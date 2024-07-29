@@ -128,6 +128,11 @@ class BaseIAP(BasePaymentProcessor):
             if not original_transaction_id:
                 raise PaymentError(response)
 
+            if 'cancellation_reason' in validation_response['receipt']['in_app'][0]:
+                error = 'iOS payment is cancelled for [%s] in basket [%d]'
+                logger.error(error, original_transaction_id, basket.id)
+                raise UserCancelled(response)
+
         # In case of Android transaction_id is required to identify payment
         elif not transaction_id:
             logger.error('Unable to find transaction id for basket [%d]', basket.id)
