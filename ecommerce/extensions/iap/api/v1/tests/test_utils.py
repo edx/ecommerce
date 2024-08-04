@@ -149,6 +149,7 @@ class TestCreateIosProducts(TestCase):
                 apply_price_of_inapp_purchase(100, '123', headers)
 
             get_call.return_value.status_code = 200
+            post_call.return_value.status_code = 201
             get_call.return_value.json.return_value = {
                 'data': [
                     {
@@ -159,12 +160,11 @@ class TestCreateIosProducts(TestCase):
                     }
                 ]
             }
-            with self.assertRaises(AppStoreRequestException, msg="Couldn't find nearest low price point"):
-                # Make sure it doesn't select higher price point
-                apply_price_of_inapp_purchase(80, '123', headers)
+            with self.assertRaises(AppStoreRequestException, msg="Couldn't find nearest high price point"):
+                # Make sure it doesn't select lower price point
+                apply_price_of_inapp_purchase(100, '123', headers)
 
-            post_call.return_value.status_code = 201
-            apply_price_of_inapp_purchase(100, '123', headers)
+            apply_price_of_inapp_purchase(98, '123', headers)
             price_url = 'https://api.appstoreconnect.apple.com/v1/inAppPurchasePriceSchedules'
             self.assertEqual(post_call.call_args[0][0], price_url)
             self.assertEqual(post_call.call_args[1]['headers'], headers)
