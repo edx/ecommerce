@@ -85,7 +85,7 @@ class TestCreateIosProducts(TestCase):
             'price': 1001
         }
         error_msg = create_ios_product(course, self.ios_seat, self.configuration)
-        self.assertEqual(error_msg, 'Error: Appstore does not allow price> 1000')
+        self.assertEqual(error_msg, 'Error: Appstore does not allow price > 1000')
 
     def test_create_ios_product_with_failure(self, _):
         course = {

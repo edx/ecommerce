@@ -35,7 +35,7 @@ def create_ios_product(course, ios_product, configuration):
     return error message in case of failure.
     """
     if course['price'] > 1000:
-        return 'Error: Appstore does not allow price> 1000'
+        return 'Error: Appstore does not allow price > 1000'
 
     headers = get_auth_headers(configuration)
     try:
