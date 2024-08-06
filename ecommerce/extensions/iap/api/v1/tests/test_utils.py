@@ -73,17 +73,25 @@ class TestCreateIosProducts(TestCase):
         course = {
             'key': 'test',
             'name': 'test',
-            'price': '123'
+            'price': 123
         }
         error_msg = create_ios_product(course, self.ios_seat, self.configuration)
         self.assertEqual(error_msg, None)
 
-    # @mock.patch('ecommerce.extensions.iap.api.v1.utils.create_inapp_purchase')
+    def test_error_on_ios_product_price_threshhold(self, _,):
+        course = {
+            'key': 'test',
+            'name': 'test',
+            'price': 1001
+        }
+        error_msg = create_ios_product(course, self.ios_seat, self.configuration)
+        self.assertEqual(error_msg, 'Error: Appstore does not allow price> 1000')
+
     def test_create_ios_product_with_failure(self, _):
         course = {
             'key': 'test',
             'name': 'test',
-            'price': '123'
+            'price': 123
         }
         error_msg = create_ios_product(course, self.ios_seat, self.configuration)
         expected_msg = "[Couldn't create inapp purchase id]  for course [{}] with sku [{}]".format(
@@ -110,7 +118,7 @@ class TestCreateIosProducts(TestCase):
             course = {
                 'key': 'test',
                 'name': 'test',
-                'price': '123'
+                'price': 123
             }
             headers = get_auth_headers(self.configuration)
             create_inapp_purchase(course, 'test.sku', '123', headers)

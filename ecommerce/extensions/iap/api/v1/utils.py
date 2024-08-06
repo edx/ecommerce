@@ -34,6 +34,9 @@ def create_ios_product(course, ios_product, configuration):
     Create in app ios product on connect store.
     return error message in case of failure.
     """
+    if course['price'] > 1000:
+        return 'Error: Appstore does not allow price> 1000'
+
     headers = get_auth_headers(configuration)
     try:
         in_app_purchase_id = get_or_create_inapp_purchase(ios_product, course, configuration, headers)
