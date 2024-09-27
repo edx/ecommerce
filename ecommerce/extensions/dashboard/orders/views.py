@@ -87,6 +87,4 @@ class OrderDetailView(CoreOrderDetailView):
         return self.reload_page()
 
     def _is_order_from_mobile(self, order):
-        processor_responses = order.basket.paymentprocessorresponse_set.all()
-        return any(response.processor_name in MOBILE_PAYMENT_PROCESSORS
-                   for response in processor_responses)
+        return order.basket.paymentprocessorresponse_set.filter(processor_name__in=MOBILE_PAYMENT_PROCESSORS).exists()
