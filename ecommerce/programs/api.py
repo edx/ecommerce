@@ -50,3 +50,19 @@ class ProgramsApiClient:
         TieredCache.set_all_tiers(cache_key, program, self.cache_ttl)
         logging.info('Program [%s] was successfully retrieved and cached.', program_uuid)
         return program
+
+    def get_all_programs(self):
+        """
+        Retrieve all programs.
+
+        Returns:
+            dict
+        """
+        logging.info("Retrieving all programs.")
+        api_url = urljoin(f"{self.api_url}/", f"programs/")
+        resp = self.client.get(api_url)
+        resp.raise_for_status()
+        programs = resp.json()
+
+        logging.info('Programs were successfully retrieved.')
+        return programs
