@@ -1,10 +1,12 @@
 from enum import Enum
-from django.db import connection
+
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
-from ecommerce.programs.api import ProgramsApiClient
-from ecommerce.programs.utils import get_all_programs
+from ecommerce.extensions.client import CommercetoolsAPIClient
 from oscar.core.loading import get_model
+
+from ecommerce.programs.utils import get_all_programs
+
 
 Benefit = get_model('offer', 'Benefit')
 ConditionalOffer = get_model('offer', 'ConditionalOffer')
@@ -23,11 +25,14 @@ class ProxyClassDiscountType(Enum):
     PERCENTAGE = "ecommerce.programs.benefits.PercentageDiscountBenefitWithoutRange"
     ABSOLUTE = "ecommerce.programs.benefits.AbsoluteDiscountBenefitWithoutRange"
 
-# def query_existing_discount(discount_type, discount_value):
-#     query = {
-#         "where": f'value(type="{discount_type}") and value(permyriad="{discount_value}") and requiresDiscountCode = false and target(type="lineItems")'
-#     }
-#     return commercetools_request("GET", "cart-discounts", data=query)
+def query_existing_discount(order_id):
+    # query = {
+    #     "where": f'value(type="{discount_type}") and value(permyriad="{discount_value}") and requiresDiscountCode = false and target(type="lineItems")'
+    # }
+    client = CommercetoolsAPIClient()
+
+    result = client.get_non_code_cart_discount_by_type_and_value(order_id)
+    return result
 
 def group_ten_percentage_offers(cart_discounts: list):
     offers = ConditionalOffer.objects.filter(
@@ -116,6 +121,8 @@ class Command(BaseCommand):
 
         for discount_data in cart_discounts:
             print(discount_data['predicate'], discount_data['type'], discount_data['value'])
+
+        print('RESULT', query_existing_discount("f380b998-a97e-4ef4-83fa-7d208fd7c5a5"))
 
         # for discount_data in cart_discounts:
         #     # existing = query_existing_discount(discount_data["type"], discount_data["value"])
