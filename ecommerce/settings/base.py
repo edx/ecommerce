@@ -905,8 +905,7 @@ COMMERCETOOLS_CONFIG = {
     'projectKey': 'SET_ME',
     'clientId': 'SET_ME',
     'clientSecret': 'SET_ME',
-    'authUrl': f"https://auth.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com",
+    'authUrl': f"https://auth.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com/oauth/token",
     'apiUrl': f"https://api.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com",
-    'importUrl': f"https://import.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com",  # Required for ImpEx
     'scopes': 'some_scope'
 }
