@@ -57,8 +57,10 @@ from ecommerce.extensions.api.v2.constants import (
 )
 from ecommerce.extensions.catalogue.utils import attach_vouchers_to_coupon_product
 from ecommerce.extensions.checkout.views import ReceiptResponseView
-from ecommerce.extensions.iap.api.v1.utils import apply_price_of_inapp_purchase, get_auth_headers
+from ecommerce.extensions.iap.api.v1.utils import apply_price_of_inapp_purchase, create_ios_product, get_auth_headers
+from ecommerce.extensions.iap.constants import ANDROID_SKU_PREFIX, CREATE_APPSTORE_PRODUCTS_FOR_INAPP, IOS_SKU_PREFIX
 from ecommerce.extensions.iap.processors.ios_iap import IOSIAP
+from ecommerce.extensions.iap.utils import create_mobile_seat
 from ecommerce.extensions.offer.constants import (
     ASSIGN,
     AUTOMATIC_EMAIL,
@@ -827,13 +829,30 @@ class AtomicPublicationSerializer(serializers.Serializer):  # pylint: disable=ab
 
         return products
 
-    def _update_mobile_seats(self, course):
+    def _update_or_create_mobile_seats(self, course):
         certificate_type_query = Q(attributes__name='certificate_type',
                                    attribute_values__value_text=CertificateType.VERIFIED)
         mobile_query = Q(stockrecords__partner_sku__contains='mobile')
         seat_products = course.seat_products
         mobile_seats = seat_products.filter(certificate_type_query & mobile_query)
         web_seat = seat_products.filter(certificate_type_query & ~mobile_query).first()
+        if mobile_seats:
+            self._update_mobile_seats(mobile_seats, web_seat, course)
+        else:
+            logger.info("Creating mobile seats for course [%s]", course.id)
+            create_mobile_seat(ANDROID_SKU_PREFIX, web_seat)
+            ios_seat = create_mobile_seat(IOS_SKU_PREFIX, web_seat)
+            if waffle.switch_is_active(CREATE_APPSTORE_PRODUCTS_FOR_INAPP):
+                partner_short_code = self.context['request'].site.siteconfiguration.partner.short_code
+                configuration = settings.PAYMENT_PROCESSOR_CONFIG[partner_short_code.lower()][IOSIAP.NAME.lower()]
+                course_data = {
+                    'price': ios_seat.price_excl_tax,
+                    'name': course.name,
+                    'key': course.id
+                }
+                create_ios_product(course_data, ios_seat, configuration)
+
+    def _update_mobile_seats(self, mobile_seats, web_seat, course):
         failure_msg = False
         try:
             for mobile_seat in mobile_seats:
@@ -925,9 +944,11 @@ class AtomicPublicationSerializer(serializers.Serializer):  # pylint: disable=ab
 
                 resp_message = course.publish_to_lms()
                 published = (resp_message is None)
-
                 if published:
-                    self._update_mobile_seats(course)
+                    try:
+                        self._update_or_create_mobile_seats(course)
+                    except Exception as e:  # pylint: disable=broad-except
+                        logger.error("Couldn't update mobile seats for course [%s]: [%s]", course.id, str(e))
 
                     return created, None, None
                 raise Exception(resp_message)

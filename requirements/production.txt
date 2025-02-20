@@ -237,7 +237,7 @@ edx-drf-extensions==9.1.2
     # via
     #   -r requirements/base.in
     #   edx-rbac
-git+https://github.com/openedx/ecommerce-worker.git@2u/3.3.5#egg=edx-ecommerce-worker
+edx-ecommerce-worker @ git+https://github.com/edx/ecommerce-worker.git@2u/3.3.5
     # via -r requirements/base.in
 edx-opaque-keys==2.3.0
     # via

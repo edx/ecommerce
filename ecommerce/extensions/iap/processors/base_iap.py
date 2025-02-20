@@ -128,6 +128,11 @@ class BaseIAP(BasePaymentProcessor):
             if not original_transaction_id:
                 raise PaymentError(response)
 
+            if 'cancellation_reason' in validation_response['receipt']['in_app'][0]:
+                error = 'iOS payment is cancelled for [%s] in basket [%d]'
+                logger.error(error, original_transaction_id, basket.id)
+                raise UserCancelled(response)
+
         # In case of Android transaction_id is required to identify payment
         elif not transaction_id:
             logger.error('Unable to find transaction id for basket [%d]', basket.id)
@@ -178,8 +183,7 @@ class BaseIAP(BasePaymentProcessor):
         """
         purchases = response['receipt'].get('in_app', [])
         for purchase in purchases:
-            if purchase['product_id'] == product_id and \
-                    response['receipt']['original_purchase_date_ms'] == purchase['original_purchase_date_ms']:
+            if purchase['product_id'] == product_id:
 
                 response['receipt']['in_app'] = [purchase]
                 break
@@ -208,6 +212,7 @@ class BaseIAP(BasePaymentProcessor):
                                                                             basket=basket)
 
         meta_data = self._get_metadata(currency_code=currency_code, price=price)
+        original_transaction_id = original_transaction_id or transaction_id
         PaymentProcessorResponseExtension.objects.create(
             processor_response=processor_response, original_transaction_id=original_transaction_id,
             meta_data=meta_data)
