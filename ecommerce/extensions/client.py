@@ -1,9 +1,9 @@
 import logging
 from typing import Dict, List, Optional, Union
-import requests
-from requests.exceptions import HTTPError, RequestException
 
+import requests
 from django.conf import settings
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 

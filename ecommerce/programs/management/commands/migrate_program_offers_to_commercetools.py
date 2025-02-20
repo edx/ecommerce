@@ -1,14 +1,13 @@
 import logging
 import re
 from enum import Enum
-from requests.exceptions import HTTPError
-
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
-from ecommerce.extensions.client import CommercetoolsAPIClient
 from oscar.core.loading import get_model
+from requests.exceptions import HTTPError
 
+from ecommerce.extensions.client import CommercetoolsAPIClient
 from ecommerce.programs.utils import get_all_programs
 
 logger = logging.getLogger(__name__)
