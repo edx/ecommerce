@@ -71,8 +71,6 @@ charset-normalizer==3.1.0
     #   requests
 click==8.1.3
     # via edx-django-utils
-commercetools @ git+https://github.com/edx/commercetools-python-sdk.git@main
-    # via -r requirements/base.in
 configparser==5.3.0
     # via cybersource-rest-client-python
 coreapi==2.3.3
@@ -343,15 +341,7 @@ lxml==4.9.2
 markdown==2.6.9
     # via -r requirements/base.in
 markupsafe==2.1.3
-    # via
-    #   jinja2
-    #   werkzeug
-marshmallow-enum==1.5.1
-    # via commercetools
-marshmallow==3.22.0
-    # via
-    #   commercetools
-    #   marshmallow-enum
+    # via jinja2
 monotonic==1.6
     # via analytics-python
 multidict==6.0.4
@@ -383,9 +373,7 @@ oauthlib==3.2.2
     #   requests-oauthlib
     #   social-auth-core
 packaging==23.1
-    # via
-    #   drf-yasg
-    #   marshmallow
+    # via drf-yasg
 paramiko==3.2.0
     # via cybersource-rest-client-python
 path-py==7.2
@@ -423,7 +411,7 @@ pyasn1==0.5.0
     #   oauth2client
     #   pyasn1-modules
     #   rsa
-    #   x50
+    #   x509
 pyasn1-modules==0.3.0
     # via
     #   google-auth
@@ -492,7 +480,6 @@ pytz==2023.3
     #   -r requirements/base.in
     #   babel
     #   celery
-    #   commercetools
     #   cybersource-rest-client-python
     #   datetime
     #   django
@@ -519,7 +506,6 @@ requests==2.31.0
     # via
     #   -r requirements/base.in
     #   analytics-python
-    #   commercetools
     #   coreapi
     #   cybersource-rest-client-python
     #   edx-drf-extensions
@@ -529,7 +515,6 @@ requests==2.31.0
     #   naked
     #   paypalrestsdk
     #   requests-file
-    #   requests-mock
     #   requests-oauthlib
     #   requests-toolbelt
     #   slumber
@@ -538,11 +523,8 @@ requests==2.31.0
     #   zeep
 requests-file==1.5.1
     # via zeep
-requests-mock==1.12.1
-    # via commercetools
 requests-oauthlib==1.3.1
     # via
-    #   commercetools
     #   getsmarter-api-clients
     #   social-auth-core
 requests-toolbelt==1.0.0
@@ -641,16 +623,8 @@ vine==1.3.0
     #   celery
 webencodings==0.5.1
     # via bleach
-webob==1.8.9
-    # via commercetools
-werkzeug==3.0.6
-    # via commercetools
 wheel==0.40.0
     # via cybersource-rest-client-python
-wrapt==1.13.3
-    # via
-    #   -c requirements/constraints.txt
-    #   commercetools
 x509==0.1
     # via cybersource-rest-client-python
 xss-utils==0.4.0

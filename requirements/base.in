@@ -1,7 +1,5 @@
 -c constraints.txt
 
-# Our own rebuilt Commercetools SDK (see SONIC-30)
-commercetools @ git+https://github.com/edx/commercetools-python-sdk.git@main
 
 analytics-python
 app-store-notifications-v2-validator==0.0.7
