@@ -1032,11 +1032,11 @@ webtest==3.0.0
     # via django-webtest
 wheel==0.40.0
     # via
+    #   -r requirements/base.txt
     #   cybersource-rest-client-python
 wrapt==1.13.3
     # via
     #   -c requirements/constraints.txt
-    #   -r requirements/base.txt
     #   astroid
 x509==0.1
     # via

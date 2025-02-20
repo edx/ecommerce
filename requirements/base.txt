@@ -606,9 +606,8 @@ vine==1.3.0
     #   celery
 webencodings==0.5.1
     # via bleach
-wrapt==1.13.3
-    # via
-    #   -c requirements/constraints.txt
+wheel==0.40.0
+    # via cybersource-rest-client-python
 x509==0.1
     # via cybersource-rest-client-python
 xss-utils==0.4.0
