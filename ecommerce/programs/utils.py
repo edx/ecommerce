@@ -53,6 +53,6 @@ def get_all_programs(siteconfiguration):
         client = ProgramsApiClient(siteconfiguration)
         response = client.get_all_programs()
     except (ReqConnectionError, HTTPError, Timeout):
-        log.debug("Failed to retrieve programs.")
+        log.debug("Failed to retrieve all programs from course-discovery.")
 
     return response

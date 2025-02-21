@@ -112,7 +112,6 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
     return predicate
 
 
-# Function to extract UUIDs and condition type from a predicate
 def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, program_uuids: list):
     """
     Combine UUIDs and condition type to create a target predicate for a cart discount.
@@ -123,11 +122,22 @@ def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, p
         program_uuids (list): List of program UUIDs.
 
     Returns:
-        str: Target predicate for the cart discount.
+        tuple: A tuple where the first item is a boolean indicating if an update call is needed,
+               and the second item is the updated target predicate or None if no update is needed.
     """
-    uuids = re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
-    combined_uuids = list(set(uuids) | set(program_uuids))
-    return _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+    extracted_uuids_from_predicate = re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
+
+    existing_uuids_set = set(extracted_uuids_from_predicate)
+    new_uuids_set = set(program_uuids)
+
+    if existing_uuids_set == new_uuids_set:
+        return False, None
+
+    combined_uuids = list(existing_uuids_set | new_uuids_set)
+    updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+
+    return True, updated_predicate
+
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
@@ -205,7 +215,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Handle the command."""
-        client = CommercetoolsAPIClient()
+        try:
+            client = CommercetoolsAPIClient()
+        except CommandError as error:
+            logger.error(error)
+            return
+
         sort_order = _get_highest_sort_order(client)
 
         cart_discounts = []
@@ -260,15 +275,23 @@ class Command(BaseCommand):
                 discount = existing['results'][0]
                 predicate = discount['target']['predicate']
 
-                updated_predicate = _combine_uuids_to_predicate(
+                needs_update, updated_predicate = _combine_uuids_to_predicate(
                     predicate, is_ten_percent_discount, discount_data["program_uuids"]
                 )
+
+                if not needs_update:
+                    logger.info(
+                        "Cart discount with type %s and value %s is up to date.",
+                        discount_type, discount_value
+                    )
+                    continue
 
                 logger.info(
                     "Updating cart discount with type %s and value %s.",
                     discount_type, discount_value
                 )
                 response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate)
+
                 if not response:
                     logger.error(
                         "Failed to update cart discount with type %s and value %s.",
