@@ -57,10 +57,7 @@ class CommercetoolsAPIClient:
             json (Optional[Dict]): JSON payload for POST/PUT requests.
 
         Returns:
-            Union[Dict, List]: JSON response from the API.
-
-        Raises:
-            HTTPError: If the request fails.
+            Union[Dict, List]: JSON response from the API or None if the request fails.
         """
         url = f"{self.config['apiUrl']}/{self.config['projectKey']}/{endpoint}"
         headers = {
@@ -70,13 +67,13 @@ class CommercetoolsAPIClient:
         try:
             response = requests.request(method, url, headers=headers, params=params, json=json)
             response.raise_for_status()
-            print('RESULT', response.json())
             return response.json()
         except HTTPError as err:
             if response is not None:
-                response_message = response.json().get("message")
+                response_message = response.json().get('message', 'No message provided.')
                 logger.error("API request failed with error: %s and message: %s", err, response_message)
-            raise
+
+            return None
 
     def get_cart_discounts_without_code_by_type_and_value(
         self, discount_type: str, discount_value: int
@@ -88,8 +85,8 @@ class CommercetoolsAPIClient:
             discount_type (str): Type of discount (e.g., "relative").
             discount_value (str): Value of the discount.
 
-        Retur
-            Dict: Cart discount data.
+        Returns:
+            Dict: Cart discount data or None if request fails.
         """
 
         if discount_type == "absolute":
@@ -111,7 +108,7 @@ class CommercetoolsAPIClient:
         Fetch the latest sort order for cart discounts without codes.
 
         Returns:
-            Dict: Latest cart discount data.
+            Dict: Latest cart discount data or None if request fails.
         """
         return self._make_request(
             "GET",
@@ -147,7 +144,7 @@ class CommercetoolsAPIClient:
             target_ids (List[str]): List of target IDs.
 
         Returns:
-            Dict: Created cart discount data.
+            Dict: Created cart discount data or None if request fails.
         """
         if discount_type == "absolute":
             discount_value_data = {
@@ -180,7 +177,7 @@ class CommercetoolsAPIClient:
             "requiresDiscountCode": False,
             "stackingMode": "Stacking",
         }
-        print('PAYLOAD', payload)
+
         return self._make_request("POST", "cart-discounts", json=payload)
 
     def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str) -> Dict:
@@ -192,7 +189,7 @@ class CommercetoolsAPIClient:
             predicate (str): Updated predicate for the cart discount.
 
         Returns:
-            Dict: Updated cart discount data.
+            Dict: Updated cart discount data or None if request fails.
         """
         payload = {
             "version": 1,
