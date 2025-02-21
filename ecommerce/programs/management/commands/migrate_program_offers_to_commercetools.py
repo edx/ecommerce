@@ -139,7 +139,6 @@ def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, p
     return True, updated_predicate
 
 
-
 def _group_ten_percentage_offers(cart_discounts: list):
     """
     Group offers of 10% discount.
