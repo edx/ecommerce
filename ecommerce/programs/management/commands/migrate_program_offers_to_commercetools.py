@@ -272,6 +272,7 @@ class Command(BaseCommand):
                 logger.info("Cart discount created successfully")
             else:
                 discount = existing['results'][0]
+                version = discount['version']
                 predicate = discount['target']['predicate']
 
                 needs_update, updated_predicate = _combine_uuids_to_predicate(
@@ -289,7 +290,7 @@ class Command(BaseCommand):
                     "Updating cart discount with type %s and value %s.",
                     discount_type, discount_value
                 )
-                response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate)
+                response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate, version)
 
                 if not response:
                     logger.error(

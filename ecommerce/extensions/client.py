@@ -180,19 +180,20 @@ class CommercetoolsAPIClient:
 
         return self._make_request("POST", "cart-discounts", json=payload)
 
-    def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str) -> Dict:
+    def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str, version: int) -> Dict:
         """
         Update the target predicate for a cart discount.
 
         Args:
             cart_discount_id (str): ID of the cart discount.
             predicate (str): Updated predicate for the cart discount.
+            version (int): Version of the cart discount.
 
         Returns:
             Dict: Updated cart discount data or None if request fails.
         """
         payload = {
-            "version": 1,
+            "version": version,
             "actions": [
                 {
                     "action": "changeTarget",
