@@ -37,7 +37,7 @@ class CommercetoolsAPIClient:
             response.raise_for_status()
             return response.json()["access_token"]
         except HTTPError as e:
-            logger.error(f"Failed to retrieve access token: {e}")
+            logger.error("Failed to retrieve access token: %s", e)
             raise
 
     def _make_request(
@@ -75,7 +75,7 @@ class CommercetoolsAPIClient:
         except HTTPError as err:
             if response is not None:
                 response_message = response.json().get("message")
-                logger.error(f"API request failed with error: {err} and message: {response_message}")
+                logger.error("API request failed with error: %s and message: %s", err, response_message)
             raise
 
     def get_cart_discounts_without_code_by_type_and_value(
@@ -88,7 +88,7 @@ class CommercetoolsAPIClient:
             discount_type (str): Type of discount (e.g., "relative").
             discount_value (str): Value of the discount.
 
-        Returns:
+        Retur
             Dict: Cart discount data.
         """
 
