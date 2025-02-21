@@ -59,7 +59,7 @@ class ProgramsApiClient:
             dict
         """
         logging.info("Retrieving all programs from course-discovery service.")
-        api_url = urljoin(self.api_url, "/programs/")
+        api_url = urljoin(f"{self.api_url}/", "programs/")
         resp = self.client.get(api_url)
         resp.raise_for_status()
         programs = resp.json()

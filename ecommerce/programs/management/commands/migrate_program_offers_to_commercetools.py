@@ -187,7 +187,7 @@ def _group_other_offers(cart_discounts: list):
 
     discount_groups = {}
     for offer in offers:
-        program_uuid = offer.condition.program_uuid
+        program_uuid = str(offer.condition.program_uuid)
         discount_type = CT_CART_DISCOUNT_TYPE_MAP.get(offer.benefit.proxy().benefit_class_type)
         discount_value = offer.benefit.value
         type_value_key = f"{discount_type}-{discount_value}"
