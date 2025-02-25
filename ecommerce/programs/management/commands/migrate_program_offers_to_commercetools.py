@@ -8,7 +8,7 @@ from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.extensions.client import CommercetoolsAPIClient
-from ecommerce.programs.utils import get_all_programs
+from ecommerce.programs.utils import get_all_program_uuids
 
 logger = logging.getLogger(__name__)
 
@@ -156,11 +156,11 @@ def _group_ten_percentage_offers(cart_discounts: list):
     programs_with_offer = {offer.condition.program_uuid for offer in offers}
 
     site_configuration = SiteConfiguration.objects.first()
-    programs_response = get_all_programs(site_configuration)
-    if not programs_response:
+    all_programs = get_all_program_uuids(site_configuration)
+
+    if not all_programs:
         raise CommandError("Failed to retrieve all programs from course-discovery")
 
-    all_programs = {program['uuid'] for program in programs_response['results']}
     programs_to_exclude = list(set(all_programs) - set(programs_with_offer))
 
     cart_discounts.append({
@@ -268,8 +268,8 @@ class Command(BaseCommand):
                         "Failed to create cart discount with type %s and value %s.",
                         discount_type, discount_value
                     )
-
-                logger.info("Cart discount created successfully")
+                else:
+                    logger.info("Cart discount created successfully")
             else:
                 discount = existing['results'][0]
                 version = discount['version']
@@ -297,5 +297,5 @@ class Command(BaseCommand):
                         "Failed to update cart discount with type %s and value %s.",
                         discount_type, discount_value
                     )
-
-                logger.info("Cart discount updated successfully")
+                else:
+                    logger.info("Cart discount updated successfully")

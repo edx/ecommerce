@@ -36,9 +36,9 @@ def get_program(program_uuid, siteconfiguration):
     return response
 
 
-def get_all_programs(siteconfiguration):
+def get_all_program_uuids(siteconfiguration):
     """
-    Returns all the program present in the Discovery Service.
+    Returns all the program uuids present in the Discovery Service.
 
     Args:
         siteconfiguration (SiteConfiguration): Configuration containing the requisite parameters
@@ -51,8 +51,8 @@ def get_all_programs(siteconfiguration):
     response = None
     try:
         client = ProgramsApiClient(siteconfiguration)
-        response = client.get_all_programs()
+        response = client.get_all_program_uuids()
     except (ReqConnectionError, HTTPError, Timeout):
-        log.debug("Failed to retrieve all programs from course-discovery.")
+        log.debug("Failed to retrieve all program uuids from course-discovery.")
 
     return response
