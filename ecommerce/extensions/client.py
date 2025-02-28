@@ -32,13 +32,9 @@ class CommercetoolsAPIClient:
             "scope": f"manage_project:{self.config['projectKey']}",
         }
 
-        try:
-            response = requests.post(auth_url, auth=auth, data=data)
-            response.raise_for_status()
-            return response.json()["access_token"]
-        except HTTPError as e:
-            logger.error("Failed to retrieve access token: %s", e)
-            raise
+        response = requests.post(auth_url, auth=auth, data=data)
+        response.raise_for_status()
+        return response.json()["access_token"]
 
     def _make_request(
         self,

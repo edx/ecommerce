@@ -48,6 +48,9 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     """
     response = client.get_highest_sort_order_for_cart_discount_without_codes()
 
+    if not response:
+        raise CommandError("Failed to get highest sort order for cart discounts without codes. Exiting command.")
+
     if response['count'] > 0:
         return float(response['results'][0]['sortOrder'])
 
@@ -112,7 +115,7 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
     return predicate
 
 
-def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, program_uuids: list):
+def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, legacy_program_uuids: list):
     """
     Combine UUIDs and condition type to create a target predicate for a cart discount.
 
@@ -127,16 +130,17 @@ def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, p
     """
     extracted_uuids_from_predicate = re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
 
-    existing_uuids_set = set(extracted_uuids_from_predicate)
-    new_uuids_set = set(program_uuids)
+    existing_uuids = set(extracted_uuids_from_predicate)
+    legacy_uuids = set(legacy_program_uuids)
+    new_uuids_in_legacy = list(legacy_uuids - existing_uuids)
 
-    if existing_uuids_set == new_uuids_set:
-        return False, None
+    if not new_uuids_in_legacy:
+        return False, None, None
 
-    combined_uuids = list(existing_uuids_set | new_uuids_set)
+    combined_uuids = list(existing_uuids | legacy_uuids)
     updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
 
-    return True, updated_predicate
+    return True, updated_predicate, new_uuids_in_legacy
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
@@ -159,7 +163,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
     all_programs = get_all_program_uuids(site_configuration)
 
     if not all_programs:
-        raise CommandError("Failed to retrieve all programs from course-discovery")
+        raise CommandError("Failed to retrieve programs uuids from course-discovery. Exiting command.")
 
     programs_to_exclude = list(set(all_programs) - set(programs_with_offer))
 
@@ -216,9 +220,8 @@ class Command(BaseCommand):
         """Handle the command."""
         try:
             client = CommercetoolsAPIClient()
-        except CommandError as error:
-            logger.error(error)
-            return
+        except HTTPError as error:
+            raise CommandError(f"Failed to initialize Commercetools client. Error: {error}")
 
         sort_order = _get_highest_sort_order(client)
 
@@ -226,33 +229,47 @@ class Command(BaseCommand):
         _group_ten_percentage_offers(cart_discounts)
         _group_other_offers(cart_discounts)
 
+        command_soft_failed = False
         for discount_data in cart_discounts:
             discount_type = discount_data["type"]
             discount_value = discount_data["value"]
             discount_value_in_cents = int(discount_value * 100)
 
             logger.info(
-                "Checking existing cart discount with type %s and value %s in Commercetools.",
+                "Fetching existing cart discount with type: %s, and value: %s in Commercetools.",
                 discount_type, discount_value
             )
             existing = client.get_cart_discounts_without_code_by_type_and_value(discount_type, discount_value_in_cents)
             if not existing:
-                logger.info(
-                    "Failed to get discount with type %s and value %s. Cart discount not created.",
+                logger.error(
+                    "Error while fetching cart discount with type: %s, and value: %s. Skipping this group for now.",
                     discount_type, discount_value
                 )
+                command_soft_failed = True
                 continue
 
             is_ten_percent_discount = (
-                discount_type == CT_PERCENTAGE_DISCOUNT_TYPE and discount_value_in_cents == TEN_PERCENT_DISCOUNT_IN_CENTS
+                discount_type == CT_PERCENTAGE_DISCOUNT_TYPE and
+                discount_value_in_cents == TEN_PERCENT_DISCOUNT_IN_CENTS
             )
 
             if existing['count'] == 0:
-                sort_order += 0.00000000000001
                 logger.info(
-                    "Creating cart discount with type %s and value %s.",
+                    "No cart discount exists with type: %s, and value: %s. Creating a new one.",
                     discount_type, discount_value
                 )
+
+                sort_order += 0.00000000000001
+                logger.info(
+                    "Creating cart discount with type: %s, value: %s, sort order: %s, and %s program uuids: %s.",
+                    discount_type,
+                    discount_value,
+                    discount_value_in_cents,
+                    sort_order,
+                    'excluded' if is_ten_percent_discount else 'included',
+                    ", ".join(discount_data["program_uuids"])
+                )
+
                 response = _create_cart_discount(
                     client=client,
                     discount_type=discount_type,
@@ -265,37 +282,57 @@ class Command(BaseCommand):
 
                 if not response:
                     logger.error(
-                        "Failed to create cart discount with type %s and value %s.",
+                        "Failed to create cart discount with type: %s, and value: %s.",
                         discount_type, discount_value
                     )
+                    command_soft_failed = True
                 else:
-                    logger.info("Cart discount created successfully")
+                    logger.info("Cart discount created successfully.")
             else:
+                if existing['count'] > 1:
+                    logger.error(
+                        "More than one cart discount exists with type: %s, and value: %s. Skipping this group for now.",
+                        discount_type, discount_value
+                    )
+                    command_soft_failed = True
+                    continue
+
+                logger.info(
+                    "Existing cart discount found with type %s and value %s.",
+                    discount_type, discount_value
+                )
+
                 discount = existing['results'][0]
                 version = discount['version']
                 predicate = discount['target']['predicate']
 
-                needs_update, updated_predicate = _combine_uuids_to_predicate(
+                needs_update, updated_predicate, uuids_being_added = _combine_uuids_to_predicate(
                     predicate, is_ten_percent_discount, discount_data["program_uuids"]
                 )
 
                 if not needs_update:
                     logger.info(
-                        "Cart discount with type %s and value %s is up to date.",
+                        "Cart discount with type: %s, and value: %s is up to date.",
                         discount_type, discount_value
                     )
                     continue
 
                 logger.info(
-                    "Updating cart discount with type %s and value %s.",
-                    discount_type, discount_value
+                    "Updating existing cart discount predicate with program uuids: %s.",
+                    ", ".join(uuids_being_added)
                 )
                 response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate, version)
 
                 if not response:
                     logger.error(
-                        "Failed to update cart discount with type %s and value %s.",
+                        "Failed to update cart discount with type: %s, and value: %s.",
                         discount_type, discount_value
                     )
+                    command_soft_failed = True
                 else:
-                    logger.info("Cart discount updated successfully")
+                    logger.info("Cart discount updated successfully.")
+
+        if command_soft_failed:
+            raise CommandError("Command run completed with errors.")
+
+        logger.info("Program offers migrated to Commercetools successfully.")
