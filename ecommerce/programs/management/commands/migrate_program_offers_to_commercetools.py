@@ -229,6 +229,10 @@ class Command(BaseCommand):
         _group_ten_percentage_offers(cart_discounts)
         _group_other_offers(cart_discounts)
 
+        created_discounts = []
+        updated_discounts = []
+        failed_discounts = []
+
         command_soft_failed = False
         for discount_data in cart_discounts:
             discount_type = discount_data["type"]
@@ -245,7 +249,13 @@ class Command(BaseCommand):
                     "Error while fetching cart discount with type: %s, and value: %s. Skipping this group for now.",
                     discount_type, discount_value
                 )
+
                 command_soft_failed = True
+                failed_discounts.append({
+                    "type": discount_type,
+                    "value": discount_value,
+                    "reason": "Error while fetching cart discount."
+                })
                 continue
 
             is_ten_percent_discount = (
@@ -264,8 +274,7 @@ class Command(BaseCommand):
                     "Creating cart discount with type: %s, value: %s, sort order: %s, and %s program uuids: %s.",
                     discount_type,
                     discount_value,
-                    discount_value_in_cents,
-                    sort_order,
+                    f"{sort_order:.20f}".rstrip('0').rstrip('.'),
                     'excluded' if is_ten_percent_discount else 'included',
                     ", ".join(discount_data["program_uuids"])
                 )
@@ -285,16 +294,32 @@ class Command(BaseCommand):
                         "Failed to create cart discount with type: %s, and value: %s.",
                         discount_type, discount_value
                     )
+
                     command_soft_failed = True
+                    failed_discounts.append({
+                        "type": discount_type,
+                        "value": discount_value,
+                        "reason": "Error while creating cart discount."
+                    })
                 else:
                     logger.info("Cart discount created successfully.")
+                    created_discounts.append({
+                        "type": discount_type,
+                        "value": discount_value
+                    })
             else:
                 if existing['count'] > 1:
                     logger.error(
                         "More than one cart discount exists with type: %s, and value: %s. Skipping this group for now.",
                         discount_type, discount_value
                     )
+
                     command_soft_failed = True
+                    failed_discounts.append({
+                        "type": discount_type,
+                        "value": discount_value,
+                        "reason": "Multiple cart discounts found for same type and value."
+                    })
                     continue
 
                 logger.info(
@@ -329,10 +354,42 @@ class Command(BaseCommand):
                         discount_type, discount_value
                     )
                     command_soft_failed = True
+                    failed_discounts.append({
+                        "type": discount_type,
+                        "value": discount_value,
+                        "reason": "Error while updating cart discount."
+                    })
                 else:
                     logger.info("Cart discount updated successfully.")
+                    updated_discounts.append({
+                        "type": discount_type,
+                        "value": discount_value,
+                        "uuids_added": uuids_being_added
+                    })
+
+        if created_discounts:
+            created_summary = ", ".join(
+                f"{d['type']} {d['value']}" for d in created_discounts
+            )
+            logger.info("Summary of created discounts: %s", created_summary)
+        else:
+            logger.info("No discounts were created.")
+
+        if updated_discounts:
+            updated_summary = ", ".join(
+                f"{d['type']} {d['value']} (UUIDs: {', '.join(d['uuids_added'])})"
+                for d in updated_discounts
+            )
+            logger.info("Summary of updated discounts: %s", updated_summary)
+        else:
+            logger.info("No discounts were updated.")
 
         if command_soft_failed:
+            failed_summary = ", ".join(
+                f"{d['type']} {d['value']} (Reason: {d['reason']})"
+                for d in failed_discounts
+            )
+            logger.error("Summary of failed discount migrations: %s", failed_summary)
             raise CommandError("Command run completed with errors.")
 
         logger.info("Program offers migrated to Commercetools successfully.")
