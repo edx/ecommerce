@@ -179,7 +179,7 @@ class CommercetoolsAPIClient:
             "sortOrder": f"{sort_order:.14f}",
             "isActive": True,
             "requiresDiscountCode": False,
-            "stackingMode": "Stacking",
+            "stackingMode": "StopAfterThisDiscount",
         }
 
         return self._make_request("POST", "cart-discounts", json=payload)
