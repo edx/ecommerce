@@ -5,6 +5,8 @@ import requests
 from django.conf import settings
 from requests.exceptions import HTTPError
 
+from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ class CommercetoolsAPIClient:
         auth = (self.config["clientId"], self.config["clientSecret"])
         data = {
             "grant_type": "client_credentials",
-            "scope": f"manage_project:{self.config['projectKey']}",
+            "scope": self.config['scopes'],
         }
 
         response = requests.post(auth_url, auth=auth, data=data)
@@ -85,7 +87,7 @@ class CommercetoolsAPIClient:
             Dict: Cart discount data or None if request fails.
         """
 
-        if discount_type == "absolute":
+        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
             discount_value_param = f' and value(money(centAmount={discount_value}))'
         else:
             discount_value_param = f' and value(permyriad={discount_value})'
@@ -116,13 +118,13 @@ class CommercetoolsAPIClient:
             },
         )
 
-    def create_cart_discount_without_code(
+    def create_bundle_cart_discount_without_code(
         self,
         key: str,
         name: str,
         description: str,
         discount_type: str,
-        discount_value: int,
+        discount_value_in_cents: int,
         sort_order: float,
         predicate: str,
     ) -> Dict:
@@ -142,17 +144,17 @@ class CommercetoolsAPIClient:
         Returns:
             Dict: Created cart discount data or None if request fails.
         """
-        if discount_type == "absolute":
+        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
             discount_value_data = {
                 "money": [{
-                    "centAmount": discount_value,
+                    "centAmount": discount_value_in_cents,
                     "currencyCode": "USD"
                 }],
                 "applicationMode": "ProportionateDistribution"
             }
         else:
             discount_value_data = {
-                "permyriad": discount_value
+                "permyriad": discount_value_in_cents
             }
 
         payload = {

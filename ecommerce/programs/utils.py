@@ -53,6 +53,6 @@ def get_all_program_uuids(siteconfiguration):
         client = ProgramsApiClient(siteconfiguration)
         response = client.get_all_program_uuids()
     except (ReqConnectionError, HTTPError, Timeout):
-        log.debug("Failed to retrieve all program uuids from course-discovery.")
+        log.error("Failed to retrieve all program uuids from course-discovery.")
 
     return response
