@@ -217,7 +217,7 @@ def _group_other_offers(cart_discounts: list):
         })
 
 
-def _migrate_program_offers(client):
+def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     """
     Migrate program offers to Commercetools.
 
@@ -428,6 +428,6 @@ class Command(BaseCommand):
         try:
             client = CommercetoolsAPIClient()
         except HTTPError as error:
-            raise CommandError(f"Failed to initialize Commercetools client. Error: {error}")
+            raise CommandError(f"Failed to initialize Commercetools client. Error: {error}") from error
 
         _migrate_program_offers(client)
