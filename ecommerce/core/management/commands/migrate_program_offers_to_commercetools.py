@@ -84,11 +84,10 @@ def _create_cart_discount(
     display_discount_symbol = "%" if is_absolute else "USD"
     response = client.create_bundle_cart_discount_without_code(
         key=f"{discount_type}-{discount_value_in_cents}-{PROGRAM_OFFER_KEY}",
-        name=f"{discount_type.capitalize()} {discount_value} {PROGRAM_OFFER_NAME}",
         name=f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value} {display_discount_symbol}",
         description=f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}",
         discount_type=discount_type,
-        discount_value=discount_value_in_cents,
+        discount_value_in_cents=discount_value_in_cents,
         sort_order=sort_order,
         predicate=predicate
     )
@@ -216,6 +215,7 @@ def _group_other_offers(cart_discounts: list):
             "value": value["value"],
             "program_uuids": value["program_uuids"]
         })
+
 
 def _migrate_program_offers(client):
     """
@@ -431,5 +431,3 @@ class Command(BaseCommand):
             raise CommandError(f"Failed to initialize Commercetools client. Error: {error}")
 
         _migrate_program_offers(client)
-
-

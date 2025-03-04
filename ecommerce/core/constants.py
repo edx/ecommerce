@@ -78,6 +78,7 @@ TEN_PERCENT_DISCOUNT_IN_CENTS = 1000
 PROGRAM_OFFER_KEY = 'program-offer'
 PROGRAM_OFFER_NAME = 'Program Offer'
 
+
 class Status:
     """Health statuses."""
     OK = 'OK'
