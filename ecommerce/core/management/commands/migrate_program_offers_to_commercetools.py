@@ -81,7 +81,7 @@ def _create_cart_discount(
     """
     is_absolute = discount_type == CT_ABSOLUTE_DISCOUNT_TYPE
     display_discount_type = "Fixed" if is_absolute else "Percentage"
-    display_discount_symbol = "%" if is_absolute else "USD"
+    display_discount_symbol = "USD" if is_absolute else "%"
     response = client.create_bundle_cart_discount_without_code(
         key=f"{discount_type}-{discount_value_in_cents}-{PROGRAM_OFFER_KEY}",
         name=f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value} {display_discount_symbol}",
