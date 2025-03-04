@@ -4,16 +4,17 @@ from enum import Enum
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
-from ecommerce.core.constants import (
-    CT_ABSOLUTE_DISCOUNT_TYPE,
-    CT_PERCENTAGE_DISCOUNT_TYPE,
-    PROGRAM_OFFER_KEY,
-    TEN_PERCENT_DISCOUNT_IN_CENTS
-)
 from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient
+from ecommerce.core.constants import (
+    CT_ABSOLUTE_DISCOUNT_TYPE,
+    CT_PERCENTAGE_DISCOUNT_TYPE,
+    PROGRAM_OFFER_KEY,
+    PROGRAM_OFFER_NAME,
+    TEN_PERCENT_DISCOUNT_IN_CENTS
+)
 from ecommerce.programs.utils import get_all_program_uuids
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ def _create_cart_discount(
     client: CommercetoolsAPIClient,
     discount_type: str,
     discount_value_in_cents: int,
-    discount_value: int,
+    discount_value: float,
     sort_order: float,
     predicate: str
 ):
@@ -78,10 +79,14 @@ def _create_cart_discount(
     Returns:
         Dict: Created cart discount data or None if request fails.
     """
+    is_absolute = discount_type == CT_ABSOLUTE_DISCOUNT_TYPE
+    display_discount_type = "Fixed" if is_absolute else "Percentage"
+    display_discount_symbol = "%" if is_absolute else "USD"
     response = client.create_bundle_cart_discount_without_code(
-        key=f"{discount_type}-{discount_value}-{PROGRAM_OFFER_KEY}",
-        name=f"{discount_type.capitalize()} {discount_value} Program Offer",
-        description=f"Program Offer with value: {discount_value} and type: {discount_type}",
+        key=f"{discount_type}-{discount_value_in_cents}-{PROGRAM_OFFER_KEY}",
+        name=f"{discount_type.capitalize()} {discount_value} {PROGRAM_OFFER_NAME}",
+        name=f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value} {display_discount_symbol}",
+        description=f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}",
         discount_type=discount_type,
         discount_value=discount_value_in_cents,
         sort_order=sort_order,
@@ -269,14 +274,22 @@ def _migrate_program_offers(client):
             )
 
             sort_order += 0.00000000000001
-            logger.info(
-                "Creating cart discount with type: %s, value: %s, sort order: %s, and %s program uuids: %s.",
-                discount_type,
-                discount_value,
-                f"{sort_order:.20f}".rstrip('0').rstrip('.'),
-                'excluded' if is_ten_percent_discount else 'included',
-                ", ".join(discount_data["program_uuids"])
-            )
+
+            if not is_ten_percent_discount:
+                logger.info(
+                    "Creating cart discount with type: %s, value: %s, sort order: %s, including program uuids: %s.",
+                    discount_type,
+                    discount_value,
+                    f"{sort_order:.14f}",
+                    ", ".join(discount_data["program_uuids"])
+                )
+            else:
+                logger.info(
+                    "Creating cart discount with type: %s, value: %s, and sort order: %s.",
+                    discount_type,
+                    discount_value,
+                    f"{sort_order:.14f}"
+                )
 
             response = _create_cart_discount(
                 client=client,
@@ -303,7 +316,10 @@ def _migrate_program_offers(client):
                 })
                 continue
 
-            logger.info("Cart discount created successfully.")
+            logger.info(
+                "Cart discount created successfully with type: %s, and value: %s.",
+                discount_type, discount_value
+            )
             created_discounts.append({
                 "type": discount_type,
                 "value": discount_value
@@ -344,7 +360,9 @@ def _migrate_program_offers(client):
                 continue
 
             logger.info(
-                "Updating existing cart discount predicate with program uuids: %s.",
+                "Updating existing cart discount with type: %s, value: %s, and predicate with program uuids: %s.",
+                discount_type,
+                discount_value,
                 ", ".join(uuids_being_added)
             )
             response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate, version)
@@ -362,7 +380,12 @@ def _migrate_program_offers(client):
                 })
                 continue
 
-            logger.info("Cart discount updated successfully.")
+            logger.info(
+                "Cart discount updated successfully with type: %s, value: %s, and predicate with program uuids: %s.",
+                discount_type,
+                discount_value,
+                ", ".join(uuids_being_added)
+            )
             updated_discounts.append({
                 "type": discount_type,
                 "value": discount_value,

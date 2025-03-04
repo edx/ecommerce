@@ -69,7 +69,12 @@ class CommercetoolsAPIClient:
         except HTTPError as err:
             if response is not None:
                 response_message = response.json().get('message', 'No message provided.')
-                logger.error("API request failed with error: %s and message: %s", err, response_message)
+                logger.error(
+                    "API request for endpoint: %s failed with error: %s and message: %s",
+                    endpoint, err, response_message
+                )
+            else:
+                logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
 
             return None
 
@@ -165,12 +170,13 @@ class CommercetoolsAPIClient:
                 "type": discount_type,
                 **discount_value_data,
             },
+            # Equivalent to "At least one existing line item satisfies the condition(s) is True in CT."
             "cartPredicate": "lineItemExists(custom.bundleId is defined) = true",
             "target": {
                 "type": "lineItems",
                 "predicate": predicate,
             },
-            "sortOrder": f"{sort_order:.20f}".rstrip('0').rstrip('.'),
+            "sortOrder": f"{sort_order:.14f}",
             "isActive": True,
             "requiresDiscountCode": False,
             "stackingMode": "Stacking",
