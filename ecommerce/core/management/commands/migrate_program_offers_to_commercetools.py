@@ -280,7 +280,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                     "Creating cart discount with type: %s, value: %s, sort order: %s, including program uuids: %s.",
                     discount_type,
                     discount_value,
-                    f"{sort_order:.14f}",
+                    f"{sort_order:.14f}".rstrip("0").rstrip("."),
                     ", ".join(discount_data["program_uuids"])
                 )
             else:
@@ -288,7 +288,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                     "Creating cart discount with type: %s, value: %s, and sort order: %s.",
                     discount_type,
                     discount_value,
-                    f"{sort_order:.14f}"
+                    f"{sort_order:.14f}".rstrip("0").rstrip(".")
                 )
 
             response = _create_cart_discount(
