@@ -1,0 +1,211 @@
+import logging
+from typing import Dict, List, Optional, Union
+
+import requests
+from django.conf import settings
+from requests.exceptions import HTTPError
+
+from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE
+
+logger = logging.getLogger(__name__)
+
+
+class CommercetoolsAPIClient:
+    """Custom Commercetools API Client using requests."""
+
+    def __init__(self):
+        """
+        Initialize the Commercetools client with configuration from Django settings.
+        """
+        self.config = settings.COMMERCETOOLS_CONFIG
+        self.access_token = self._get_access_token()
+
+    def _get_access_token(self) -> str:
+        """
+        Retrieve an access token using client credentials flow for Commercetools.
+
+        Returns:
+            str: Access token for API requests.
+        """
+        auth_url = self.config["authUrl"]
+        auth = (self.config["clientId"], self.config["clientSecret"])
+        data = {
+            "grant_type": "client_credentials",
+            "scope": self.config['scopes'],
+        }
+
+        response = requests.post(auth_url, auth=auth, data=data)
+        response.raise_for_status()
+        return response.json()["access_token"]
+
+    def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        json: Optional[Dict] = None,
+    ) -> Union[Dict, List]:
+        """
+        Make an HTTP request to the Commercetools API.
+
+        Args:
+            method (str): HTTP method (e.g., "GET", "POST").
+            endpoint (str): API endpoint (e.g., "/cart-discounts").
+            params (Optional[Dict]): Query parameters.
+            json (Optional[Dict]): JSON payload for POST/PUT requests.
+
+        Returns:
+            Union[Dict, List]: JSON response from the API or None if the request fails.
+        """
+        url = f"{self.config['apiUrl']}/{self.config['projectKey']}/{endpoint}"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.request(method, url, headers=headers, params=params, json=json)
+            response.raise_for_status()
+            return response.json()
+        except HTTPError as err:
+            if response is not None:
+                response_message = response.json().get('message', 'No message provided.')
+                logger.error(
+                    "API request for endpoint: %s failed with error: %s and message: %s",
+                    endpoint, err, response_message
+                )
+            else:
+                logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
+
+            return None
+
+    def get_cart_discounts_without_code_by_type_and_value(
+        self, discount_type: str, discount_value: int
+    ) -> Dict:
+        """
+        Fetch cart discounts without a discount code by type and value.
+
+        Args:
+            discount_type (str): Type of discount (e.g., "relative").
+            discount_value (str): Value of the discount.
+
+        Returns:
+            Dict: Cart discount data or None if request fails.
+        """
+
+        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
+            discount_value_param = f' and value(money(centAmount={discount_value}))'
+        else:
+            discount_value_param = f' and value(permyriad={discount_value})'
+
+        query_params = f'value(type="{discount_type}") and requiresDiscountCode=false and target(type="lineItems")'
+        query_params += discount_value_param
+
+        return self._make_request(
+            "GET",
+            "cart-discounts",
+            params={"where": query_params},
+        )
+
+    def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
+        """
+        Fetch the latest sort order for cart discounts without codes.
+
+        Returns:
+            Dict: Latest cart discount data or None if request fails.
+        """
+        return self._make_request(
+            "GET",
+            "cart-discounts",
+            params={
+                "where": "requiresDiscountCode=false and target(type=\"lineItems\")",
+                "sort": ["sortOrder desc"],
+                "limit": 1,
+            },
+        )
+
+    def create_bundle_cart_discount_without_code(
+        self,
+        key: str,
+        name: str,
+        description: str,
+        discount_type: str,
+        discount_value_in_cents: int,
+        sort_order: float,
+        predicate: str,
+    ) -> Dict:
+        """
+        Create a new cart discount.
+
+        Args:
+            key (str): Unique key for the cart discount.
+            name (str): Name of the cart discount.
+            description (str): Description of the cart discount.
+            value (int): Discount value.
+            cart_predicate (str): Predicate for the cart discount.
+            cart_discount_type (str): Type of discount (e.g., "relative").
+            target_type (str): Type of target (e.g., "lineItems").
+            target_ids (List[str]): List of target IDs.
+
+        Returns:
+            Dict: Created cart discount data or None if request fails.
+        """
+        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
+            discount_value_data = {
+                "money": [{
+                    "centAmount": discount_value_in_cents,
+                    "currencyCode": "USD"
+                }],
+                "applicationMode": "ProportionateDistribution"
+            }
+        else:
+            discount_value_data = {
+                "permyriad": discount_value_in_cents
+            }
+
+        payload = {
+            "key": key,
+            "name": {"en-us": name},
+            "description": {"en-us": description},
+            "value": {
+                "type": discount_type,
+                **discount_value_data,
+            },
+            # Equivalent to "At least one existing line item satisfies the condition(s) is True in CT."
+            "cartPredicate": "lineItemExists(custom.bundleId is defined) = true",
+            "target": {
+                "type": "lineItems",
+                "predicate": predicate,
+            },
+            "sortOrder": f"{sort_order:.14f}",
+            "isActive": True,
+            "requiresDiscountCode": False,
+            "stackingMode": "StopAfterThisDiscount",
+        }
+
+        return self._make_request("POST", "cart-discounts", json=payload)
+
+    def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str, version: int) -> Dict:
+        """
+        Update the target predicate for a cart discount.
+
+        Args:
+            cart_discount_id (str): ID of the cart discount.
+            predicate (str): Updated predicate for the cart discount.
+            version (int): Version of the cart discount.
+
+        Returns:
+            Dict: Updated cart discount data or None if request fails.
+        """
+        payload = {
+            "version": version,
+            "actions": [
+                {
+                    "action": "changeTarget",
+                    "target": {
+                        "type": "lineItems",
+                        "predicate": predicate
+                    }
+                }
+            ]
+        }
+        return self._make_request("POST", f"cart-discounts/{cart_discount_id}", json=payload)

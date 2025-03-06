@@ -34,3 +34,25 @@ def get_program(program_uuid, siteconfiguration):
         log.debug("Failed to retrieve program details for %s", program_uuid)
 
     return response
+
+
+def get_all_program_uuids(siteconfiguration):
+    """
+    Returns all the program uuids present in the Discovery Service.
+
+    Args:
+        siteconfiguration (SiteConfiguration): Configuration containing the requisite parameters
+            to connect to the Discovery Service.
+
+    Returns:
+        dict
+        None if not found or another error occurs
+    """
+    response = None
+    try:
+        client = ProgramsApiClient(siteconfiguration)
+        response = client.get_all_program_uuids()
+    except (ReqConnectionError, HTTPError, Timeout):
+        log.error("Failed to retrieve all program uuids from course-discovery.")
+
+    return response

@@ -898,3 +898,14 @@ CAMPAIGN_IDS_BY_EMAIL_TYPE = {
 }
 
 SERVICE_USERS = []
+
+_COMMERCETOOLS_CONFIG_GEO = 'us-central1.gcp'
+
+COMMERCETOOLS_CONFIG = {
+    'projectKey': 'SET_ME',
+    'clientId': 'SET_ME',
+    'clientSecret': 'SET_ME',
+    'authUrl': f"https://auth.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com/oauth/token",
+    'apiUrl': f"https://api.{_COMMERCETOOLS_CONFIG_GEO}.commercetools.com",
+    'scopes': 'some_scope'
+}

@@ -70,6 +70,14 @@ ALLOW_MISSING_LMS_USER_ID = 'allow_missing_lms_user_id'
 # .. toggle_status: supported
 HUBSPOT_FORMS_INTEGRATION_ENABLE = "hubspot_forms_integration_enable"
 
+CT_ABSOLUTE_DISCOUNT_TYPE = 'absolute'
+CT_PERCENTAGE_DISCOUNT_TYPE = 'relative'
+
+TEN_PERCENT_DISCOUNT_IN_CENTS = 1000
+
+PROGRAM_OFFER_KEY = 'program-offer'
+PROGRAM_OFFER_NAME = 'Program Offer'
+
 
 class Status:
     """Health statuses."""
