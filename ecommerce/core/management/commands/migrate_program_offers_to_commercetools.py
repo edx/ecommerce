@@ -136,15 +136,24 @@ def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, l
 
     existing_uuids = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
-    new_uuids_in_legacy = list(legacy_uuids - existing_uuids)
 
-    if not new_uuids_in_legacy:
-        return False, None, []
+    if not is_ten_percent_discount:
+        new_uuids_in_legacy = list(legacy_uuids - existing_uuids)
+        if not new_uuids_in_legacy:
+            return False, None, []
 
-    combined_uuids = list(existing_uuids | legacy_uuids)
-    updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+        combined_uuids = list(existing_uuids | legacy_uuids)
+        updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
 
-    return True, updated_predicate, new_uuids_in_legacy
+        return True, updated_predicate, new_uuids_in_legacy
+    else:
+        uuids_to_remove_from_ct = list(existing_uuids - legacy_uuids)
+        if not uuids_to_remove_from_ct:
+            return False, None, []
+
+        updated_predicate = _create_target_predicate_from_program_uuids(legacy_uuids, is_ten_percent_discount)
+        return True, updated_predicate, uuids_to_remove_from_ct
+
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
@@ -348,7 +357,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             version = discount['version']
             predicate = discount['target']['predicate']
 
-            needs_update, updated_predicate, uuids_being_added = _combine_uuids_to_predicate(
+            needs_update, updated_predicate, uuids_being_updated = _combine_uuids_to_predicate(
                 predicate, is_ten_percent_discount, discount_data["program_uuids"]
             )
 
@@ -359,11 +368,14 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 )
                 continue
 
+            update_action = 'removing' if is_ten_percent_discount else 'adding'
+
             logger.info(
-                "Updating existing cart discount with type: %s, value: %s, and predicate with program uuids: %s.",
+                "Updating existing cart discount with type: %s, value: %s, and predicate by %s program uuids: %s.",
                 discount_type,
                 discount_value,
-                ", ".join(uuids_being_added)
+                update_action,
+                ", ".join(uuids_being_updated)
             )
             response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate, version)
 
@@ -381,15 +393,17 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 continue
 
             logger.info(
-                "Cart discount updated successfully with type: %s, value: %s, and predicate with program uuids: %s.",
+                "Cart discount updated successfully with type: %s, value: %s, and predicate by %s program uuids: %s.",
                 discount_type,
                 discount_value,
-                ", ".join(uuids_being_added)
+                update_action,
+                ", ".join(uuids_being_updated)
             )
             updated_discounts.append({
                 "type": discount_type,
                 "value": discount_value,
-                "uuids_added": uuids_being_added
+                "update_action": update_action,
+                "uuids_updated": uuids_being_updated
             })
 
     if created_discounts:
@@ -402,7 +416,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
 
     if updated_discounts:
         updated_summary = ", ".join(
-            f"{d['type']} {d['value']} (UUIDs: {', '.join(d['uuids_added'])})"
+            f"{d['type']} {d['value']} ({d['update_action']} UUIDs: {', '.join(d['uuids_updated'])})"
             for d in updated_discounts
         )
         logger.info("Summary of updated discounts: %s", updated_summary)
