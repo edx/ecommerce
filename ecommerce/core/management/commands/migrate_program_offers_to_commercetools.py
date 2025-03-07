@@ -177,16 +177,7 @@ def _combine_uuids_to_predicate(
     uuids_in_ct = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
 
-    if not is_ten_percent_discount:
-        new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
-        if not new_uuids_in_legacy:
-            return False, None, [], None
-
-        combined_uuids = list(uuids_in_ct | legacy_uuids)
-        updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
-
-        return True, updated_predicate, new_uuids_in_legacy, 'adding'
-    else:
+    if is_ten_percent_discount:
         if len(legacy_uuids) > len(uuids_in_ct):
             extra_legacy_uuids = list(legacy_uuids - uuids_in_ct)
             uuids_to_add_in_ct = []
@@ -222,8 +213,17 @@ def _combine_uuids_to_predicate(
                 combined_uuids, is_ten_percent_discount
             )
             return True, updated_predicate, uuids_to_remove_from_ct, 'removing'
+    else:
+        new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
+        if not new_uuids_in_legacy:
+            return False, None, [], None
 
-        return False, None, [], None
+        combined_uuids = list(uuids_in_ct | legacy_uuids)
+        updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+
+        return True, updated_predicate, new_uuids_in_legacy, 'adding'
+
+    return False, None, [], None
 
 
 def _group_ten_percentage_offers(cart_discounts: list):

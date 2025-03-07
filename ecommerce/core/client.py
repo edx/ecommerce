@@ -85,7 +85,7 @@ class CommercetoolsAPIClient:
         Returns:
             Dict: Cart discount data or None if request fails.
         """
-        query_params = f'requiresDiscountCode=false and target(type="lineItems")'
+        query_params = 'requiresDiscountCode=false and target(type="lineItems")'
 
         cart_discounts_without_code = self._make_request(
             "GET",
