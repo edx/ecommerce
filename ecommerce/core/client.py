@@ -105,11 +105,11 @@ class CommercetoolsAPIClient:
                 discount_value_in_cents = cart_discount['value']['permyriad']
 
             key = f"{discount_type}-{discount_value_in_cents}"
-
             if key in cart_discounts_without_code_dict:
+                display_discount_value = discount_value_in_cents / 100 if discount_value_in_cents > 0 else '0'
                 logger.error(
                     "More than one cart discount exists with type: %s, and value: %s. Cannot sync cart discounts.",
-                    discount_type, discount_value_in_cents/100
+                    discount_type, display_discount_value
                 )
                 return None
 

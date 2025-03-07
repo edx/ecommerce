@@ -57,6 +57,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
 
     return 0.00000000000001
 
+
 def _get_existing_cart_discounts(client: CommercetoolsAPIClient):
     """
     Get existing cart discounts without discount codes.
@@ -135,6 +136,7 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
 
     return predicate
 
+
 def _extract_uuids_from_predicate(predicate: str):
     """
     Extract program UUIDs from a predicate.
@@ -194,7 +196,6 @@ def _combine_uuids_to_predicate(
 
             if not uuids_to_add_in_ct:
                 return False, None, [], None
-
 
             combined_uuids = list(set(uuids_to_add_in_ct) | uuids_in_ct)
             updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
