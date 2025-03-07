@@ -216,7 +216,7 @@ def _combine_uuids_to_predicate(
             if not uuids_to_remove_from_ct:
                 return False, None, [], None
 
-            combined_uuids - list(uuids_in_ct - set(uuids_to_remove_from_ct))
+            combined_uuids = list(uuids_in_ct - set(uuids_to_remove_from_ct))
             updated_predicate = _create_target_predicate_from_program_uuids(
                 combined_uuids, is_ten_percent_discount
             )
@@ -239,7 +239,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
         benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
     ).select_related('benefit', 'condition')
 
-    programs_with_offer = [offer.condition.program_uuid for offer in offers]
+    programs_with_offer = [str(offer.condition.program_uuid) for offer in offers]
 
     site_configuration = SiteConfiguration.objects.first()
     program_uuids = get_all_program_uuids(site_configuration)
