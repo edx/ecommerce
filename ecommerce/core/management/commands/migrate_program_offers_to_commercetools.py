@@ -57,6 +57,23 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
 
     return 0.00000000000001
 
+def _get_existing_cart_discounts(client: CommercetoolsAPIClient):
+    """
+    Get existing cart discounts without discount codes.
+
+    Args:
+        client (CommercetoolsAPIClient): Commercetools API client.
+
+    Returns:
+        List: List of existing cart discounts without discount codes.
+    """
+    response = client.get_cart_discounts_without_code()
+
+    if response is None:
+        raise CommandError("Failed to get existing cart discounts without discount codes. Exiting command.")
+
+    return response
+
 
 def _create_cart_discount(
     client: CommercetoolsAPIClient,
@@ -118,8 +135,26 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
 
     return predicate
 
+def _extract_uuids_from_predicate(predicate: str):
+    """
+    Extract program UUIDs from a predicate.
 
-def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, legacy_program_uuids: list):
+    Args:
+        predicate (str): Predicate for the cart discount.
+
+    Returns:
+        list: List of program UUIDs.
+    """
+    return re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
+
+
+def _combine_uuids_to_predicate(
+    predicate: str,
+    is_ten_percent_discount: bool,
+    legacy_program_uuids: list,
+    non_ten_percentage_offer_uuids: set,
+    existing_cart_discounts_in_ct: dict
+):
     """
     Combine UUIDs and condition type to create a target predicate for a cart discount.
 
@@ -127,33 +162,67 @@ def _combine_uuids_to_predicate(predicate: str, is_ten_percent_discount: bool, l
         predicate (str): Predicate for the cart discount.
         is_ten_percent_discount (bool): Flag indicating if the discount is a 10% discount.
         program_uuids (list): List of program UUIDs.
+        non_ten_percentage_offer_uuids (set): Set of UUIDs for non-10% discounts.
 
     Returns:
         tuple: A tuple where the first item is a boolean indicating if an update call is needed,
-               and the second item is the updated target predicate or None if no update is needed.
+               the second item is the updated target predicate or None if no update is needed,
+               the third item is the list of uuids being updated,
+               and the forth item is the type of action being performed on the update.
     """
-    extracted_uuids_from_predicate = re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
+    extracted_uuids_from_predicate = _extract_uuids_from_predicate(predicate)
 
-    existing_uuids = set(extracted_uuids_from_predicate)
+    uuids_in_ct = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
 
     if not is_ten_percent_discount:
-        new_uuids_in_legacy = list(legacy_uuids - existing_uuids)
+        new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
         if not new_uuids_in_legacy:
-            return False, None, []
+            return False, None, [], None
 
-        combined_uuids = list(existing_uuids | legacy_uuids)
+        combined_uuids = list(uuids_in_ct | legacy_uuids)
         updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
 
-        return True, updated_predicate, new_uuids_in_legacy
+        return True, updated_predicate, new_uuids_in_legacy, 'adding'
     else:
-        uuids_to_remove_from_ct = list(existing_uuids - legacy_uuids)
-        if not uuids_to_remove_from_ct:
-            return False, None, []
+        if len(legacy_uuids) > len(uuids_in_ct):
+            extra_legacy_uuids = list(legacy_uuids - uuids_in_ct)
+            uuids_to_add_in_ct = []
+            for uuid in extra_legacy_uuids:
+                if uuid in non_ten_percentage_offer_uuids:
+                    uuids_to_add_in_ct.append(uuid)
 
-        updated_predicate = _create_target_predicate_from_program_uuids(legacy_uuids, is_ten_percent_discount)
-        return True, updated_predicate, uuids_to_remove_from_ct
+            if not uuids_to_add_in_ct:
+                return False, None, [], None
 
+
+            combined_uuids = list(set(uuids_to_add_in_ct) | uuids_in_ct)
+            updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+            return True, updated_predicate, uuids_to_add_in_ct, 'adding'
+
+        if len(legacy_uuids) < len(uuids_in_ct):
+            non_ten_percent_offer_uuids_in_ct = set()
+            for key, value in existing_cart_discounts_in_ct.items():
+                if key != f"{CT_PERCENTAGE_DISCOUNT_TYPE}-{TEN_PERCENT_DISCOUNT_IN_CENTS}":
+                    uuids_from_predicate = _extract_uuids_from_predicate(value['target']['predicate'])
+                    non_ten_percent_offer_uuids_in_ct |= set(uuids_from_predicate)
+
+            uuids_to_remove_from_ct = []
+            extra_uuids_in_ct = list(uuids_in_ct - legacy_uuids)
+            for uuid in extra_uuids_in_ct:
+                if uuid not in non_ten_percent_offer_uuids_in_ct:
+                    uuids_to_remove_from_ct.append(uuid)
+
+            if not uuids_to_remove_from_ct:
+                return False, None, [], None
+
+            combined_uuids - list(uuids_in_ct - set(uuids_to_remove_from_ct))
+            updated_predicate = _create_target_predicate_from_program_uuids(
+                combined_uuids, is_ten_percent_discount
+            )
+            return True, updated_predicate, uuids_to_remove_from_ct, 'removing'
+
+        return False, None, [], None
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
@@ -187,7 +256,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
     })
 
 
-def _group_other_offers(cart_discounts: list):
+def _group_other_offers(cart_discounts: list, non_ten_percentage_offer_uuids: set):
     """
     Group offers by discount type and value that are not 10% discount.
 
@@ -205,6 +274,8 @@ def _group_other_offers(cart_discounts: list):
     discount_groups = {}
     for offer in offers:
         program_uuid = str(offer.condition.program_uuid)
+        non_ten_percentage_offer_uuids.add(program_uuid)
+
         discount_type = CT_CART_DISCOUNT_TYPE_MAP.get(offer.benefit.proxy().benefit_class_type)
         discount_value = offer.benefit.value
         type_value_key = f"{discount_type}-{discount_value}"
@@ -234,10 +305,12 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
         client (CommercetoolsAPIClient): Commercetools API client.
     """
     sort_order = _get_highest_sort_order(client)
+    existing_cart_discounts_in_ct = _get_existing_cart_discounts(client)
 
     cart_discounts = []
+    non_ten_percentage_offer_uuids = set()
     _group_ten_percentage_offers(cart_discounts)
-    _group_other_offers(cart_discounts)
+    _group_other_offers(cart_discounts, non_ten_percentage_offer_uuids)
 
     created_discounts = []
     updated_discounts = []
@@ -250,33 +323,18 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
         discount_value_in_cents = int(discount_value * 100)
 
         logger.info(
-            "Fetching existing cart discount with type: %s, and value: %s in Commercetools.",
+            "Checking if cart discount already exists in Commercetools with type: %s, and value: %s.",
             discount_type, discount_value
         )
 
-        # TODO: [Future performance issue] - Fetch all cart discounts outside loop and
-        # process in the memory to save multiple CT calls.
-        existing = client.get_cart_discounts_without_code_by_type_and_value(discount_type, discount_value_in_cents)
-        if not existing:
-            logger.error(
-                "Error while fetching cart discount with type: %s, and value: %s. Skipping this group for now.",
-                discount_type, discount_value
-            )
-
-            command_soft_failed = True
-            failed_discounts.append({
-                "type": discount_type,
-                "value": discount_value,
-                "reason": "Error while fetching cart discount."
-            })
-            continue
+        existing_discount = existing_cart_discounts_in_ct.get(f"{discount_type}-{discount_value_in_cents}")
 
         is_ten_percent_discount = (
             discount_type == CT_PERCENTAGE_DISCOUNT_TYPE and
             discount_value_in_cents == TEN_PERCENT_DISCOUNT_IN_CENTS
         )
 
-        if existing['count'] == 0:
+        if not existing_discount:
             logger.info(
                 "No cart discount exists with type: %s, and value: %s. Creating a new one.",
                 discount_type, discount_value
@@ -334,31 +392,20 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 "value": discount_value
             })
         else:
-            if existing['count'] > 1:
-                logger.error(
-                    "More than one cart discount exists with type: %s, and value: %s. Skipping this group for now.",
-                    discount_type, discount_value
-                )
-
-                command_soft_failed = True
-                failed_discounts.append({
-                    "type": discount_type,
-                    "value": discount_value,
-                    "reason": "Multiple cart discounts found for same type and value."
-                })
-                continue
-
             logger.info(
                 "Existing cart discount found with type %s and value %s.",
                 discount_type, discount_value
             )
 
-            discount = existing['results'][0]
-            version = discount['version']
-            predicate = discount['target']['predicate']
+            version = existing_discount['version']
+            predicate = existing_discount['target']['predicate']
 
-            needs_update, updated_predicate, uuids_being_updated = _combine_uuids_to_predicate(
-                predicate, is_ten_percent_discount, discount_data["program_uuids"]
+            needs_update, updated_predicate, uuids_being_updated, update_action = _combine_uuids_to_predicate(
+                predicate,
+                is_ten_percent_discount,
+                discount_data["program_uuids"],
+                non_ten_percentage_offer_uuids,
+                existing_cart_discounts_in_ct
             )
 
             if not needs_update:
@@ -368,8 +415,6 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 )
                 continue
 
-            update_action = 'removing' if is_ten_percent_discount else 'adding'
-
             logger.info(
                 "Updating existing cart discount with type: %s, value: %s, and predicate by %s program uuids: %s.",
                 discount_type,
@@ -377,7 +422,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 update_action,
                 ", ".join(uuids_being_updated)
             )
-            response = client.update_cart_discount_target_predicate(discount['id'], updated_predicate, version)
+            response = client.update_cart_discount_target_predicate(existing_discount['id'], updated_predicate, version)
 
             if not response:
                 logger.error(

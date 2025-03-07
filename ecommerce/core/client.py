@@ -78,33 +78,44 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_cart_discounts_without_code_by_type_and_value(
-        self, discount_type: str, discount_value: int
-    ) -> Dict:
+    def get_cart_discounts_without_code(self) -> Dict:
         """
         Fetch cart discounts without a discount code by type and value.
-
-        Args:
-            discount_type (str): Type of discount (e.g., "relative").
-            discount_value (str): Value of the discount.
 
         Returns:
             Dict: Cart discount data or None if request fails.
         """
+        query_params = f'requiresDiscountCode=false and target(type="lineItems")'
 
-        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
-            discount_value_param = f' and value(money(centAmount={discount_value}))'
-        else:
-            discount_value_param = f' and value(permyriad={discount_value})'
-
-        query_params = f'value(type="{discount_type}") and requiresDiscountCode=false and target(type="lineItems")'
-        query_params += discount_value_param
-
-        return self._make_request(
+        cart_discounts_without_code = self._make_request(
             "GET",
             "cart-discounts",
             params={"where": query_params},
         )
+        if not cart_discounts_without_code:
+            return None
+
+        cart_discounts_without_code_dict = {}
+        for cart_discount in cart_discounts_without_code["results"]:
+            discount_type = cart_discount['value']['type']
+
+            if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
+                discount_value_in_cents = cart_discount['value']['money'][0]['centAmount']
+            else:
+                discount_value_in_cents = cart_discount['value']['permyriad']
+
+            key = f"{discount_type}-{discount_value_in_cents}"
+
+            if key in cart_discounts_without_code_dict:
+                logger.error(
+                    "More than one cart discount exists with type: %s, and value: %s. Cannot sync cart discounts.",
+                    discount_type, discount_value_in_cents/100
+                )
+                return None
+
+            cart_discounts_without_code_dict[key] = cart_discount
+
+        return cart_discounts_without_code_dict
 
     def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
         """
