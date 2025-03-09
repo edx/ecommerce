@@ -5,7 +5,10 @@ import requests
 from django.conf import settings
 from requests.exceptions import HTTPError
 
-from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE
+from ecommerce.core.constants import (
+    CT_ABSOLUTE_DISCOUNT_TYPE,
+    BUNDLE_CART_DISCOUNT_KEY_FORMAT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +88,7 @@ class CommercetoolsAPIClient:
         Returns:
             Dict: Cart discount data or None if request fails.
         """
+        # This query is used to get all cart discounts for program offers.
         query_params = 'requiresDiscountCode=false and target(type="lineItems")'
 
         cart_discounts_without_code = self._make_request(
@@ -104,16 +108,20 @@ class CommercetoolsAPIClient:
             else:
                 discount_value_in_cents = cart_discount['value']['permyriad']
 
-            key = f"{discount_type}-{discount_value_in_cents}"
+            key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(discount_type, discount_value_in_cents)
             if key in cart_discounts_without_code_dict:
                 display_discount_value = discount_value_in_cents / 100 if discount_value_in_cents > 0 else '0'
                 logger.error(
-                    "More than one cart discount exists with type: %s, and value: %s. Cannot sync cart discounts.",
+                    "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
                     discount_type, display_discount_value
                 )
-                return None
+                continue
 
-            cart_discounts_without_code_dict[key] = cart_discount
+            cart_discounts_without_code_dict[key] = {
+                "id": cart_discount['id'],
+                "version": cart_discount['version'],
+                "target_predicate": cart_discount['target']['predicate']
+            }
 
         return cart_discounts_without_code_dict
 

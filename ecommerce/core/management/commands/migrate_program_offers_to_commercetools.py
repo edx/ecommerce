@@ -13,7 +13,8 @@ from ecommerce.core.constants import (
     CT_PERCENTAGE_DISCOUNT_TYPE,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
-    TEN_PERCENT_DISCOUNT_IN_CENTS
+    TEN_PERCENT_DISCOUNT_IN_CENTS,
+    BUNDLE_CART_DISCOUNT_KEY_FORMAT,
 )
 from ecommerce.programs.utils import get_all_program_uuids
 
@@ -151,7 +152,7 @@ def _extract_uuids_from_predicate(predicate: str):
 
 
 def _combine_uuids_to_predicate(
-    predicate: str,
+    target_predicate: str,
     is_ten_percent_discount: bool,
     legacy_program_uuids: list,
     non_ten_percentage_offer_uuids: set,
@@ -172,56 +173,56 @@ def _combine_uuids_to_predicate(
                the third item is the list of uuids being updated,
                and the forth item is the type of action being performed on the update.
     """
-    extracted_uuids_from_predicate = _extract_uuids_from_predicate(predicate)
+    extracted_uuids_from_predicate = _extract_uuids_from_predicate(target_predicate)
 
     uuids_in_ct = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
 
-    if is_ten_percent_discount:
-        if len(legacy_uuids) > len(uuids_in_ct):
-            extra_legacy_uuids = list(legacy_uuids - uuids_in_ct)
-            uuids_to_add_in_ct = []
-            for uuid in extra_legacy_uuids:
-                if uuid in non_ten_percentage_offer_uuids:
-                    uuids_to_add_in_ct.append(uuid)
+    # if is_ten_percent_discount:
+    #     if len(legacy_uuids) > len(uuids_in_ct):
+    #         extra_legacy_uuids = list(legacy_uuids - uuids_in_ct)
+    #         uuids_to_add_in_ct = []
+    #         for uuid in extra_legacy_uuids:
+    #             if uuid in non_ten_percentage_offer_uuids:
+    #                 uuids_to_add_in_ct.append(uuid)
 
-            if not uuids_to_add_in_ct:
-                return False, None, [], None
+    #         if not uuids_to_add_in_ct:
+    #             return False, None, [], None
 
-            combined_uuids = list(set(uuids_to_add_in_ct) | uuids_in_ct)
-            updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
-            return True, updated_predicate, uuids_to_add_in_ct, 'adding'
+    #         combined_uuids = list(set(uuids_to_add_in_ct) | uuids_in_ct)
+    #         updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+    #         return True, updated_predicate, uuids_to_add_in_ct, 'adding'
 
-        if len(legacy_uuids) < len(uuids_in_ct):
-            non_ten_percent_offer_uuids_in_ct = set()
-            for key, value in existing_cart_discounts_in_ct.items():
-                if key != f"{CT_PERCENTAGE_DISCOUNT_TYPE}-{TEN_PERCENT_DISCOUNT_IN_CENTS}":
-                    uuids_from_predicate = _extract_uuids_from_predicate(value['target']['predicate'])
-                    non_ten_percent_offer_uuids_in_ct |= set(uuids_from_predicate)
+    #     if len(legacy_uuids) < len(uuids_in_ct):
+    #         non_ten_percent_offer_uuids_in_ct = set()
+    #         for key, value in existing_cart_discounts_in_ct.items():
+    #             if key != f"{CT_PERCENTAGE_DISCOUNT_TYPE}-{TEN_PERCENT_DISCOUNT_IN_CENTS}":
+    #                 uuids_from_predicate = _extract_uuids_from_predicate(value['target']['predicate'])
+    #                 non_ten_percent_offer_uuids_in_ct |= set(uuids_from_predicate)
 
-            uuids_to_remove_from_ct = []
-            extra_uuids_in_ct = list(uuids_in_ct - legacy_uuids)
-            for uuid in extra_uuids_in_ct:
-                if uuid not in non_ten_percent_offer_uuids_in_ct:
-                    uuids_to_remove_from_ct.append(uuid)
+    #         uuids_to_remove_from_ct = []
+    #         extra_uuids_in_ct = list(uuids_in_ct - legacy_uuids)
+    #         for uuid in extra_uuids_in_ct:
+    #             if uuid not in non_ten_percent_offer_uuids_in_ct:
+    #                 uuids_to_remove_from_ct.append(uuid)
 
-            if not uuids_to_remove_from_ct:
-                return False, None, [], None
+    #         if not uuids_to_remove_from_ct:
+    #             return False, None, [], None
 
-            combined_uuids = list(uuids_in_ct - set(uuids_to_remove_from_ct))
-            updated_predicate = _create_target_predicate_from_program_uuids(
-                combined_uuids, is_ten_percent_discount
-            )
-            return True, updated_predicate, uuids_to_remove_from_ct, 'removing'
-    else:
-        new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
-        if not new_uuids_in_legacy:
-            return False, None, [], None
+    #         combined_uuids = list(uuids_in_ct - set(uuids_to_remove_from_ct))
+    #         updated_predicate = _create_target_predicate_from_program_uuids(
+    #             combined_uuids, is_ten_percent_discount
+    #         )
+    #         return True, updated_predicate, uuids_to_remove_from_ct, 'removing'
+    # else:
+    #     new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
+    #     if not new_uuids_in_legacy:
+    #         return False, None, [], None
 
-        combined_uuids = list(uuids_in_ct | legacy_uuids)
-        updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
+    #     combined_uuids = list(uuids_in_ct | legacy_uuids)
+    #     updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
 
-        return True, updated_predicate, new_uuids_in_legacy, 'adding'
+    #     return True, updated_predicate, new_uuids_in_legacy, 'adding'
 
     return False, None, [], None
 
@@ -328,7 +329,9 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             discount_type, discount_value
         )
 
-        existing_discount = existing_cart_discounts_in_ct.get(f"{discount_type}-{discount_value_in_cents}")
+        existing_discount = existing_cart_discounts_in_ct.get(
+            BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(discount_type, discount_value_in_cents)
+        )
 
         is_ten_percent_discount = (
             discount_type == CT_PERCENTAGE_DISCOUNT_TYPE and
@@ -399,10 +402,10 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             )
 
             version = existing_discount['version']
-            predicate = existing_discount['target']['predicate']
+            target_predicate = existing_discount['target_predicate']
 
             needs_update, updated_predicate, uuids_being_updated, update_action = _combine_uuids_to_predicate(
-                predicate,
+                target_predicate,
                 is_ten_percent_discount,
                 discount_data["program_uuids"],
                 non_ten_percentage_offer_uuids,
