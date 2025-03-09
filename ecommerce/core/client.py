@@ -81,9 +81,9 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_cart_discounts_without_code(self) -> Dict:
+    def get_ct_bundle_offers_without_code(self) -> Dict:
         """
-        Fetch cart discounts without a discount code by type and value.
+        Fetch bundle cart discounts without a discount code from Commercetools.
 
         Returns:
             Dict: Cart discount data or None if request fails.
@@ -91,16 +91,16 @@ class CommercetoolsAPIClient:
         # This query is used to get all cart discounts for program offers.
         query_params = 'requiresDiscountCode=false and target(type="lineItems")'
 
-        cart_discounts_without_code = self._make_request(
+        bundle_offer_without_codes = self._make_request(
             "GET",
             "cart-discounts",
             params={"where": query_params},
         )
-        if not cart_discounts_without_code:
+        if not bundle_offer_without_codes:
             return None
 
-        cart_discounts_without_code_dict = {}
-        for cart_discount in cart_discounts_without_code["results"]:
+        ct_bundle_without_code_dict = {}
+        for cart_discount in bundle_offer_without_codes["results"]:
             discount_type = cart_discount['value']['type']
 
             if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
@@ -109,7 +109,9 @@ class CommercetoolsAPIClient:
                 discount_value_in_cents = cart_discount['value']['permyriad']
 
             key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(discount_type, discount_value_in_cents)
-            if key in cart_discounts_without_code_dict:
+            # This is rare scenario, but it can happen when someone has created a cart discount
+            # with the same type and value for a bundle offer.
+            if key in ct_bundle_without_code_dict:
                 display_discount_value = discount_value_in_cents / 100 if discount_value_in_cents > 0 else '0'
                 logger.error(
                     "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
@@ -117,13 +119,13 @@ class CommercetoolsAPIClient:
                 )
                 continue
 
-            cart_discounts_without_code_dict[key] = {
+            ct_bundle_without_code_dict[key] = {
                 "id": cart_discount['id'],
                 "version": cart_discount['version'],
                 "target_predicate": cart_discount['target']['predicate']
             }
 
-        return cart_discounts_without_code_dict
+        return ct_bundle_without_code_dict
 
     def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
         """

@@ -59,9 +59,9 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     return 0.00000000000001
 
 
-def _get_existing_cart_discounts(client: CommercetoolsAPIClient):
+def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient):
     """
-    Get existing cart discounts without discount codes.
+    Get existing bundle cart discounts (program discounts without codes) from Commercetools.
 
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
@@ -69,7 +69,7 @@ def _get_existing_cart_discounts(client: CommercetoolsAPIClient):
     Returns:
         List: List of existing cart discounts without discount codes.
     """
-    response = client.get_cart_discounts_without_code()
+    response = client._get_ct_bundle_offers_without_code()
 
     if response is None:
         raise CommandError("Failed to get existing cart discounts without discount codes. Exiting command.")
@@ -307,7 +307,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
         client (CommercetoolsAPIClient): Commercetools API client.
     """
     sort_order = _get_highest_sort_order(client)
-    existing_cart_discounts_in_ct = _get_existing_cart_discounts(client)
+    existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client)
 
     cart_discounts = []
     non_ten_percentage_offer_uuids = set()
