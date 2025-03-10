@@ -108,7 +108,7 @@ class CommercetoolsAPIClient:
             else:
                 discount_value_in_cents = cart_discount['value']['permyriad']
 
-            key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(discount_type, discount_value_in_cents)
+            key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(type=discount_type, value=discount_value_in_cents)
             # This is rare scenario, but it can happen when someone has created a cart discount
             # with the same type and value for a bundle offer.
             if key in ct_bundle_without_code_dict:

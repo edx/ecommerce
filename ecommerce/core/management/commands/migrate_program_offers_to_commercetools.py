@@ -14,7 +14,7 @@ from ecommerce.core.constants import (
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
     TEN_PERCENT_DISCOUNT_IN_CENTS,
-    BUNDLE_CART_DISCOUNT_KEY_FORMAT,
+    BUNDLE_CART_DISCOUNT_KEY_FORMAT
 )
 from ecommerce.programs.utils import get_all_program_uuids
 
@@ -69,7 +69,7 @@ def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient):
     Returns:
         List: List of existing cart discounts without discount codes.
     """
-    response = client._get_ct_bundle_offers_without_code()
+    response = client.get_ct_bundle_offers_without_code()
 
     if response is None:
         raise CommandError("Failed to get existing cart discounts without discount codes. Exiting command.")
@@ -185,12 +185,12 @@ def _combine_uuids_to_predicate(
             if uuid not in non_ten_percentage_offer_uuids:
                 uuids_not_to_add.add(uuid)
 
-        updated_uuids = list(legacy_uuids - uuids_not_to_add)
+        updated_uuids = legacy_uuids - uuids_not_to_add
         if updated_uuids == uuids_in_ct:
             return False, None, [], []
 
         updated_predicate = _create_target_predicate_from_program_uuids(
-            updated_uuids,
+            list(updated_uuids),
             is_ten_percent_discount
         )
 
@@ -244,7 +244,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
     })
 
 
-def _group_other_offers(cart_discounts: list, non_ten_percentage_offer_uuids: set):
+def _group_other_offers(cart_discounts: list):
     """
     Group offers by discount type and value that are not 10% discount.
 
@@ -262,7 +262,6 @@ def _group_other_offers(cart_discounts: list, non_ten_percentage_offer_uuids: se
     discount_groups = {}
     for offer in offers:
         program_uuid = str(offer.condition.program_uuid)
-        non_ten_percentage_offer_uuids.add(program_uuid)
 
         discount_type = CT_CART_DISCOUNT_TYPE_MAP.get(offer.benefit.proxy().benefit_class_type)
         discount_value = offer.benefit.value
@@ -285,6 +284,26 @@ def _group_other_offers(cart_discounts: list, non_ten_percentage_offer_uuids: se
         })
 
 
+
+def _get_non_ten_percentage_offer_uuids():
+    """
+    Get non-10% discount offer uuids from legacy ecommerce.
+
+    Args:
+        cart_discounts (set): List of cart discounts.
+    """
+    non_ten_percentage_offer_uuids = [
+        str(uuid) for uuid in ConditionalOffer.objects.filter(
+            offer_type=ConditionalOffer.SITE,
+            condition__program_uuid__isnull=False,
+        ).exclude(
+            benefit__value=10,
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
+        ).values_list('condition__program_uuid', flat=True)
+    ]
+    return set(non_ten_percentage_offer_uuids)
+
+
 def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     """
     Migrate program offers to Commercetools.
@@ -294,11 +313,11 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     """
     sort_order = _get_highest_sort_order(client)
     existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client)
+    non_ten_percentage_offer_uuids = _get_non_ten_percentage_offer_uuids()
 
     cart_discounts = []
-    non_ten_percentage_offer_uuids = set()
     _group_ten_percentage_offers(cart_discounts)
-    _group_other_offers(cart_discounts, non_ten_percentage_offer_uuids)
+    _group_other_offers(cart_discounts)
 
     created_discounts = []
     updated_discounts = []
@@ -316,7 +335,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
         )
 
         existing_discount = existing_cart_discounts_in_ct.get(
-            BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(discount_type, discount_value_in_cents)
+            BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(type=discount_type, value=discount_value_in_cents)
         )
 
         is_ten_percent_discount = (
@@ -404,9 +423,11 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 )
                 continue
 
-            update_log = f"Updating existing cart discount with type: {discount_type}, value: {discount_value} "
-            update_log += f"{f'and adding uuids:{', '.join(uuids_added)}' if uuids_added else ''}"
-            update_log += f"{f'and removing uuids:{', '.join(uuids_removed)}' if uuids_removed else ''}"
+            update_log = f"Updating existing cart discount with type: {discount_type}, value: {discount_value}"
+            if uuids_added:
+                update_log += f" and adding uuids:{', '.join(uuids_added)}"
+            if uuids_removed:
+                update_log += f" and removing uuids:{', '.join(uuids_removed)}"
             logger.info(update_log)
             response = client.update_cart_discount_target_predicate(existing_discount['id'], updated_predicate, version)
 
@@ -423,9 +444,11 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 })
                 continue
 
-            update_log = f"Cart discount updated successfully with type: {discount_type}, value: {discount_value} "
-            update_log += f"{f'and adding uuids:{', '.join(uuids_added)}' if uuids_added else ''}"
-            update_log += f"{f'and removing uuids:{', '.join(uuids_removed)}' if uuids_removed else ''}"
+            update_log = f"Cart discount updated successfully with type: {discount_type}, value: {discount_value}"
+            if uuids_added:
+                update_log += f" and adding uuids:{', '.join(uuids_added)}"
+            if uuids_removed:
+                update_log += f" and removing uuids:{', '.join(uuids_removed)}"
             logger.info(update_log)
             updated_discounts.append({
                 "type": discount_type,
