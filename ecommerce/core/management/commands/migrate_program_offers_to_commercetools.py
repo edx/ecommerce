@@ -59,7 +59,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     return 0.00000000000001
 
 
-def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient):
+def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient, failed_discounts: list):
     """
     Get existing bundle cart discounts (program discounts without codes) from Commercetools.
 
@@ -69,7 +69,7 @@ def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient):
     Returns:
         List: List of existing cart discounts without discount codes.
     """
-    response = client.get_ct_bundle_offers_without_code()
+    response = client.get_ct_bundle_offers_without_code(failed_discounts)
 
     if response is None:
         raise CommandError("Failed to get existing cart discounts without discount codes. Exiting command.")
@@ -116,7 +116,9 @@ def _create_cart_discount(
 def _delete_extra_ct_bundle_offers(
     client: CommercetoolsAPIClient,
     cart_discounts: list,
-    existing_cart_discounts_in_ct: dict
+    existing_cart_discounts_in_ct: dict,
+    deleted_discounts: list,
+    failed_discounts: list
 ):
     """
     Delete a cart discount from Commercetools.
@@ -138,13 +140,24 @@ def _delete_extra_ct_bundle_offers(
                 "Deleting cart discount with type: %s and value: %s as it no longer exists in legacy ecommerce.",
                 ct_discount['type'], ct_discount['display_value']
             )
+
             response = client.delete_cart_discount_by_id(ct_discount['id'], ct_discount['version'])
             if not response:
                 logger.error(
                     "Failed to delete cart discount with type: %s and value: %s.",
                     ct_discount['type'], ct_discount['display_value']
                 )
+                failed_discounts.append({
+                    "type": ct_discount['type'],
+                    "value": ct_discount['display_value'],
+                    "reason": "Error while deleting cart discount."
+                })
+                continue
 
+            deleted_discounts.append({
+                "type": ct_discount['type'],
+                "value": ct_discount['display_value']
+            })
             logger.info(
                 "Cart discount with type: %s and value: %s deleted successfully.",
                 ct_discount['type'], ct_discount['display_value']
@@ -348,8 +361,13 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
     """
+    created_discounts = []
+    updated_discounts = []
+    failed_discounts = []
+    deleted_discounts = []
+
     sort_order = _get_highest_sort_order(client)
-    existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client)
+    existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client, failed_discounts)
     non_ten_percentage_offer_uuids = _get_non_ten_percentage_offer_uuids()
 
     cart_discounts = []
@@ -357,13 +375,14 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     _group_other_offers(cart_discounts)
 
     # Delete cart discounts that are no longer in legacy ecommerce
-    _delete_extra_ct_bundle_offers(client, cart_discounts, existing_cart_discounts_in_ct)
+    _delete_extra_ct_bundle_offers(
+        client,
+        cart_discounts,
+        existing_cart_discounts_in_ct,
+        deleted_discounts,
+        failed_discounts
+    )
 
-    created_discounts = []
-    updated_discounts = []
-    failed_discounts = []
-
-    command_soft_failed = False
     for discount_data in cart_discounts:
         discount_type = discount_data["type"]
         discount_value = discount_data["value"]
@@ -423,8 +442,6 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                     "Failed to create cart discount with type: %s, and value: %s.",
                     discount_type, discount_value
                 )
-
-                command_soft_failed = True
                 failed_discounts.append({
                     "type": discount_type,
                     "value": discount_value,
@@ -476,7 +493,6 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                     "Failed to update cart discount with type: %s, and value: %s.",
                     discount_type, discount_value
                 )
-                command_soft_failed = True
                 failed_discounts.append({
                     "type": discount_type,
                     "value": discount_value,
@@ -522,7 +538,15 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     else:
         logger.info("No discounts were updated.")
 
-    if command_soft_failed:
+    if deleted_discounts:
+        deleted_summary = ", ".join(
+            f"{d['type']} {d['value']}" for d in deleted_discounts
+        )
+        logger.info("Summary of deleted discounts: %s", deleted_summary)
+    else:
+        logger.info("No discounts were deleted.")
+
+    if failed_discounts:
         failed_summary = ", ".join(
             f"{d['type']} {d['value']} (Reason: {d['reason']})"
             for d in failed_discounts

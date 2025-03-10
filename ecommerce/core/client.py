@@ -81,9 +81,12 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_ct_bundle_offers_without_code(self) -> Dict:
+    def get_ct_bundle_offers_without_code(self, failed_discounts: list) -> Dict:
         """
         Fetch bundle cart discounts without a discount code from Commercetools.
+
+        Args:
+            failed_discounts (list): List of failed discounts.
 
         Returns:
             Dict: Cart discount data or None if request fails.
@@ -117,6 +120,11 @@ class CommercetoolsAPIClient:
                     "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
                     discount_type, display_discount_value
                 )
+                failed_discounts.append({
+                    "type": discount_type,
+                    "value": display_discount_value,
+                    "reason": "More than one cart discount exists with the same type and value."
+                })
                 continue
 
             ct_bundle_without_code_dict[key] = {
