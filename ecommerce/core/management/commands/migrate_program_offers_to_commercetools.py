@@ -536,7 +536,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
 
     if deleted_discounts:
         deleted_summary = ", ".join(
-            f"{d['type']} {d['value']}" for d in deleted_discounts
+            f"{discount['type']} {discount['value']}" for discount in deleted_discounts
         )
         logger.info("Summary of deleted discounts: %s", deleted_summary)
     else:
@@ -544,8 +544,8 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
 
     if failed_discounts:
         failed_summary = ", ".join(
-            f"{d['type']} {d['value']} (Reason: {d['reason']})"
-            for d in failed_discounts
+            f"{discount['type']} {discount['value']} (Reason: {discount['reason']})"
+            for discount in failed_discounts
         )
         logger.error("Summary of failed discount migrations: %s", failed_summary)
         raise CommandError("Command run completed with errors.")

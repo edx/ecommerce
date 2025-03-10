@@ -99,7 +99,7 @@ class CommercetoolsAPIClient:
         if not bundle_offer_without_codes:
             return None
 
-        ct_bundle_without_code_dict = {}
+        ct_bundle_offers_without_code_dict = {}
         for cart_discount in bundle_offer_without_codes["results"]:
             discount_type = cart_discount['value']['type']
 
@@ -112,7 +112,7 @@ class CommercetoolsAPIClient:
             key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(type=discount_type, value=discount_value_in_cents)
             # This is rare scenario, but it can happen when someone has created a cart discount
             # with the same type and value for a bundle offer.
-            if key in ct_bundle_without_code_dict:
+            if key in ct_bundle_offers_without_code_dict:
                 logger.error(
                     "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
                     discount_type, display_discount_value
@@ -124,7 +124,7 @@ class CommercetoolsAPIClient:
                 })
                 continue
 
-            ct_bundle_without_code_dict[key] = {
+            ct_bundle_offers_without_code_dict[key] = {
                 "id": cart_discount['id'],
                 "type": discount_type,
                 "display_value": display_discount_value,
@@ -132,7 +132,7 @@ class CommercetoolsAPIClient:
                 "target_predicate": cart_discount['target']['predicate']
             }
 
-        return ct_bundle_without_code_dict
+        return ct_bundle_offers_without_code_dict
 
     def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
         """
