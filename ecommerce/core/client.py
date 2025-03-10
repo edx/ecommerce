@@ -108,11 +108,11 @@ class CommercetoolsAPIClient:
             else:
                 discount_value_in_cents = cart_discount['value']['permyriad']
 
+            display_discount_value = discount_value_in_cents / 100
             key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(type=discount_type, value=discount_value_in_cents)
             # This is rare scenario, but it can happen when someone has created a cart discount
             # with the same type and value for a bundle offer.
             if key in ct_bundle_without_code_dict:
-                display_discount_value = discount_value_in_cents / 100 if discount_value_in_cents > 0 else '0'
                 logger.error(
                     "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
                     discount_type, display_discount_value
@@ -121,6 +121,8 @@ class CommercetoolsAPIClient:
 
             ct_bundle_without_code_dict[key] = {
                 "id": cart_discount['id'],
+                "type": discount_type,
+                "display_value": display_discount_value,
                 "version": cart_discount['version'],
                 "target_predicate": cart_discount['target']['predicate']
             }
@@ -230,3 +232,16 @@ class CommercetoolsAPIClient:
             ]
         }
         return self._make_request("POST", f"cart-discounts/{cart_discount_id}", json=payload)
+
+    def delete_cart_discount_by_id(self, cart_discount_id: str, version: int) -> Dict:
+        """
+        Delete a cart discount by its ID.
+
+        Args:
+            cart_discount_id (str): ID of the cart discount to delete.
+            version (int): Version of the cart discount.
+
+        Returns:
+            Dict: Deleted cart discount data or None if request fails.
+        """
+        return self._make_request("DELETE", f"cart-discounts/{cart_discount_id}", params={"version": version})

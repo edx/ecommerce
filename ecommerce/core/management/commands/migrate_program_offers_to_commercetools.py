@@ -113,6 +113,44 @@ def _create_cart_discount(
     return response
 
 
+def _delete_extra_ct_bundle_offers(
+    client: CommercetoolsAPIClient,
+    cart_discounts: list,
+    existing_cart_discounts_in_ct: dict
+):
+    """
+    Delete a cart discount from Commercetools.
+
+    Args:
+        client (CommercetoolsAPIClient): Commercetools API client.
+    """
+    cart_discount_keys = {
+        BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(
+            type=discount["type"],
+            value=int(discount["value"] * 100)  # Convert to cents
+        ) for discount in cart_discounts
+    }
+
+    # Finding discounts in CT that has been removed from legacy ecommerce
+    for key, ct_discount in existing_cart_discounts_in_ct.items():
+        if key not in cart_discount_keys:
+            logger.info(
+                "Deleting cart discount with type: %s and value: %s as it no longer exists in legacy ecommerce.",
+                ct_discount['type'], ct_discount['display_value']
+            )
+            response = client.delete_cart_discount_by_id(ct_discount['id'], ct_discount['version'])
+            if not response:
+                logger.error(
+                    "Failed to delete cart discount with type: %s and value: %s.",
+                    ct_discount['type'], ct_discount['display_value']
+                )
+
+            logger.info(
+                "Cart discount with type: %s and value: %s deleted successfully.",
+                ct_discount['type'], ct_discount['display_value']
+            )
+
+
 def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_percent_discount: bool):
     """
     Create a target predicate for a cart discount based on program UUIDs.
@@ -284,7 +322,6 @@ def _group_other_offers(cart_discounts: list):
         })
 
 
-
 def _get_non_ten_percentage_offer_uuids():
     """
     Get non-10% discount offer uuids from legacy ecommerce.
@@ -318,6 +355,9 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     cart_discounts = []
     _group_ten_percentage_offers(cart_discounts)
     _group_other_offers(cart_discounts)
+
+    # Delete cart discounts that are no longer in legacy ecommerce
+    _delete_extra_ct_bundle_offers(client, cart_discounts, existing_cart_discounts_in_ct)
 
     created_discounts = []
     updated_discounts = []
