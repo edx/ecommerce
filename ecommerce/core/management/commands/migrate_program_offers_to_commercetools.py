@@ -244,11 +244,8 @@ def _combine_uuids_to_predicate(
             list(updated_uuids),
             is_ten_percent_discount
         )
-
         uuids_added = list(updated_uuids - uuids_in_ct)
         uuids_removed = list(uuids_in_ct - updated_uuids)
-
-        return True, updated_predicate, uuids_added, uuids_removed
     else:
         if uuids_in_ct == legacy_uuids:
             return False, None, [], []
@@ -257,11 +254,10 @@ def _combine_uuids_to_predicate(
             list(legacy_uuids),
             is_ten_percent_discount
         )
-
         uuids_added = list(legacy_uuids - uuids_in_ct)
         uuids_removed = list(uuids_in_ct - legacy_uuids)
 
-        return True, updated_predicate, uuids_added, uuids_removed
+    return True, updated_predicate, uuids_added, uuids_removed
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
