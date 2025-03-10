@@ -5,10 +5,7 @@ import requests
 from django.conf import settings
 from requests.exceptions import HTTPError
 
-from ecommerce.core.constants import (
-    CT_ABSOLUTE_DISCOUNT_TYPE,
-    BUNDLE_CART_DISCOUNT_KEY_FORMAT,
-)
+from ecommerce.core.constants import BUNDLE_CART_DISCOUNT_KEY_FORMAT, CT_ABSOLUTE_DISCOUNT_TYPE
 
 logger = logging.getLogger(__name__)
 

@@ -80,6 +80,7 @@ PROGRAM_OFFER_NAME = 'Program Offer'
 
 BUNDLE_CART_DISCOUNT_KEY_FORMAT = "{type}-{value}"
 
+
 class Status:
     """Health statuses."""
     OK = 'OK'

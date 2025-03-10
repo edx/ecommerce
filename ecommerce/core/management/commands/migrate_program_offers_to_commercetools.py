@@ -9,12 +9,12 @@ from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient
 from ecommerce.core.constants import (
+    BUNDLE_CART_DISCOUNT_KEY_FORMAT,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
-    TEN_PERCENT_DISCOUNT_IN_CENTS,
-    BUNDLE_CART_DISCOUNT_KEY_FORMAT
+    TEN_PERCENT_DISCOUNT_IN_CENTS
 )
 from ecommerce.programs.utils import get_all_program_uuids
 
