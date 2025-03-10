@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from requests.exceptions import HTTPError
 
-from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE
+from ecommerce.core.constants import BUNDLE_CART_DISCOUNT_KEY_FORMAT, CT_ABSOLUTE_DISCOUNT_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -78,33 +78,61 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_cart_discounts_without_code_by_type_and_value(
-        self, discount_type: str, discount_value: int
-    ) -> Dict:
+    def get_ct_bundle_offers_without_code(self, failed_discounts: list) -> Dict:
         """
-        Fetch cart discounts without a discount code by type and value.
+        Fetch bundle cart discounts without a discount code from Commercetools.
 
         Args:
-            discount_type (str): Type of discount (e.g., "relative").
-            discount_value (str): Value of the discount.
+            failed_discounts (list): List of failed discounts.
 
         Returns:
             Dict: Cart discount data or None if request fails.
         """
+        # This query is used to get all cart discounts for program offers.
+        query_params = 'requiresDiscountCode=false and target(type="lineItems")'
 
-        if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
-            discount_value_param = f' and value(money(centAmount={discount_value}))'
-        else:
-            discount_value_param = f' and value(permyriad={discount_value})'
-
-        query_params = f'value(type="{discount_type}") and requiresDiscountCode=false and target(type="lineItems")'
-        query_params += discount_value_param
-
-        return self._make_request(
+        bundle_offer_without_codes = self._make_request(
             "GET",
             "cart-discounts",
             params={"where": query_params},
         )
+        if not bundle_offer_without_codes:
+            return None
+
+        ct_bundle_offers_without_code_dict = {}
+        for cart_discount in bundle_offer_without_codes["results"]:
+            discount_type = cart_discount['value']['type']
+
+            if discount_type == CT_ABSOLUTE_DISCOUNT_TYPE:
+                discount_value_in_cents = cart_discount['value']['money'][0]['centAmount']
+            else:
+                discount_value_in_cents = cart_discount['value']['permyriad']
+
+            display_discount_value = discount_value_in_cents / 100
+            key = BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(type=discount_type, value=discount_value_in_cents)
+            # This is rare scenario, but it can happen when someone has created a cart discount
+            # with the same type and value for a bundle offer.
+            if key in ct_bundle_offers_without_code_dict:
+                logger.error(
+                    "More than one cart discount exists with type: %s, and value: %s. Skipping it for now.",
+                    discount_type, display_discount_value
+                )
+                failed_discounts.append({
+                    "type": discount_type,
+                    "value": display_discount_value,
+                    "reason": "More than one cart discount exists with the same type and value."
+                })
+                continue
+
+            ct_bundle_offers_without_code_dict[key] = {
+                "id": cart_discount['id'],
+                "type": discount_type,
+                "display_value": display_discount_value,
+                "version": cart_discount['version'],
+                "target_predicate": cart_discount['target']['predicate']
+            }
+
+        return ct_bundle_offers_without_code_dict
 
     def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
         """
@@ -176,7 +204,7 @@ class CommercetoolsAPIClient:
                 "type": "lineItems",
                 "predicate": predicate,
             },
-            "sortOrder": f"{sort_order:.14f}",
+            "sortOrder": f"{sort_order:.14f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": False,
             "stackingMode": "StopAfterThisDiscount",
@@ -209,3 +237,16 @@ class CommercetoolsAPIClient:
             ]
         }
         return self._make_request("POST", f"cart-discounts/{cart_discount_id}", json=payload)
+
+    def delete_cart_discount_by_id(self, cart_discount_id: str, version: int) -> Dict:
+        """
+        Delete a cart discount by its ID.
+
+        Args:
+            cart_discount_id (str): ID of the cart discount to delete.
+            version (int): Version of the cart discount.
+
+        Returns:
+            Dict: Deleted cart discount data or None if request fails.
+        """
+        return self._make_request("DELETE", f"cart-discounts/{cart_discount_id}", params={"version": version})

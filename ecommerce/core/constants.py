@@ -78,6 +78,8 @@ TEN_PERCENT_DISCOUNT_IN_CENTS = 1000
 PROGRAM_OFFER_KEY = 'program-offer'
 PROGRAM_OFFER_NAME = 'Program Offer'
 
+BUNDLE_CART_DISCOUNT_KEY_FORMAT = "{type}-{value}"
+
 
 class Status:
     """Health statuses."""
