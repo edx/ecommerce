@@ -156,7 +156,6 @@ def _combine_uuids_to_predicate(
     is_ten_percent_discount: bool,
     legacy_program_uuids: list,
     non_ten_percentage_offer_uuids: set,
-    existing_cart_discounts_in_ct: dict
 ):
     """
     Combine UUIDs and condition type to create a target predicate for a cart discount.
@@ -170,61 +169,48 @@ def _combine_uuids_to_predicate(
     Returns:
         tuple: A tuple where the first item is a boolean indicating if an update call is needed,
                the second item is the updated target predicate or None if no update is needed,
-               the third item is the list of uuids being updated,
-               and the forth item is the type of action being performed on the update.
+               the third item is the list of uuids being added,
+               and the forth item is the list of uuids being removed.
     """
     extracted_uuids_from_predicate = _extract_uuids_from_predicate(target_predicate)
 
     uuids_in_ct = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
 
-    # if is_ten_percent_discount:
-    #     if len(legacy_uuids) > len(uuids_in_ct):
-    #         extra_legacy_uuids = list(legacy_uuids - uuids_in_ct)
-    #         uuids_to_add_in_ct = []
-    #         for uuid in extra_legacy_uuids:
-    #             if uuid in non_ten_percentage_offer_uuids:
-    #                 uuids_to_add_in_ct.append(uuid)
+    # Handling 10% discount case separately as it deals with exclusion filter
+    if is_ten_percent_discount:
+        # Removing uuids that are not in the non-10% discounts to allow default 10% discount no new programs
+        uuids_not_to_add = set()
+        for uuid in (legacy_uuids - uuids_in_ct):
+            if uuid not in non_ten_percentage_offer_uuids:
+                uuids_not_to_add.add(uuid)
 
-    #         if not uuids_to_add_in_ct:
-    #             return False, None, [], None
+        updated_uuids = list(legacy_uuids - uuids_not_to_add)
+        if updated_uuids == uuids_in_ct:
+            return False, None, [], []
 
-    #         combined_uuids = list(set(uuids_to_add_in_ct) | uuids_in_ct)
-    #         updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
-    #         return True, updated_predicate, uuids_to_add_in_ct, 'adding'
+        updated_predicate = _create_target_predicate_from_program_uuids(
+            updated_uuids,
+            is_ten_percent_discount
+        )
 
-    #     if len(legacy_uuids) < len(uuids_in_ct):
-    #         non_ten_percent_offer_uuids_in_ct = set()
-    #         for key, value in existing_cart_discounts_in_ct.items():
-    #             if key != f"{CT_PERCENTAGE_DISCOUNT_TYPE}-{TEN_PERCENT_DISCOUNT_IN_CENTS}":
-    #                 uuids_from_predicate = _extract_uuids_from_predicate(value['target']['predicate'])
-    #                 non_ten_percent_offer_uuids_in_ct |= set(uuids_from_predicate)
+        uuids_added = list(updated_uuids - uuids_in_ct)
+        uuids_removed = list(uuids_in_ct - updated_uuids)
 
-    #         uuids_to_remove_from_ct = []
-    #         extra_uuids_in_ct = list(uuids_in_ct - legacy_uuids)
-    #         for uuid in extra_uuids_in_ct:
-    #             if uuid not in non_ten_percent_offer_uuids_in_ct:
-    #                 uuids_to_remove_from_ct.append(uuid)
+        return True, updated_predicate, uuids_added, uuids_removed
+    else:
+        if uuids_in_ct == legacy_uuids:
+            return False, None, [], []
 
-    #         if not uuids_to_remove_from_ct:
-    #             return False, None, [], None
+        updated_predicate = _create_target_predicate_from_program_uuids(
+            list(legacy_uuids),
+            is_ten_percent_discount
+        )
 
-    #         combined_uuids = list(uuids_in_ct - set(uuids_to_remove_from_ct))
-    #         updated_predicate = _create_target_predicate_from_program_uuids(
-    #             combined_uuids, is_ten_percent_discount
-    #         )
-    #         return True, updated_predicate, uuids_to_remove_from_ct, 'removing'
-    # else:
-    #     new_uuids_in_legacy = list(legacy_uuids - uuids_in_ct)
-    #     if not new_uuids_in_legacy:
-    #         return False, None, [], None
+        uuids_added = list(legacy_uuids - uuids_in_ct)
+        uuids_removed = list(uuids_in_ct - legacy_uuids)
 
-    #     combined_uuids = list(uuids_in_ct | legacy_uuids)
-    #     updated_predicate = _create_target_predicate_from_program_uuids(combined_uuids, is_ten_percent_discount)
-
-    #     return True, updated_predicate, new_uuids_in_legacy, 'adding'
-
-    return False, None, [], None
+        return True, updated_predicate, uuids_added, uuids_removed
 
 
 def _group_ten_percentage_offers(cart_discounts: list):
@@ -404,12 +390,11 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             version = existing_discount['version']
             target_predicate = existing_discount['target_predicate']
 
-            needs_update, updated_predicate, uuids_being_updated, update_action = _combine_uuids_to_predicate(
+            needs_update, updated_predicate, uuids_added, uuids_removed = _combine_uuids_to_predicate(
                 target_predicate,
                 is_ten_percent_discount,
                 discount_data["program_uuids"],
-                non_ten_percentage_offer_uuids,
-                existing_cart_discounts_in_ct
+                non_ten_percentage_offer_uuids
             )
 
             if not needs_update:
@@ -419,13 +404,10 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 )
                 continue
 
-            logger.info(
-                "Updating existing cart discount with type: %s, value: %s, and predicate by %s program uuids: %s.",
-                discount_type,
-                discount_value,
-                update_action,
-                ", ".join(uuids_being_updated)
-            )
+            update_log = f"Updating existing cart discount with type: {discount_type}, value: {discount_value} "
+            update_log += f"{f'and adding uuids:{', '.join(uuids_added)}' if uuids_added else ''}"
+            update_log += f"{f'and removing uuids:{', '.join(uuids_removed)}' if uuids_removed else ''}"
+            logger.info(update_log)
             response = client.update_cart_discount_target_predicate(existing_discount['id'], updated_predicate, version)
 
             if not response:
@@ -441,18 +423,15 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 })
                 continue
 
-            logger.info(
-                "Cart discount updated successfully with type: %s, value: %s, and predicate by %s program uuids: %s.",
-                discount_type,
-                discount_value,
-                update_action,
-                ", ".join(uuids_being_updated)
-            )
+            update_log = f"Cart discount updated successfully with type: {discount_type}, value: {discount_value} "
+            update_log += f"{f'and adding uuids:{', '.join(uuids_added)}' if uuids_added else ''}"
+            update_log += f"{f'and removing uuids:{', '.join(uuids_removed)}' if uuids_removed else ''}"
+            logger.info(update_log)
             updated_discounts.append({
                 "type": discount_type,
                 "value": discount_value,
-                "update_action": update_action,
-                "uuids_updated": uuids_being_updated
+                "uuids_added": uuids_added,
+                "uuids_removed": uuids_removed
             })
 
     if created_discounts:
@@ -464,10 +443,18 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
         logger.info("No discounts were created.")
 
     if updated_discounts:
-        updated_summary = ", ".join(
-            f"{d['type']} {d['value']} ({d['update_action']} UUIDs: {', '.join(d['uuids_updated'])})"
-            for d in updated_discounts
-        )
+        updated_summary = []
+        for discount in updated_discounts:
+            update_log = f"{discount['type']} {discount['value']}"
+
+            if discount['uuids_added']:
+                update_log += f" (added uuids: {', '.join(discount['uuids_added'])})"
+            if discount['uuids_removed']:
+                update_log += f" (removed uuids: {', '.join(discount['uuids_removed'])})"
+
+            updated_summary.append(update_log)
+
+        updated_summary = ", ".join(updated_summary)
         logger.info("Summary of updated discounts: %s", updated_summary)
     else:
         logger.info("No discounts were updated.")
