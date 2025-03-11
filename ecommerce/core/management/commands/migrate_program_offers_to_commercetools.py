@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import re
 from enum import Enum
@@ -116,7 +117,6 @@ def _create_cart_discount(
 def _delete_extra_ct_bundle_offers(
     client: CommercetoolsAPIClient,
     cart_discounts: list,
-    existing_cart_discounts_in_ct: dict,
     deleted_discounts: list,
     failed_discounts: list
 ):
@@ -126,6 +126,8 @@ def _delete_extra_ct_bundle_offers(
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
     """
+    ct_bundle_offers_without_code = _get_ct_bundle_offers_without_code(client, failed_discounts)
+
     cart_discount_keys = {
         BUNDLE_CART_DISCOUNT_KEY_FORMAT.format(
             type=discount["type"],
@@ -134,7 +136,7 @@ def _delete_extra_ct_bundle_offers(
     }
 
     # Finding discounts in CT that has been removed from legacy ecommerce
-    for key, ct_discount in existing_cart_discounts_in_ct.items():
+    for key, ct_discount in ct_bundle_offers_without_code.items():
         if key not in cart_discount_keys:
             logger.info(
                 "Deleting cart discount with type: %s and value: %s as it no longer exists in legacy ecommerce.",
@@ -268,6 +270,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
         cart_discounts (list): List to store cart discounts.
     """
     offers = ConditionalOffer.objects.filter(
+        Q(end_datetime__isnull=True) | Q(end_datetime__gte=datetime.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
         benefit__value=10,
@@ -299,6 +302,7 @@ def _group_other_offers(cart_discounts: list):
         cart_discounts (list): List to store cart discounts.
     """
     offers = ConditionalOffer.objects.filter(
+        Q(end_datetime__isnull=True) | Q(end_datetime__gte=datetime.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
     ).exclude(
@@ -363,7 +367,6 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     deleted_discounts = []
 
     sort_order = _get_highest_sort_order(client)
-    existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client, failed_discounts)
     non_ten_percentage_offer_uuids = _get_non_ten_percentage_offer_uuids()
 
     cart_discounts = []
@@ -374,10 +377,12 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     _delete_extra_ct_bundle_offers(
         client,
         cart_discounts,
-        existing_cart_discounts_in_ct,
         deleted_discounts,
         failed_discounts
     )
+
+    # Getting fresh cart discounts from Commercetools after deleting extra cart discounts
+    existing_cart_discounts_in_ct = _get_ct_bundle_offers_without_code(client, failed_discounts)
 
     for discount_data in cart_discounts:
         discount_type = discount_data["type"]
