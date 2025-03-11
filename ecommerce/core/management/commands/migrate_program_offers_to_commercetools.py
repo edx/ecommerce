@@ -1,10 +1,10 @@
-from datetime import datetime
 import logging
 import re
 from enum import Enum
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
+from django.utils import timezone
 from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
@@ -270,7 +270,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
         cart_discounts (list): List to store cart discounts.
     """
     offers = ConditionalOffer.objects.filter(
-        Q(end_datetime__isnull=True) | Q(end_datetime__gte=datetime.now()),
+        Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
         benefit__value=10,
@@ -302,7 +302,7 @@ def _group_other_offers(cart_discounts: list):
         cart_discounts (list): List to store cart discounts.
     """
     offers = ConditionalOffer.objects.filter(
-        Q(end_datetime__isnull=True) | Q(end_datetime__gte=datetime.now()),
+        Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
     ).exclude(
