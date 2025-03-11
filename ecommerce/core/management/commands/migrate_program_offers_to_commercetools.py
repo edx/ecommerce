@@ -342,7 +342,8 @@ def _get_non_ten_percentage_offer_uuids():
     Args:
         cart_discounts (set): List of cart discounts.
     """
-    non_ten_percentage_offer_uuids = [
+    # Getting non-10% discount offer uuids from legacy ecommerce
+    non_ten_percentage_offer_uuids = set([
         str(uuid) for uuid in ConditionalOffer.objects.filter(
             offer_type=ConditionalOffer.SITE,
             condition__program_uuid__isnull=False,
@@ -350,8 +351,20 @@ def _get_non_ten_percentage_offer_uuids():
             benefit__value=10,
             benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
         ).values_list('condition__program_uuid', flat=True)
-    ]
-    return set(non_ten_percentage_offer_uuids)
+    ])
+
+    # Getting 10% discount offer uuids from legacy ecommerce that are expired
+    non_ten_percentage_offer_uuids |= set([
+        str(uuid) for uuid in ConditionalOffer.objects.filter(
+            end_datetime__lt=timezone.now(),
+            offer_type=ConditionalOffer.SITE,
+            condition__program_uuid__isnull=False,
+            benefit__value=10,
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
+        ).values_list('condition__program_uuid', flat=True)
+    ])
+
+    return non_ten_percentage_offer_uuids
 
 
 def _migrate_program_offers(client):  # pylint: disable=too-many-statements
