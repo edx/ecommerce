@@ -80,6 +80,7 @@ def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient, failed_di
 
 def _create_cart_discount(
     client: CommercetoolsAPIClient,
+    is_ten_percent_discount: bool,
     discount_type: str,
     discount_value_in_cents: int,
     discount_value: float,
@@ -101,11 +102,20 @@ def _create_cart_discount(
     """
     is_absolute = discount_type == CT_ABSOLUTE_DISCOUNT_TYPE
     display_discount_type = "Fixed" if is_absolute else "Percentage"
-    display_discount_symbol = "USD" if is_absolute else "%"
+    display_discount_symbol = " USD" if is_absolute else "%"
+    program_name = f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value}{display_discount_symbol}"
+
+    if is_ten_percent_discount:
+        program_name += " (Default)"
+        program_description = f"Default {PROGRAM_OFFER_NAME.lower()} with value: {discount_value}"
+        program_description += f" and type: {display_discount_type}"
+    else:
+        program_description = f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}"
+
     response = client.create_bundle_cart_discount_without_code(
         key=f"{discount_type}-{discount_value_in_cents}-{PROGRAM_OFFER_KEY}",
-        name=f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value} {display_discount_symbol}",
-        description=f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}",
+        name=program_name,
+        description=program_description,
         discount_type=discount_type,
         discount_value_in_cents=discount_value_in_cents,
         sort_order=sort_order,
@@ -442,6 +452,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
 
             response = _create_cart_discount(
                 client=client,
+                is_ten_percent_discount=is_ten_percent_discount,
                 discount_type=discount_type,
                 discount_value_in_cents=discount_value_in_cents,
                 discount_value=discount_value,
