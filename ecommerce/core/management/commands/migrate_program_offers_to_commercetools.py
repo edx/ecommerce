@@ -272,24 +272,25 @@ def _combine_uuids_to_predicate(
     return True, updated_predicate, uuids_added, uuids_removed
 
 
-def _group_ten_percentage_offers(cart_discounts: list):
+def _group_ten_percentage_offers(cart_discounts: list, site_configuration):
     """
     Group offers of 10% discount.
 
     Args:
         cart_discounts (list): List to store cart discounts.
     """
+    partner_id = site_configuration.partner_id
     offers = ConditionalOffer.objects.filter(
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
         benefit__value=10,
-        benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
+        benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+        partner_id=partner_id
     ).select_related('benefit', 'condition')
 
     programs_with_offer = [str(offer.condition.program_uuid) for offer in offers]
 
-    site_configuration = SiteConfiguration.objects.first()
     program_uuids = get_all_program_uuids(site_configuration)
 
     if not program_uuids:
@@ -304,7 +305,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
     })
 
 
-def _group_other_offers(cart_discounts: list):
+def _group_other_offers(cart_discounts: list, partner_id: int):
     """
     Group offers by discount type and value that are not 10% discount.
 
@@ -315,6 +316,7 @@ def _group_other_offers(cart_discounts: list):
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
+        partner_id=partner_id
     ).exclude(
         Q(benefit__value=0) |
         Q(benefit__value=10, benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value)
@@ -392,9 +394,12 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     sort_order = _get_highest_sort_order(client)
     non_ten_percentage_offer_uuids = _get_non_ten_percentage_offer_uuids()
 
+    site_configuration = SiteConfiguration.objects.first()
+    partner_id = site_configuration.partner_id
+
     cart_discounts = []
-    _group_ten_percentage_offers(cart_discounts)
-    _group_other_offers(cart_discounts)
+    _group_ten_percentage_offers(cart_discounts, site_configuration)
+    _group_other_offers(cart_discounts, partner_id)
 
     # Delete cart discounts that are no longer in legacy ecommerce
     _delete_extra_ct_bundle_offers(
