@@ -80,6 +80,7 @@ def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient, failed_di
 
 def _create_cart_discount(
     client: CommercetoolsAPIClient,
+    is_ten_percent_discount: bool,
     discount_type: str,
     discount_value_in_cents: int,
     discount_value: float,
@@ -101,11 +102,20 @@ def _create_cart_discount(
     """
     is_absolute = discount_type == CT_ABSOLUTE_DISCOUNT_TYPE
     display_discount_type = "Fixed" if is_absolute else "Percentage"
-    display_discount_symbol = "USD" if is_absolute else "%"
+    display_discount_symbol = " USD" if is_absolute else "%"
+    program_name = f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value}{display_discount_symbol}"
+
+    if is_ten_percent_discount:
+        program_name += " (Default)"
+        program_description = f"Default {PROGRAM_OFFER_NAME.lower()} with value: {discount_value}"
+        program_description += f" and type: {display_discount_type}"
+    else:
+        program_description = f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}"
+
     response = client.create_bundle_cart_discount_without_code(
         key=f"{discount_type}-{discount_value_in_cents}-{PROGRAM_OFFER_KEY}",
-        name=f"[{PROGRAM_OFFER_NAME} - {display_discount_type}] {discount_value} {display_discount_symbol}",
-        description=f"{PROGRAM_OFFER_NAME} with value: {discount_value} and type: {display_discount_type}",
+        name=program_name,
+        description=program_description,
         discount_type=discount_type,
         discount_value_in_cents=discount_value_in_cents,
         sort_order=sort_order,
@@ -262,24 +272,25 @@ def _combine_uuids_to_predicate(
     return True, updated_predicate, uuids_added, uuids_removed
 
 
-def _group_ten_percentage_offers(cart_discounts: list):
+def _group_ten_percentage_offers(cart_discounts: list, site_configuration):
     """
     Group offers of 10% discount.
 
     Args:
         cart_discounts (list): List to store cart discounts.
     """
+    partner_id = site_configuration.partner_id
     offers = ConditionalOffer.objects.filter(
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
         benefit__value=10,
-        benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value
+        benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+        partner_id=partner_id
     ).select_related('benefit', 'condition')
 
     programs_with_offer = [str(offer.condition.program_uuid) for offer in offers]
 
-    site_configuration = SiteConfiguration.objects.first()
     program_uuids = get_all_program_uuids(site_configuration)
 
     if not program_uuids:
@@ -294,7 +305,7 @@ def _group_ten_percentage_offers(cart_discounts: list):
     })
 
 
-def _group_other_offers(cart_discounts: list):
+def _group_other_offers(cart_discounts: list, partner_id: int):
     """
     Group offers by discount type and value that are not 10% discount.
 
@@ -305,6 +316,7 @@ def _group_other_offers(cart_discounts: list):
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.SITE,
         condition__program_uuid__isnull=False,
+        partner_id=partner_id
     ).exclude(
         Q(benefit__value=0) |
         Q(benefit__value=10, benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value)
@@ -382,9 +394,12 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
     sort_order = _get_highest_sort_order(client)
     non_ten_percentage_offer_uuids = _get_non_ten_percentage_offer_uuids()
 
+    site_configuration = SiteConfiguration.objects.first()
+    partner_id = site_configuration.partner_id
+
     cart_discounts = []
-    _group_ten_percentage_offers(cart_discounts)
-    _group_other_offers(cart_discounts)
+    _group_ten_percentage_offers(cart_discounts, site_configuration)
+    _group_other_offers(cart_discounts, partner_id)
 
     # Delete cart discounts that are no longer in legacy ecommerce
     _delete_extra_ct_bundle_offers(
@@ -442,6 +457,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
 
             response = _create_cart_discount(
                 client=client,
+                is_ten_percent_discount=is_ten_percent_discount,
                 discount_type=discount_type,
                 discount_value_in_cents=discount_value_in_cents,
                 discount_value=discount_value,
