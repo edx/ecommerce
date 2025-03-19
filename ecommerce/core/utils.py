@@ -8,14 +8,12 @@ import waffle
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from edx_django_utils.cache import get_cache_key as get_django_cache_key
-from oscar.core.loading import get_model
 from requests.exceptions import ConnectionError as ReqConnectionError
 from requests.exceptions import RequestException, Timeout
 
-from ecommerce.core.constants import KEY_TO_PREDICATE_DIC
+from ecommerce.core.constants import KEY_TO_PREDICATE_DICT
 
 logger = logging.getLogger(__name__)
-# Partner = get_model('partner', 'Partner')
 
 
 def log_message_and_raise_validation_error(message):
@@ -81,7 +79,7 @@ def use_read_replica_if_available(queryset):
     return queryset.using("read_replica") if "read_replica" in settings.DATABASES else queryset
 
 
-def extract_orgs(text: str) -> str:
+def _extract_orgs(text: str) -> str:
     """
     Extracts organization values from a query string and formats them into a predicate.
 
@@ -144,10 +142,10 @@ def _process_org_values(input_string):
             - If no matching orgs are found: "No org values found"
 
     Examples:
-        >>> process_org_values('org:(-MITx OR HarvardX)')
+        >>> _process_org_values('org:(-MITx OR HarvardX)')
         'attributes.`brand-text` not in ("MITx")'
 
-        >>> process_org_values('org:(HarvardX AND MITx)')
+        >>> _process_org_values('org:(HarvardX AND MITx)')
         'attributes.`brand-text` in ("HarvardX","MITx")'
 
     Notes:
@@ -156,43 +154,46 @@ def _process_org_values(input_string):
         - Removes duplicate values in the output.
         - If no org values are found, returns "No org values found".
     """
-    # Regular expression to match org values
-    pattern = r'org:\s*(?:\((.*?)\)|"(.*?)"|([\w]+))'
+    # Updated regex to capture org values without empty groups
+    pattern = r'org:\s*(?:\(([^)]+)\)|"([^"]+)"|([\w-]+))'
 
-    # Find all matching org groups
+    # Extract org values from input
     matches = re.findall(pattern, input_string)
 
     if not matches:
-        return "No org values found"
+        logger.info('No valid org values found in input: %s', input_string)
+        return ""
 
     negative_orgs = []
     positive_orgs = []
-
     for match in matches:
-        # Extract and clean orgs from captured groups
-        combined_match = next((m for m in match if m), None)
+        # Get the first non-empty value from the match tuple
+        combined_match = ""
+        for m in match:
+            if m:  # If the value is not empty, assign it and break
+                combined_match = m
+                break
+        # Split values on AND/OR (case-insensitive)
+        values = re.split(r'\s+(?:AND|OR)\s+', combined_match, flags=re.IGNORECASE)
 
-        if combined_match:
-            # Split on AND/OR (case-insensitive)
-            values = re.split(r'\s+(?:AND|OR)\s+', combined_match, flags=re.IGNORECASE)
-
-            for value in values:
-                value = value.strip()
-                if value.startswith('-'):
-                    negative_orgs.append(value[1:])  # Remove the negative sign
-                else:
-                    positive_orgs.append(value)
+        for value in values:
+            value = value.strip()
+            if value.startswith('-'):
+                negative_orgs.append(value[1:])  # Remove the negative sign
+            else:
+                positive_orgs.append(value)
 
     if negative_orgs:
         # Handle negative orgs by using 'not in'
         negative_orgs_str = ",".join(sorted(set(f'"{org}"' for org in negative_orgs)))
         return f'attributes.`brand-text` not in ({negative_orgs_str})'
 
-    # If no negative orgs, process positive orgs with the other function
-    return extract_orgs(input_string)
+    # If no negative orgs, process positive orgs
+    positive_orgs_str = ",".join(sorted(set(f'"{org}"' for org in positive_orgs)))
+    return f'attributes.`brand-text` in ({positive_orgs_str})'
 
 
-def detect_string_type(input_string):
+def _detect_string_type(input_string):
     """
     Detects the type of a given input string based on specific prefixes.
 
@@ -269,7 +270,7 @@ def _split_components_on_operator(input_string):
             - "operator" (str or None): The logical operator ('AND', 'OR') connecting to the next component.
 
     Example:
-        >>> split_components_on_operator('org:MITx AND key:("course1" OR "course2") OR number:12345')
+        >>> _split_components_on_operator('org:MITx AND key:("course1" OR "course2") OR number:12345')
         [
             {'component': 'org:MITx', 'operator': 'AND'},
             {'component': 'key:("course1" OR "course2")', 'operator': 'OR'},
@@ -283,53 +284,80 @@ def _split_components_on_operator(input_string):
     """
     input_string = input_string.strip()  # Normalize input
 
-    # Regex pattern to detect 'AND' or 'OR' before 'key:', 'org:', or 'number:'
-    pattern = r'(\s+(AND|OR)\s+)(?=key:|org:|number:|start:)'
+    # Updated regex to detect 'AND' or 'OR' before 'key:', 'org:', or 'number:' using a non-capturing group
+    pattern = r'(\s+(?:AND|OR)\s+)(?=key:|org:|number:|start:)'
 
     # Split the input string while keeping the delimiters
-    parts = re.split(pattern, input_string)
-
+    query_parts = re.split(pattern, input_string)
     result = []
 
     # Iterate through parts and capture components with their operators
-    for i in range(0, len(parts), 3):
-        component = parts[i].strip()
+    for i in range(0, len(query_parts), 2):
+        component = query_parts[i].strip()
 
         # Identify the operator if present
-        operator = parts[i + 1].strip() if i + 1 < len(parts) else None
+        operator = query_parts[i + 1].strip() if i + 1 < len(query_parts) else None
 
         if component:
             result.append({"component": component, "operator": operator})
+        else:
+            logger.info('Empty component found in input: %s', input_string)
 
     return result
+
+
+def _process_values(values):
+    """
+    Processes a string of values by transforming logical operators and removing hyphens.
+
+    This function performs the following transformations:
+    1. Splits the input string on the logical operators "AND" and "OR" (case-insensitive),
+       while preserving the delimiters.
+    2. Swaps "AND" with "OR" and vice versa, tracking the changes.
+    3. Removes any hyphens from the values.
+    4. Returns the processed string and a list of the changed operators.
+
+    Args:
+        values (str): The input string containing values and logical operators.
+
+    Returns:
+        tuple:
+            - str: The processed string with modified logical operators and hyphen-free values.
+            - list: A list of strings describing the changed operators (e.g., "AND → OR").
+
+    Example:
+        >>> _process_values("A AND B OR -C")
+        ('A OR B AND C', ['AND → OR', 'OR → AND'])
+
+        >>> _process_values("A AND -B")
+        ('A OR B', ['AND → OR'])
+    """
+    # Split on AND/OR (case-insensitive) while keeping delimiters
+    tokens = re.split(r'(\s+(?i:AND|OR)\s+)', values)
+
+    # Track changed operators
+    changed_operators = []
+
+    # Process each token
+    processed_tokens = []
+    for token in tokens:
+        token_upper = token.strip().upper()
+        if token_upper == "AND":
+            processed_tokens.append(" OR ")
+            changed_operators.append("AND → OR")
+        elif token_upper == "OR":
+            processed_tokens.append(" AND ")
+            changed_operators.append("OR → AND")
+        else:
+            # Remove '-' from values
+            processed_tokens.append(token.replace("-", ""))
+
+    return "".join(processed_tokens), changed_operators
 
 
 def _modify_key_values(input_string):
     # Regex pattern to find key, org, or number values
     pattern = r'(key|number|org|start):\((.*?)\)'
-
-    def process_values(values):
-        # Split on AND/OR (case-insensitive) while keeping delimiters
-        tokens = re.split(r'(\s+(?i:AND|OR)\s+)', values)
-
-        # Track changed operators
-        changed_operators = []
-
-        # Process each token
-        processed_tokens = []
-        for token in tokens:
-            token_upper = token.strip().upper()
-            if token_upper == "AND":
-                processed_tokens.append(" OR ")
-                changed_operators.append("AND → OR")
-            elif token_upper == "OR":
-                processed_tokens.append(" AND ")
-                changed_operators.append("OR → AND")
-            else:
-                # Remove '-' from values
-                processed_tokens.append(token.replace("-", ""))
-
-        return "".join(processed_tokens), changed_operators
 
     modified_string = input_string
     all_changed_operators = []
@@ -337,7 +365,7 @@ def _modify_key_values(input_string):
     for match in re.finditer(pattern, input_string):
         category, values = match.groups()
         if "-" in values:  # Only modify if values contain '-'
-            modified_values, changed_operators = process_values(values)
+            modified_values, changed_operators = _process_values(values)
             all_changed_operators.extend(changed_operators)
             modified_string = modified_string.replace(match.group(0), f"{category}:({modified_values})")
 
@@ -390,7 +418,7 @@ def _extract_course_info(course_string):
             'number': number,
             'courserun': courserun
         }
-
+    logger.error('Invalid course format: %s', course_string)
     return "Invalid course format"
 
 
@@ -456,14 +484,13 @@ def _fetch_catalog_course_runs(query, limit, site_configuration):
 
     from ecommerce.coupons.utils import get_catalog_course_runs  # pylint: disable=import-outside-toplevel
 
-    # partner = Partner.objects.filter(short_code='edX').get()
     try:
         response = get_catalog_course_runs(site=site_configuration, query=query, limit=limit, offset=0)
         results = response['results']
         course_ids = [result['key'] for result in results]
         return course_ids
-    except (ReqConnectionError, RequestException, Timeout):
-        logger.error('Unable to connect to Catalog API.')
+    except (ReqConnectionError, RequestException, Timeout) as exc:
+        logger.error('Unable to connect to Catalog API. %s', exc)
         return []
 
 
@@ -510,17 +537,23 @@ def _process_query_string(query, site_configuration):
     """
     Processes a query string by detecting its type and generating the corresponding predicate.
 
-    This function parses the input query string, determines the type of each component (e.g., 'org', 'number', 'key', 'start'),
-    and applies the appropriate processing function to generate a predicate. Certain query types require the `site_configuration`
-    argument, while others do not. The resulting predicates are concatenated using the detected logical operators ('AND' or 'OR').
+    This function parses the input query string, determines the type of each component (
+    e.g., 'org', 'number', 'key', 'start'),
+    and applies the appropriate processing function to generate a predicate.
+    Certain query types require the `site_configuration`
+    argument, while others do not. The resulting predicates are concatenated
+    using the detected logical operators ('AND' or 'OR').
 
     Args:
-        query (str): The query string to be processed, containing components like 'org:', 'number:', 'key:', or 'start:'.
-        site_configuration (object): Configuration object required for some query handlers (e.g., 'number' and 'key').
+        query (str): The query string to be processed, containing components like
+        'org:', 'number:', 'key:', or 'start:'.
+        site_configuration (object): Configuration object required for some query
+        handlers (e.g., 'number' and 'key').
 
     Returns:
-        str: A processed predicate string for use in further filtering or querying. If no matching query type is found,
-             it returns 'No match found'.
+        str: A processed predicate string for use in further filtering or querying.
+        If no matching query type is found,
+             it returns ''.
 
     Query Types and Handlers:
         - 'number': Processed by `process_number` (requires `site_configuration`)
@@ -532,8 +565,10 @@ def _process_query_string(query, site_configuration):
         >>> process_query_string('org: ("edX" OR "MITx") AND number: ("CS101")', site_config)
         'attributes.`brand-text` in ("MITx", "edX") AND product.key in ("edX+CS101")'
 
-        >>> process_query_string('key: ("CS50") OR start: [2023-01-01 TO 2024-01-01]', site_config)
-        'variant.key in ("CS50") OR attributes.`courserun-start` >= "2023-01-01" AND attributes.`courserun-start` < "2024-01-02"'
+        >>> process_query_string('key: ("CS50") OR start: [2023-01-01 TO 2024-01-01]',
+        site_config)
+        'variant.key in ("CS50") OR attributes.`courserun-start` >= "2023-01-01"
+        AND attributes.`courserun-start` < "2024-01-02"'
     """
     predicate = ''
     components = _split_components_on_operator(query)
@@ -552,7 +587,7 @@ def _process_query_string(query, site_configuration):
         component = comp['component']
         operator = comp['operator']
 
-        query_type = detect_string_type(component)
+        query_type = _detect_string_type(component)
 
         if query_type in query_handlers_with_site_config:
             predicate += query_handlers_with_site_config[query_type](component, site_configuration)
@@ -563,7 +598,7 @@ def _process_query_string(query, site_configuration):
             predicate += _concat_operator(operator)
 
         else:
-            predicate = 'No match found'
+            logger.info('No match found for %s', component)
 
     return predicate
 
@@ -583,16 +618,19 @@ def _convert_date_range_to_predicate(date_range):
     SQL-like predicate for use in queries.
 
     Args:
-        date_range (str): The date range string in the format 'start:[YYYY-MM-DD TO YYYY-MM-DD]'.
+        date_range (str): The date range string in the format
+        'start:[YYYY-MM-DD TO YYYY-MM-DD]'.
 
     Returns:
         str: A predicate string in the format:
-             'attributes.`courserun-start` >= "YYYY-MM-DD" AND attributes.`courserun-start` <= "YYYY-MM-DD"'.
+             'attributes.`courserun-start` >= "YYYY-MM-DD" AND attributes.
+             `courserun-start` <= "YYYY-MM-DD"'.
              Returns an empty string if the input format is invalid.
 
     Example:
         >>> convert_date_range_to_predicate('start:[2023-01-01 TO 2023-12-31]')
-        'attributes.`courserun-start` >= "2023-01-01" AND attributes.`courserun-start` <= "2023-12-31"'
+        'attributes.`courserun-start` >= "2023-01-01" AND attributes.
+        `courserun-start` <= "2023-12-31"'
 
         >>> convert_date_range_to_predicate('invalid_input')
         ''
@@ -601,6 +639,7 @@ def _convert_date_range_to_predicate(date_range):
     match = re.search(r'start:\[(\d{4}-\d{2}-\d{2}) TO (\d{4}-\d{2}-\d{2})\]', date_range)
 
     if not match:
+        logger.error('Invalid date range format: %s', date_range)
         return ""
 
     start_date, end_date = match.groups()
@@ -608,7 +647,7 @@ def _convert_date_range_to_predicate(date_range):
     # Construct the desired predicate
     predicate = (
         f'attributes.`courserun-start` >= "{start_date}" '
-        f'AND attributes.`courserun-start` <= "{end_date}"'
+        f'AND attributes.`courserun-start` < "{end_date}"'
     )
 
     return predicate
@@ -618,7 +657,7 @@ def _process_number(component, site_configuration):
     """
     Processes a course number component to generate a corresponding query predicate.
 
-    This function checks if the provided component exists in the `KEY_TO_PREDICATE_DIC`
+    This function checks if the provided component exists in the `KEY_TO_PREDICATE_DICT`
     dictionary and returns the corresponding predicate if found. If not found, it queries
     the catalog API to fetch course run IDs and generates a predicate using those IDs.
 
@@ -639,10 +678,10 @@ def _process_number(component, site_configuration):
         >>> process_number("unknown_course", site_configuration)
         ''
     """
-    if component in KEY_TO_PREDICATE_DIC:
-        return KEY_TO_PREDICATE_DIC[component]
+    if component in KEY_TO_PREDICATE_DICT:
+        return KEY_TO_PREDICATE_DICT[component]
 
-    course_ids = _fetch_catalog_course_runs(component, 10, site_configuration)
+    course_ids = _fetch_catalog_course_runs(component, 1, site_configuration)
     if course_ids:
         return _process_number_value(course_ids)
     return ''
@@ -652,7 +691,7 @@ def _process_key(component, site_configuration):
     """
     Processes a key component to generate a corresponding query predicate.
 
-    This function checks if the provided component exists in the `KEY_TO_PREDICATE_DIC`
+    This function checks if the provided component exists in the `KEY_TO_PREDICATE_DICT`
     dictionary and returns the corresponding predicate if found. If not, it modifies the
     key values, fetches matching course run IDs from the catalog API, and generates a
     predicate using the retrieved course runs.
@@ -674,11 +713,11 @@ def _process_key(component, site_configuration):
         >>> process_key("unknown_key", site_configuration)
         ''
     """
-    if component in KEY_TO_PREDICATE_DIC:
-        return KEY_TO_PREDICATE_DIC[component]
+    if component in KEY_TO_PREDICATE_DICT:
+        return KEY_TO_PREDICATE_DICT[component]
 
     modified_str, all_changed_operators = _modify_key_values(component)
-    course_ids = _fetch_catalog_course_runs(modified_str, 100000, site_configuration)
+    course_ids = _fetch_catalog_course_runs(modified_str, 10000, site_configuration)
 
     if course_ids:
         return _create_predicate_from_course_run(course_ids, all_changed_operators)
@@ -702,9 +741,12 @@ def _query_cleaning_process(query):
 
 
 def convert_querystring_to_predicate(query, site_configuration):
+
     cleaned_query = _query_cleaning_process(query)
     logger.info('Query to be processed: %s', cleaned_query)
+
     processed_query = _process_query_string(cleaned_query, site_configuration)
     predicate = _remove_leading_trailing_and_or(processed_query)
+
     logger.info('Query to be converted into predicate: %s', predicate)
     return predicate

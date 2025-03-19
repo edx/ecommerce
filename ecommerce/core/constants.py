@@ -80,7 +80,7 @@ PROGRAM_OFFER_NAME = 'Program Offer'
 
 BUNDLE_CART_DISCOUNT_KEY_FORMAT = "{type}-{value}"
 
-KEY_TO_PREDICATE_DIC = {
+KEY_TO_PREDICATE_DICT = {
     'key: ("AlaskaX+GRANT1x" OR "AlaskaX+GRANT2x" OR "AlaskaX+GRANT3x")':
     'product.key in ("AlaskaX+GRANT3x", "AlaskaX+GRANT2x", "AlaskaX+GRANT1x") ',
     'key: ("MITx+CTL.SC0x" OR "MITx+CTL.SC1x" OR "MITx+CTL.SC2x" OR "MITx+CTL.SC3x" OR "MITx+CTL.SC4x")':
@@ -385,6 +385,7 @@ KEY_TO_PREDICATE_DIC = {
     '"course-v1:JuilliardOpenClassroom+JCx002+3T2017", '
     '"course-v1:JuilliardOpenClassroom+JCx003+1T2017",'
     '"course-v1:JuilliardOpenClassroom+JC004+1T2017")',
+    'key: ("DelftX" AND "AIfE6x")': 'product.key in ("DelftX+AIfE6x")',
 
 }
 
