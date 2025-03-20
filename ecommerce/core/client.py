@@ -82,23 +82,36 @@ class CommercetoolsAPIClient:
         """
         Fetch cart discounts with a discount code from Commercetools.
 
-        Returns:
-            Dict: Cart discount data or None if request fails.
+        Returns a dictionary where the key is the cart discount key and the value is a tuple of the cart discount and the discount code.
         """
 
-        query_params = 'requiresDiscountCode=true and target(type="totalPrice")'
+        expansion_query = "cartDiscounts[*]"
 
-        discounts_with_code = self._make_request(
+        discount_codes = self._make_request(
             "GET",
-            "cart-discounts",
-            params={"where": query_params},
+            "discount-codes",
+            params={"expand": expansion_query},
         )
 
-        if discounts_with_code and type(discounts_with_code) == Dict:
-            return {
-                cart_discount["key"]: cart_discount
-                for cart_discount in discounts_with_code["results"]
-            }
+        if discount_codes and type(discount_codes) == dict:
+            paired_discounts = {}
+            for discount_code in discount_codes["results"]:
+                for cart_discount in discount_code.get("cartDiscounts", []):
+                    key = cart_discount.get("obj", {}).get("key")
+                    if key is not None:
+                        discount_code_copy = discount_code.copy()
+                        discount_code_copy.pop("cartDiscounts")
+                        if key in paired_discounts:
+                            paired_discounts[key][1][
+                                discount_code.get("key")
+                            ] = discount_code_copy
+                        else:
+                            paired_discounts[key] = (
+                                cart_discount.get("obj", {}),
+                                {discount_code.get("key"): discount_code_copy},
+                            )
+
+            return paired_discounts
         else:
             return None
 
@@ -196,7 +209,7 @@ class CommercetoolsAPIClient:
             Dict: Created cart discount data or None if request fails.
         """
         payload = {
-            "key": "test-key",
+            "key": key,
             "name": {"en-us": name},
             "description": {"en-us": description},
             "value": value,
@@ -217,6 +230,45 @@ class CommercetoolsAPIClient:
         }
 
         return self._make_request("POST", "cart-discounts", json=payload)
+
+    def create_discount_code(
+        self,
+        *,
+        name,
+        key,
+        code,
+        validFrom=None,
+        validUntil=None,
+        maxApplications=None,
+        maxApplicationsPerCustomer=None,
+        cartDiscountId,
+    ) -> Dict:
+        """
+        Create a new discount code.
+
+        Args:
+            payload (dict): Payload containing discount code data.
+
+        Returns:
+            Dict: Created discount code data or None if request fails.
+        """
+        payload = {
+            "name": {"en-us": name},
+            "key": key,
+            "code": code,
+            "validFrom": validFrom if validFrom else None,
+            "validUntil": validUntil if validUntil else None,
+            "maxApplications": maxApplications,
+            "maxApplicationsPerCustomer": maxApplicationsPerCustomer,
+            "isActive": True,
+            "cartDiscounts": [
+                {
+                    "typeId": "cart-discount",
+                    "id": cartDiscountId,
+                }
+            ],
+        }
+        return self._make_request("POST", "discount-codes", json=payload)
 
     def create_bundle_cart_discount_without_code(
         self,
@@ -275,11 +327,50 @@ class CommercetoolsAPIClient:
             "isActive": True,
             "requiresDiscountCode": False,
             "stackingMode": "StopAfterThisDiscount",
+            "custom": {
+                "type": {
+                    "key": "cartDiscountCustomType",
+                },
+                "fields": {
+                    "discountType": "program-offer",
+                },
+            },
         }
 
         return self._make_request("POST", "cart-discounts", json=payload)
 
-    def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str, version: int) -> Dict:
+    def update_resource_by_key(
+        self,
+        *,
+        resource_type: str,
+        resource_key: str,
+        version: int,
+        actions: List[Dict],
+    ) -> Optional[Dict]:
+        """
+        Update a resource by its key.
+
+        Args:
+            resource_type (str): Type of the resource to update.
+            resource_key (str): Key of the resource to update.
+            version (int): Version of the cart discount.
+            actions (List[Dict]): List of actions to perform.
+
+        Returns:
+            Dict: Updated resource data or None if request fails.
+        """
+        payload = {
+            "version": version,
+            "actions": actions,
+        }
+
+        return self._make_request(
+            "POST", f"{resource_type}/key={resource_key}", json=payload
+        )
+
+    def update_cart_discount_target_predicate(
+        self, cart_discount_id: str, predicate: str, version: int
+    ) -> Dict:
         """
         Update the target predicate for a cart discount.
 
@@ -317,44 +408,3 @@ class CommercetoolsAPIClient:
             Dict: Deleted cart discount data or None if request fails.
         """
         return self._make_request("DELETE", f"cart-discounts/{cart_discount_id}", params={"version": version})
-
-    def create_discount_code(
-        self,
-        *,
-        name,
-        description,
-        key,
-        code,
-        validFrom=None,
-        validUntil=None,
-        maxApplications=None,
-        maxApplicationsPerCustomer=None,
-        cartDiscountId,
-    ) -> Dict:
-        """
-        Create a new discount code.
-
-        Args:
-            payload (dict): Payload containing discount code data.
-
-        Returns:
-            Dict: Created discount code data or None if request fails.
-        """
-        payload = {
-            "name": {"en-us": name},
-            "description": {"en-us": description},
-            "key": key,
-            "code": code,
-            "validFrom": validFrom.isoformat() if validFrom else None,
-            "validUntil": validUntil.isoformat() if validUntil else None,
-            "maxApplications": maxApplications,
-            "maxApplicationsPerCustomer": maxApplicationsPerCustomer,
-            "isActive": True,
-            "cartDiscounts": [
-                {
-                    "typeId": "cart-discount",
-                    "id": cartDiscountId,
-                }
-            ],
-        }
-        return self._make_request("POST", "discount-codes", json=payload)
