@@ -253,7 +253,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+MDRP1x"': 'product.key in ("DelftX+MDRP1x")',
     'key: "DECx+CDAA1.3x"': 'product.key in ("DECx+CDAA1.3x")',
     'key: "EPFLx+CycleVie1x"': 'product.key in ("EPFLx+CycleVie1x")',
-    'key:(*)': 'No Match',
+    'key:(*)': '',
     'key:(StudioX BlendedX edX101 VideoX StudioAdv1)':
     'product.key in ("edX+BlendedX", "edX+edX101", '
     '"edX+StudioX", "edX+VideoX",  "edX+StudioAdv1" )',
@@ -370,9 +370,6 @@ KEY_TO_PREDICATE_DICT = {
     'number:(CONVERT OR resilience911 OR KAB1010x OR EPS1x OR WECS)':
     'product.key in ("IsraelX+EPS1x", "IsraelX+resilience911", '
     '"IsraelX+CONVERT", "IsraelX+KAB1010x", "IsraelX+WECS")',
-    'key: (-"MITx+DS.CFx" OR -"MITx+6.431x" OR'
-    ' -"MITx+6.86x" OR -"MITx+18.6501x" OR'
-    ' -"MITx+6.419x" OR -"MITx+IDS.S24x" OR -"MITx+14.310Fx")': '',
     'key:("6.419x" or ""6.86x" or "DS.CFx" or "14.310Fx" or "6.431x" or "18.6501x")':
     'product.key in ("MITx+6.419x", "MITx+DS.CFx", "MITx+14.310Fx", "MITx+6.86x", '
     '"MITx+6.431x", "MITx+18.6501")',
@@ -386,7 +383,6 @@ KEY_TO_PREDICATE_DICT = {
     '"course-v1:JuilliardOpenClassroom+JCx003+1T2017",'
     '"course-v1:JuilliardOpenClassroom+JC004+1T2017")',
     'key: ("DelftX" AND "AIfE6x")': 'product.key in ("DelftX+AIfE6x")',
-
 }
 
 
