@@ -85,7 +85,8 @@ class CommercetoolsAPIClient:
         """
         Fetch cart discounts with a discount code from Commercetools.
 
-        Returns a dictionary where the key is the cart discount key and the value is a tuple of the cart discount and the discount code.
+        Returns a dictionary where the key is the cart discount key and
+        the value is a tuple of the cart discount and the discount code.
         """
 
         expansion_query = "cartDiscounts[*]"
@@ -118,6 +119,7 @@ class CommercetoolsAPIClient:
                 if cart_discount_key is not None:
                     discount_code = {
                         "key": discount_code.get("key"),
+                        "name": discount_code.get("name", {}).get("en-US"),
                         "code": discount_code.get("code"),
                         "validFrom": discount_code.get("validFrom"),
                         "validUntil": discount_code.get("validUntil"),
@@ -140,9 +142,7 @@ class CommercetoolsAPIClient:
                             },
                         )
 
-            return paired_discounts
-        else:
-            return paired_discounts
+        return paired_discounts
 
     def get_ct_bundle_offers_without_code(
         self, failed_discounts: List
@@ -202,20 +202,21 @@ class CommercetoolsAPIClient:
 
         return ct_bundle_offers_without_code_dict
 
-    def get_highest_sort_order_for_cart_discount_without_codes(
+    def get_highest_sort_order_for_cart_discount(
         self,
+        where,
     ) -> Optional[Dict]:
         """
-        Fetch the latest sort order for cart discounts without codes.
+        Fetch the highest sort order for cart discounts with the course discount type.
 
         Returns:
-            Dict: Latest cart discount data or None if request fails.
+            float: Highest sort order for course cart discounts.
         """
         return self._make_request(
             "GET",
             "cart-discounts",
             params={
-                "where": 'requiresDiscountCode=false and target(type="lineItems")',
+                "where": where,
                 "sort": ["sortOrder desc"],
                 "limit": 1,
             },
@@ -231,6 +232,7 @@ class CommercetoolsAPIClient:
         cartPredicate,
         sortOrder,
         customFields,
+        target,
     ) -> Optional[Dict]:
         """
         Create a new cart discount.
@@ -244,13 +246,10 @@ class CommercetoolsAPIClient:
         payload = {
             "key": key,
             "name": {"en-us": name},
-            "description": {"en-us": description},
             "value": value,
             "cartPredicate": cartPredicate,
-            "target": {
-                "type": "totalPrice",
-            },
-            "sortOrder": f"{sortOrder:.14f}".rstrip("0").rstrip("."),
+            "target": target,
+            "sortOrder": f"{sortOrder:.8f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": True,
             "stackingMode": "StopAfterThisDiscount",
@@ -261,6 +260,9 @@ class CommercetoolsAPIClient:
                 "fields": customFields,
             },
         }
+
+        if description:
+            payload["description"] = {"en-us": description}
 
         return self._make_request("POST", "cart-discounts", json=payload)
 
@@ -443,3 +445,22 @@ class CommercetoolsAPIClient:
             Dict: Deleted cart discount data or None if request fails.
         """
         return self._make_request("DELETE", f"cart-discounts/{cart_discount_id}", params={"version": version})
+
+    def delete_discount_code_by_key(
+        self, discount_code_key: str, version: int
+    ) -> Optional[Dict]:
+        """
+        Delete a discount code by its key.
+
+        Args:
+            discount_code_key (str): Key of the discount code to delete.
+            version (int): Version of the discount code.
+
+        Returns:
+            Dict: Deleted discount code data or None if request fails.
+        """
+        return self._make_request(
+            "DELETE",
+            f"discount-codes/key={discount_code_key}",
+            params={"version": version},
+        )
