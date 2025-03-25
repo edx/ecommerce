@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, List, Optional, Union
+from collections import namedtuple
+from typing import Dict, List, Optional
 
 import requests
 from django.conf import settings
@@ -8,6 +9,8 @@ from requests.exceptions import HTTPError
 from ecommerce.core.constants import BUNDLE_CART_DISCOUNT_KEY_FORMAT, CT_ABSOLUTE_DISCOUNT_TYPE
 
 logger = logging.getLogger(__name__)
+
+PairedDiscount = namedtuple("PairedDiscount", ["cart_discount", "discount_codes"])
 
 
 class CommercetoolsAPIClient:
@@ -44,7 +47,7 @@ class CommercetoolsAPIClient:
         endpoint: str,
         params: Optional[Dict] = None,
         json: Optional[Dict] = None,
-    ) -> Union[Dict, List]:
+    ) -> Optional[Dict]:
         """
         Make an HTTP request to the Commercetools API.
 
@@ -78,7 +81,83 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_ct_bundle_offers_without_code(self, failed_discounts: list) -> Dict:
+    def get_ct_discounts_with_code(self, page_size=500) -> Optional[Dict[str, PairedDiscount]]:
+        """
+        Fetch cart discounts with a discount code from Commercetools.
+
+        Returns a dictionary where the key is the cart discount key and
+        the value is a tuple of the cart discount and the discount code.
+        """
+        expansion_query = "cartDiscounts[*]"
+
+        results = []
+        offset = 0
+        while True:
+            discount_codes = self._make_request(
+                "GET",
+                "discount-codes",
+                params={"expand": expansion_query, "offset": offset, "limit": page_size},
+            )
+            if not discount_codes:
+                logger.error("Failed to get discount codes from Commercetools.")
+                return None
+
+            results.extend(discount_codes["results"])
+            offset += page_size
+
+            if discount_codes["count"] != page_size:
+                break
+
+        paired_discounts: Dict[str, PairedDiscount] = {}
+        for discount_code in results:
+            cart_discounts = discount_code.get("cartDiscounts", [{}])
+            cart_discount = cart_discounts[0].get("obj")
+            cart_discount = {
+                "id": cart_discount.get("id"),
+                "key": cart_discount.get("key"),
+                "name": cart_discount.get("name", {}).get("en-US"),
+                "description": cart_discount.get("description", {}).get("en-US"),
+                "cartPredicate": cart_discount.get("cartPredicate"),
+                "value": cart_discount.get("value"),
+                "customFields": cart_discount.get("custom", {}).get(
+                    "fields", {}
+                ),
+                "version": cart_discount.get("version"),
+            }
+            cart_discount_key = cart_discount["key"]
+
+            # Almost non existent case for a cart discount to not have a key.
+            if cart_discount_key is not None:
+                discount_code = {
+                    "key": discount_code.get("key"),
+                    "name": discount_code.get("name", {}).get("en-US"),
+                    "code": discount_code.get("code"),
+                    "validFrom": discount_code.get("validFrom"),
+                    "validUntil": discount_code.get("validUntil"),
+                    "maxApplications": discount_code.get("maxApplications"),
+                    "version": discount_code.get("version"),
+                }
+                discount_code_key = discount_code["key"]
+
+                if cart_discount_key in paired_discounts:
+                    # Add the discount code to the existing discount codes for the cart discount.
+                    paired_discounts[cart_discount_key].discount_codes[
+                        discount_code_key
+                    ] = discount_code
+                else:
+                    # Create a new paired discount with the cart discount and discount code.
+                    paired_discounts[cart_discount_key] = PairedDiscount(
+                        cart_discount=cart_discount,
+                        discount_codes={
+                            discount_code_key: discount_code,
+                        },
+                    )
+
+        return paired_discounts
+
+    def get_ct_bundle_offers_without_code(
+        self, failed_discounts: List
+    ) -> Optional[Dict]:
         """
         Fetch bundle cart discounts without a discount code from Commercetools.
 
@@ -134,22 +213,108 @@ class CommercetoolsAPIClient:
 
         return ct_bundle_offers_without_code_dict
 
-    def get_highest_sort_order_for_cart_discount_without_codes(self) -> Dict:
+    def get_highest_sort_order_for_cart_discount(
+        self,
+        where,
+    ) -> Optional[Dict]:
         """
-        Fetch the latest sort order for cart discounts without codes.
+        Fetch the highest sort order for cart discounts with the course discount type.
 
         Returns:
-            Dict: Latest cart discount data or None if request fails.
+            float: Highest sort order for course cart discounts.
         """
         return self._make_request(
             "GET",
             "cart-discounts",
             params={
-                "where": "requiresDiscountCode=false and target(type=\"lineItems\")",
+                "where": where,
                 "sort": ["sortOrder desc"],
                 "limit": 1,
             },
         )
+
+    def create_cart_discount(
+        self,
+        *,
+        key,
+        name,
+        description,
+        value,
+        cartPredicate,
+        sortOrder,
+        customFields,
+        target,
+    ) -> Optional[Dict]:
+        """
+        Create a new cart discount.
+
+        Args:
+            payload (dict): Payload containing cart discount data.
+
+        Returns:
+            Dict: Created cart discount data or None if request fails.
+        """
+        payload = {
+            "key": key,
+            "name": {"en-us": name},
+            "value": value,
+            "cartPredicate": cartPredicate,
+            "target": target,
+            "sortOrder": f"{sortOrder:.8f}".rstrip("0").rstrip("."),
+            "isActive": True,
+            "requiresDiscountCode": True,
+            "stackingMode": "StopAfterThisDiscount",
+            "custom": {
+                "type": {
+                    "key": "cartDiscountCustomType",
+                },
+                "fields": customFields,
+            },
+        }
+
+        if description:
+            payload["description"] = {"en-us": description}
+
+        return self._make_request("POST", "cart-discounts", json=payload)
+
+    def create_discount_code(
+        self,
+        *,
+        cartDiscountId,
+        key,
+        name,
+        code,
+        validFrom=None,
+        validUntil=None,
+        maxApplications=None,
+        maxApplicationsPerCustomer=None,
+    ) -> Optional[Dict]:
+        """
+        Create a new discount code.
+
+        Args:
+            payload (dict): Payload containing discount code data.
+
+        Returns:
+            Dict: Created discount code data or None if request fails.
+        """
+        payload = {
+            "name": {"en-us": name},
+            "key": key,
+            "code": code,
+            "validFrom": validFrom,
+            "validUntil": validUntil,
+            "maxApplications": maxApplications,
+            "maxApplicationsPerCustomer": maxApplicationsPerCustomer,
+            "isActive": True,
+            "cartDiscounts": [
+                {
+                    "typeId": "cart-discount",
+                    "id": cartDiscountId,
+                }
+            ],
+        }
+        return self._make_request("POST", "discount-codes", json=payload)
 
     def create_bundle_cart_discount_without_code(
         self,
@@ -160,7 +325,7 @@ class CommercetoolsAPIClient:
         discount_value_in_cents: int,
         sort_order: float,
         predicate: str,
-    ) -> Dict:
+    ) -> Optional[Dict]:
         """
         Create a new cart discount.
 
@@ -208,11 +373,50 @@ class CommercetoolsAPIClient:
             "isActive": True,
             "requiresDiscountCode": False,
             "stackingMode": "StopAfterThisDiscount",
+            "custom": {
+                "type": {
+                    "key": "cartDiscountCustomType",
+                },
+                "fields": {
+                    "discountType": "program-offer",
+                },
+            },
         }
 
         return self._make_request("POST", "cart-discounts", json=payload)
 
-    def update_cart_discount_target_predicate(self, cart_discount_id: str, predicate: str, version: int) -> Dict:
+    def update_resource_by_key(
+        self,
+        *,
+        resource_type: str,
+        resource_key: str,
+        version: int,
+        actions: List[Dict],
+    ) -> Optional[Dict]:
+        """
+        Update a resource by its key.
+
+        Args:
+            resource_type (str): Type of the resource to update.
+            resource_key (str): Key of the resource to update.
+            version (int): Version of the cart discount.
+            actions (List[Dict]): List of actions to perform.
+
+        Returns:
+            Dict: Updated resource data or None if request fails.
+        """
+        payload = {
+            "version": version,
+            "actions": actions,
+        }
+
+        return self._make_request(
+            "POST", f"{resource_type}/key={resource_key}", json=payload
+        )
+
+    def update_cart_discount_target_predicate(
+        self, cart_discount_id: str, predicate: str, version: int
+    ) -> Optional[Dict]:
         """
         Update the target predicate for a cart discount.
 
@@ -238,7 +442,9 @@ class CommercetoolsAPIClient:
         }
         return self._make_request("POST", f"cart-discounts/{cart_discount_id}", json=payload)
 
-    def delete_cart_discount_by_id(self, cart_discount_id: str, version: int) -> Dict:
+    def delete_cart_discount_by_id(
+        self, cart_discount_id: str, version: int
+    ) -> Optional[Dict]:
         """
         Delete a cart discount by its ID.
 
@@ -250,3 +456,22 @@ class CommercetoolsAPIClient:
             Dict: Deleted cart discount data or None if request fails.
         """
         return self._make_request("DELETE", f"cart-discounts/{cart_discount_id}", params={"version": version})
+
+    def delete_discount_code_by_key(
+        self, discount_code_key: str, version: int
+    ) -> Optional[Dict]:
+        """
+        Delete a discount code by its key.
+
+        Args:
+            discount_code_key (str): Key of the discount code to delete.
+            version (int): Version of the discount code.
+
+        Returns:
+            Dict: Deleted discount code data or None if request fails.
+        """
+        return self._make_request(
+            "DELETE",
+            f"discount-codes/key={discount_code_key}",
+            params={"version": version},
+        )

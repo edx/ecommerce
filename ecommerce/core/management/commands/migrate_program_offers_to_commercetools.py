@@ -49,7 +49,9 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     Returns:
         float: The highest sort order.
     """
-    response = client.get_highest_sort_order_for_cart_discount_without_codes()
+    response = client.get_highest_sort_order_for_cart_discount(
+        where='requiresDiscountCode=false and target(type="lineItems")'
+    )
 
     if not response:
         raise CommandError("Failed to get highest sort order for cart discounts without codes. Exiting command.")
