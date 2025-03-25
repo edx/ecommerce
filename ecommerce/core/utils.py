@@ -597,7 +597,11 @@ def _process_query_string(query, site_configuration, summary_info):
             predicate += _concat_operator(operator)
 
         else:
-            logger.info('No match found for %s', component)
+            logger.error('Query type not handled in _process_query_string: %s', component)
+            summary_info["cart_discounts"]["failed"].append({
+                "name": component,
+                "reason": f"Query type not handled in _process_query_string: '{component}'"
+            })
 
     return predicate
 
@@ -663,7 +667,7 @@ def _has_wildcards_or_negatives(component):
     Returns:
         bool: True if wildcards are found or negative signs are present in course keys, False otherwise.
     """
-    if any(char in component for char in ['*', '?']):
+    if any(char in component for char in ['*', '?']) or component.startswith('-'):
         return True
 
     if ':' in component:
