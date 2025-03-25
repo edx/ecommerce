@@ -40,7 +40,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
         float: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-       where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
+        where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
     )
 
     if not response:
@@ -50,6 +50,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
         return float(response['results'][0]['sortOrder'])
 
     return 0.00000001
+
 
 def _get_cent_amount_from_value(value: Dict) -> Optional[int]:
     """
