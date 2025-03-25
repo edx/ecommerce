@@ -652,6 +652,37 @@ def _convert_date_range_to_predicate(date_range):
     return predicate
 
 
+def _has_wildcards_or_negatives(component):
+    """
+    Check if the component contains wildcards or negative signs in course keys.
+    Only checks for negative signs within individual course keys after the prefix (key:, number:, etc.).
+
+    Args:
+        component (str): The component to check (e.g., "key:(-edx+DemoX AND -edx+InjuryPrevention)")
+
+    Returns:
+        bool: True if wildcards are found or negative signs are present in course keys, False otherwise.
+    """
+    if any(char in component for char in ['*', '?']):
+        return True
+
+    if ':' in component:
+        component = component.split(':', 1)[1].strip()
+
+    component = component.strip('()')
+    parts = re.split(r'\s+(?:AND|OR)\s+', component, flags=re.IGNORECASE)
+
+    # Checking each part for negative signs in keys
+    for part in parts:
+        part = part.strip()
+        key_parts = part.split('+')
+
+        if any(key_part.strip().startswith('-') for key_part in key_parts):
+            return True
+
+    return False
+
+
 def _process_number(component, site_configuration, summary_info):
     """
     Processes a course number component to generate a corresponding query predicate.
@@ -659,7 +690,7 @@ def _process_number(component, site_configuration, summary_info):
     This function checks if the provided component exists in the `KEY_TO_PREDICATE_DICT`
     dictionary and returns the corresponding predicate if found. If not found, it queries
     the catalog API to fetch course run IDs and generates a predicate using those IDs.
-    If the component contains wildcards or negative signs, it skips the fetch call and logs an error.
+    If the component contains wildcards or starts with a negative sign, it skips the fetch call and logs an error.
 
     Args:
         component (str): The course number component to be processed.
@@ -684,15 +715,11 @@ def _process_number(component, site_configuration, summary_info):
 
     logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
 
-    # Skip fetch if component contains wildcards or negative signs
-    if any(char in component for char in ['-', '*', '?']):
-        log_message = 'Component not found in KEY_TO_PREDICATE_DICT and contains wildcards '
-        log_message += 'or negative signs, skipping fetch: %s'
-        logger.error(log_message, component)
-
+    if _has_wildcards_or_negatives(component):
+        logger.error('Query contains wildcards or negative signs: %s', component)
         summary_info["cart_discounts"]["failed"].append({
             "name": component,
-            "reason": f"Component contains wildcards or negative signs: '{component}'"
+            "reason": f"Query contains wildcards or negative signs: '{component}'"
         })
         return ''
 
@@ -715,7 +742,7 @@ def _process_key(component, site_configuration, summary_info):
     dictionary and returns the corresponding predicate if found. If not, it modifies the
     key values, fetches matching course run IDs from the catalog API, and generates a
     predicate using the retrieved course runs.
-    If the component contains wildcards or negative signs, it skips the fetch call and logs an error.
+    If the component contains wildcards or starts with a negative sign, it skips the fetch call and logs an error.
 
     Args:
         component (str): The key component to be processed.
@@ -732,7 +759,7 @@ def _process_key(component, site_configuration, summary_info):
         >>> process_key("edX+CS50", site_configuration, summary_info)
         'variant.key in ("edX+CS50")'
 
-        >>> process_key("unknown_key", site_configuration, summary_info)
+        >>> process_key("-unknown_key", site_configuration, summary_info)
         ''
     """
     if component in KEY_TO_PREDICATE_DICT:
@@ -740,14 +767,11 @@ def _process_key(component, site_configuration, summary_info):
 
     logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
 
-    # Skip fetch if component contains wildcards or negative signs
-    if any(char in component for char in ['-', '*', '?']):
-        log_message = 'Component not found in KEY_TO_PREDICATE_DICT and contains wildcards '
-        log_message += 'or negative signs, skipping fetch: %s'
-        logger.error(log_message, component)
+    if _has_wildcards_or_negatives(component):
+        logger.error('Query contains wildcards or negative signs: %s', component)
         summary_info["cart_discounts"]["failed"].append({
             "name": component,
-            "reason": f"Component contains wildcards or negative signs: '{component}'"
+            "reason": f"Query contains wildcards or negative signs: '{component}'"
         })
         return ''
 
