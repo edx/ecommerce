@@ -129,6 +129,7 @@ class CommercetoolsAPIClient:
             # Almost non existent case for a cart discount to not have a key.
             if cart_discount_key is not None:
                 discount_code = {
+                    "id": discount_code.get("id"),
                     "key": discount_code.get("key"),
                     "name": discount_code.get("name", {}).get("en-US"),
                     "code": discount_code.get("code"),
@@ -241,9 +242,9 @@ class CommercetoolsAPIClient:
         description,
         value,
         cartPredicate,
+        target,
         sortOrder,
         customFields,
-        target,
     ) -> Optional[Dict]:
         """
         Create a new cart discount.
@@ -260,7 +261,7 @@ class CommercetoolsAPIClient:
             "value": value,
             "cartPredicate": cartPredicate,
             "target": target,
-            "sortOrder": f"{sortOrder:.8f}".rstrip("0").rstrip("."),
+            "sortOrder": f"{sortOrder:.14f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": True,
             "stackingMode": "StopAfterThisDiscount",
