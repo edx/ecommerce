@@ -423,33 +423,35 @@ def _generate_summary(summary_info: Dict) -> None:
     """
 
     success_summary = {
-        "created_cart_discounts": "\n".join(
+        ("created", "Cart Discount"): "\n".join(
             cart_discount["name"]
             for cart_discount in summary_info["cart_discounts"]["created"]
         ),
-        "updated_cart_discounts": "\n".join(
+        ("updated", "Cart Discount"): "\n".join(
             cart_discount["name"]
             for cart_discount in summary_info["cart_discounts"]["updated"]
         ),
-        "created_discount_codes": "\n".join(
+        ("created", "Discount Code"): "\n".join(
             f"{discount_code['code']} - {discount_code['name']}"
             for discount_code in summary_info["discount_codes"]["created"]
         ),
-        "updated_discount_codes": "\n".join(
+        ("updated", "Discount Code"): "\n".join(
             f"{discount_code['code']} - {discount_code['name']}"
             for discount_code in summary_info["discount_codes"]["updated"]
         ),
-        "deleted_discount_codes": "\n".join(
+        ("deleted", "Discount Code"): "\n".join(
             f"{discount_code['code']} - {discount_code['name']}"
             for discount_code in summary_info["discount_codes"]["deleted"]
         ),
     }
 
     for key, value in success_summary.items():
-        if value:
-            humanized = " ".join(key.capitalize() for key in key.split("_"))
+        action, discount_type = key
 
-            logger.info(f"Summary of {humanized}:\n{value}\n")
+        if value:
+            logger.info(f"\nSummary of {action} {discount_type}:\n{value}\n")
+        else:
+            logger.info(f"No {discount_type} were {action}.")
 
     if (
         summary_info["cart_discounts"]["failed"] or
@@ -625,6 +627,9 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
     sort_order = _get_highest_sort_order(client)
     sort_order += 0.00000001
+
+    if not existing_discounts_in_ct:
+        raise CommandError("Failed to get existing discounts from Commercetools. Exiting command.")
 
     summary_info = {
         "cart_discounts": {

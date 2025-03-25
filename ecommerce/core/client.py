@@ -81,66 +81,77 @@ class CommercetoolsAPIClient:
 
             return None
 
-    def get_ct_discounts_with_code(self) -> Dict[str, PairedDiscount]:
+    def get_ct_discounts_with_code(self, page_size=500) -> Optional[Dict[str, PairedDiscount]]:
         """
         Fetch cart discounts with a discount code from Commercetools.
 
         Returns a dictionary where the key is the cart discount key and
         the value is a tuple of the cart discount and the discount code.
         """
-
         expansion_query = "cartDiscounts[*]"
 
-        discount_codes = self._make_request(
-            "GET",
-            "discount-codes",
-            params={"expand": expansion_query},
-        )
+        results = []
+        offset = 0
+        while True:
+            discount_codes = self._make_request(
+                "GET",
+                "discount-codes",
+                params={"expand": expansion_query, "offset": offset, "limit": page_size},
+            )
+            if not discount_codes:
+                logger.error("Failed to get discount codes from Commercetools.")
+                return None
+
+            results.extend(discount_codes["results"])
+            offset += page_size
+
+            if discount_codes["count"] != page_size:
+                break
 
         paired_discounts: Dict[str, PairedDiscount] = {}
-        if discount_codes:
-            for discount_code in discount_codes["results"]:
-                cart_discounts = discount_code.get("cartDiscounts", [{}])
-                cart_discount = cart_discounts[0].get("obj")
-                cart_discount = {
-                    "key": cart_discount.get("key"),
-                    "name": cart_discount.get("name", {}).get("en-US"),
-                    "description": cart_discount.get("description", {}).get("en-US"),
-                    "cartPredicate": cart_discount.get("cartPredicate"),
-                    "value": cart_discount.get("value"),
-                    "customFields": cart_discount.get("custom", {}).get(
-                        "fields", {}
-                    ),
-                    "version": cart_discount.get("version"),
+        for discount_code in results:
+            cart_discounts = discount_code.get("cartDiscounts", [{}])
+            cart_discount = cart_discounts[0].get("obj")
+            cart_discount = {
+                "id": cart_discount.get("id"),
+                "key": cart_discount.get("key"),
+                "name": cart_discount.get("name", {}).get("en-US"),
+                "description": cart_discount.get("description", {}).get("en-US"),
+                "cartPredicate": cart_discount.get("cartPredicate"),
+                "value": cart_discount.get("value"),
+                "customFields": cart_discount.get("custom", {}).get(
+                    "fields", {}
+                ),
+                "version": cart_discount.get("version"),
+            }
+            cart_discount_key = cart_discount["key"]
+
+            # Almost non existent case for a cart discount to not have a key.
+            if cart_discount_key is not None:
+                discount_code = {
+                    "key": discount_code.get("key"),
+                    "name": discount_code.get("name", {}).get("en-US"),
+                    "code": discount_code.get("code"),
+                    "validFrom": discount_code.get("validFrom"),
+                    "validUntil": discount_code.get("validUntil"),
+                    "maxApplications": discount_code.get("maxApplications"),
+                    "version": discount_code.get("version"),
                 }
-                cart_discount_key = cart_discount["key"]
+                discount_code_key = discount_code["key"]
 
-                # Almost non existent case for a cart discount to not have a key.
-                if cart_discount_key is not None:
-                    discount_code = {
-                        "key": discount_code.get("key"),
-                        "name": discount_code.get("name", {}).get("en-US"),
-                        "code": discount_code.get("code"),
-                        "validFrom": discount_code.get("validFrom"),
-                        "validUntil": discount_code.get("validUntil"),
-                        "maxApplications": discount_code.get("maxApplications"),
-                        "version": discount_code.get("version"),
-                    }
-                    discount_code_key = discount_code["key"]
-
-                    if cart_discount_key in paired_discounts:
-                        # Add the discount code to the existing discount codes for the cart discount.
-                        paired_discounts[cart_discount_key].discount_codes[
-                            discount_code_key
-                        ] = discount_code
-                    else:
-                        # Create a new paired discount with the cart discount and discount code.
-                        paired_discounts[cart_discount_key] = PairedDiscount(
-                            cart_discount=cart_discount,
-                            discount_codes={
-                                discount_code_key: discount_code,
-                            },
-                        )
+                if cart_discount_key in paired_discounts:
+                    # Add the discount code to the existing discount codes for the cart discount.
+                    paired_discounts[cart_discount_key].discount_codes[
+                        discount_code_key
+                    ] = discount_code
+                else:
+                    # Create a new paired discount with the cart discount and discount code.
+                    paired_discounts[cart_discount_key] = PairedDiscount(
+                        cart_discount=cart_discount,
+                        discount_codes={
+                            discount_code_key: discount_code,
+                        },
+                    )
 
         return paired_discounts
 
