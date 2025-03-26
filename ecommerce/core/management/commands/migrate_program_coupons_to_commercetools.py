@@ -12,7 +12,6 @@ from ecommerce.core.client import CommercetoolsAPIClient
 from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE, CT_PERCENTAGE_DISCOUNT_TYPE, ProxyClassDiscountType
 from ecommerce.invoice.models import Invoice
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -112,13 +111,10 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
             usage="Single use",
             num_orders=1,
         )
-        print(vouchers)
 
         voucher = vouchers.first()
         offer = voucher.best_offer
         program_uuid = offer.condition.program_uuid
-        print(program_uuid, offer.benefit, voucher)
-        print(offer.benefit.value)
 
         cart_discount = {
             "name": f'[Migrated Program Coupon] - {coupon.title}',
@@ -208,16 +204,16 @@ def _get_program_coupons(partner_id):
         offer_type=ConditionalOffer.VOUCHER,
         condition__program_uuid__isnull=False,
         partner_id=partner_id
+    ).exclude(
+        Q(benefit__type=Benefit.FIXED) |
+        Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
     )
 
     coupons = (
         Product.objects.filter(
             product_class__slug="coupon",
-            coupon_vouchers__vouchers__end_datetime__gt=timezone.now(),
+            coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
             coupon_vouchers__vouchers__offers__in=included_offers
-        )
-        .exclude(
-            Q(coupon_vouchers__vouchers__name__icontains="Financial Assistance")
         )
         .prefetch_related(
             Prefetch(
@@ -333,7 +329,7 @@ def _make_update_actions_by_comparing_discount_codes(
         )
 
     for key in ["validFrom", "validUntil"]:
-        if dateutil_parser.isoparse(
+        if not discount_in_ct.get(key) or dateutil_parser.isoparse(
             discount_in_ecommerce[key]
         ) != dateutil_parser.isoparse(discount_in_ct[key]):
             update_actions.append(

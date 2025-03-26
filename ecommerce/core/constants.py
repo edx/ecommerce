@@ -1,7 +1,6 @@
 """Constants core to the ecommerce app."""
 from enum import Enum
 
-
 ISO_8601_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 # Regex used to match course IDs.
