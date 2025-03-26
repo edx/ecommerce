@@ -140,7 +140,7 @@ def _map_voucher_criteria_to_cart_predicate(
             _map_list_to_ct_predicate_condition("attributes.mode", seat_types)
         )
 
-    if catalog_query:
+    if catalog_query and catalog_query not in ('*', 'key:(*)'):
         predicate = convert_querystring_to_predicate(
             catalog_query, site_configuration, summary_info
         ).strip()
@@ -186,7 +186,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         cart_discount = {
             "name": f"[Migrated] - {coupon.title}",
             "key": coupon.slug,
-            "description": _get_note_for_coupon(coupon),
+            "description": _get_note_for_coupon(coupon) or '',
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
                 "category": _get_category_for_coupon(coupon),
@@ -271,11 +271,12 @@ def _get_category_for_coupon(coupon) -> Optional[str]:
     return category
 
 
-def _get_non_multiuse_course_coupons():
+def _get_non_multiuse_course_coupons(partner_id):
     """
     Get non-multiuse course coupons from the database.
     """
     excluded_offers = ConditionalOffer.objects.filter(
+        ~Q(partner_id=partner_id) |
         Q(benefit__type=Benefit.FIXED) |
         Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00) |
         Q(condition__range__catalog_query__isnull=True)
@@ -409,7 +410,7 @@ def _make_update_actions_by_comparing_discount_codes(
         )
 
     for key in ["validFrom", "validUntil"]:
-        if dateutil_parser.isoparse(
+        if not discount_in_ct.get(key) or dateutil_parser.isoparse(
             discount_in_ecommerce[key]
         ) != dateutil_parser.isoparse(discount_in_ct[key]):
             update_actions.append(
@@ -634,7 +635,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     }
 
     site_configuration = SiteConfiguration.objects.first()
-    coupons = _get_non_multiuse_course_coupons()
+    coupons = _get_non_multiuse_course_coupons(site_configuration.partner_id)
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
         coupons, site_configuration, summary_info
     )
