@@ -2,7 +2,8 @@
 
 import logging
 import re
-from typing import Dict, List, Optional
+from collections import deque
+from typing import Deque, Dict, List, Optional, Tuple
 
 from dateutil import parser as dateutil_parser
 from django.core.management.base import BaseCommand, CommandError
@@ -46,8 +47,8 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     if not response:
         raise CommandError("Failed to get highest sort order. Exiting command.")
 
-    if response['count'] > 0:
-        return float(response['results'][0]['sortOrder'])
+    if response["count"] > 0:
+        return float(response["results"][0]["sortOrder"])
 
     return 0.00000001
 
@@ -108,12 +109,11 @@ def _map_voucher_criteria_to_cart_predicate(
     *,
     seat_types: Optional[str],
     email_domains: Optional[str],
-    catalog_query: Optional[str],
-    site_configuration,
-    summary_info: Dict,
+    query_predicate: str,
+    for_program: bool = False,
 ) -> str:
 
-    def _join_conditions(conditions: List[str]) -> str:
+    def _join_conditions(conditions: Deque[str]) -> str:
         return " and ".join(conditions)
 
     def _map_list_to_ct_predicate_condition(key: str, data: str) -> str:
@@ -129,31 +129,36 @@ def _map_voucher_criteria_to_cart_predicate(
 
         return f"{key} in ({values_string})"
 
-    cart_conditions = []
-    lineItemConditions = [
-        "quantity = 1",
-        "custom.bundleId is not defined",
-    ]
+    cart_conditions = deque()
+    lineItemConditions = deque()
 
     if seat_types:
         lineItemConditions.append(
             _map_list_to_ct_predicate_condition("attributes.mode", seat_types)
         )
 
-    if catalog_query and catalog_query not in ('*', 'key:(*)'):
-        predicate = convert_querystring_to_predicate(
-            catalog_query, site_configuration, summary_info
-        ).strip()
-        if predicate:
-            lineItemConditions.append(predicate)
-
-    cart_conditions.append(
-        f"lineItemCount({_join_conditions(lineItemConditions)}) = 1"
-    )
+    if query_predicate:
+        lineItemConditions.append(query_predicate)
 
     if email_domains:
         cart_conditions.append(
             _map_list_to_ct_predicate_condition("custom.emailDomain", email_domains)
+        )
+
+    if for_program:
+        lineItemConditions.appendleft("custom.bundleId is defined")
+        cart_conditions.appendleft(
+            f"forAllLineItems({_join_conditions(lineItemConditions)}) = true"
+        )
+    else:
+        lineItemConditions.extendleft(
+            [
+                "quantity = 1",
+                "custom.bundleId is not defined",
+            ]
+        )
+        cart_conditions.appendleft(
+            f"lineItemCount({_join_conditions(lineItemConditions)}) = 1"
         )
 
     cart_predicate = _join_conditions(cart_conditions)
@@ -183,10 +188,24 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         offer = voucher.best_offer
         offer_range = offer.condition.range
 
+        query_predicate = offer_range.catalog_query
+        if not query_predicate or query_predicate.strip() in ("*", "key:(*)"):
+            query_predicate = ""
+        else:
+            query_predicate = convert_querystring_to_predicate(
+                query_predicate, site_configuration, summary_info
+            ).strip()
+
+        name = (
+            f"[Migrated - Multiuse for Course] - {coupon.title}"
+            if voucher.usage == Voucher.MULTI_USE
+            else f"[Migrated] - {coupon.title}"
+        )
+
         cart_discount = {
-            "name": f"[Migrated] - {coupon.title}",
+            "name": name,
             "key": coupon.slug,
-            "description": _get_note_for_coupon(coupon) or '',
+            "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
                 "category": _get_category_for_coupon(coupon),
@@ -195,12 +214,26 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             "cartPredicate": _map_voucher_criteria_to_cart_predicate(
                 seat_types=offer_range.course_seat_types,
                 email_domains=offer.email_domains,
-                catalog_query=offer_range.catalog_query,
-                site_configuration=site_configuration,
-                summary_info=summary_info,
+                query_predicate=query_predicate,
             ),
             "value": _map_benefit_to_ct_value(offer.benefit),
         }
+
+        cart_discount_for_program = None
+        if voucher.usage == Voucher.MULTI_USE:
+            cart_discount_for_program = {
+                "name": f"[Migrated - Multiuse for Program] - {coupon.title}",
+                "key": f"program-{coupon.slug}",
+                "cartPredicate": _map_voucher_criteria_to_cart_predicate(
+                    seat_types=offer_range.course_seat_types,
+                    email_domains=offer.email_domains,
+                    query_predicate=query_predicate,
+                    for_program=True,
+                ),
+                "description": cart_discount["description"],
+                "customFields": cart_discount["customFields"],
+                "value": cart_discount["value"],
+            }
 
         discount_codes = [
             {
@@ -223,7 +256,14 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             if voucher.usage == "Single use" and voucher.num_orders == 1
         ]
 
-        results.append((cart_discount, discount_codes, excluded_discount_codes))
+        results.append(
+            (
+                cart_discount,
+                discount_codes,
+                excluded_discount_codes,
+                cart_discount_for_program,
+            )
+        )
     return results
 
 
@@ -271,13 +311,12 @@ def _get_category_for_coupon(coupon) -> Optional[str]:
     return category
 
 
-def _get_non_multiuse_course_coupons(partner_id):
+def _get_course_coupons(partner_id):
     """
-    Get non-multiuse course coupons from the database.
+    Get course coupons from the database.
     """
     excluded_offers = ConditionalOffer.objects.filter(
         ~Q(partner_id=partner_id) |
-        Q(benefit__type=Benefit.FIXED) |
         Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00) |
         Q(condition__range__catalog_query__isnull=True)
     )
@@ -289,7 +328,6 @@ def _get_non_multiuse_course_coupons(partner_id):
         )
         .exclude(
             Q(slug__in=["edxwelcome", "welcome-code-new2edx-30-724"]) |
-            Q(coupon_vouchers__vouchers__usage="Multi-use") |
             Q(coupon_vouchers__vouchers__offers__in=excluded_offers)
         )
         .prefetch_related(
@@ -427,12 +465,14 @@ def _generate_summary(summary_info: Dict) -> None:
 
     success_summary = {
         ("created", "Cart Discount"): "\n".join(
-            cart_discount["name"]
-            for cart_discount in summary_info["cart_discounts"]["created"]
+            discount_name
+            for discount_name in summary_info["cart_discounts"]["created"]
         ),
         ("updated", "Cart Discount"): "\n".join(
-            cart_discount["name"]
-            for cart_discount in summary_info["cart_discounts"]["updated"]
+            f"{discount_name} - Update actions: {update_actions}"
+            for discount_name, update_actions in summary_info["cart_discounts"][
+                "updated"
+            ]
         ),
         ("created", "Discount Code"): "\n".join(
             f"{discount_code['code']} - {discount_code['name']}"
@@ -480,15 +520,53 @@ def _generate_summary(summary_info: Dict) -> None:
         raise CommandError("Command run completed with errors.")
 
 
+def _create_cart_discount(
+    *,
+    client: CommercetoolsAPIClient,
+    cart_discount: Dict,
+    sort_order: float,
+    summary_info,
+    for_program: bool = False,
+) -> Tuple:
+    target = (
+        {"type": "lineItems", "predicate": "1=1"}
+        if for_program
+        else {"type": "totalPrice"}
+    )
+
+    cart_discount_response = client.create_cart_discount(
+        sortOrder=sort_order, target=target, **cart_discount
+    )
+
+    if not cart_discount_response:
+        logger.error(
+            f"Failed to create cart discount with name: {cart_discount['name']}."
+        )
+        summary_info["cart_discounts"]["failed"].append(
+            {
+                "name": cart_discount["name"],
+                "reason": "Error while creating cart discount.",
+            }
+        )
+        return None, sort_order
+
+    sort_order += 0.00000001
+    logger.info(
+        f"Cart discount created successfully with name: {cart_discount['name']}."
+    )
+    summary_info["cart_discounts"]["created"].append(cart_discount["name"])
+    return cart_discount_response["id"], sort_order
+
+
 def _create_discount_code(
     *,
     client: CommercetoolsAPIClient,
-    cart_discount_id: str,
+    cart_discount_ids: List[str],
     discount_code: Dict,
     summary_info: Dict,
 ) -> None:
     discount_code_response = client.create_discount_code(
-        cartDiscountId=cart_discount_id, **discount_code
+        cartDiscountIds=cart_discount_ids, **discount_code
     )
 
     if discount_code_response:
@@ -513,13 +591,9 @@ def _update_existing_cart_discount(
     *,
     client: CommercetoolsAPIClient,
     cart_discount: Dict,
-    discount_codes: List[Dict],
-    excluded_discount_codes: List[str],
-    existing_discount_in_ct: PairedDiscount,
+    cart_discount_in_ct: Dict,
     summary_info: Dict,
 ) -> None:
-    cart_discount_in_ct, discount_codes_in_ct = existing_discount_in_ct
-
     update_actions_for_cart_discount = (
         _make_update_actions_by_comparing_cart_discounts(
             discount_in_ecommerce=cart_discount,
@@ -547,7 +621,49 @@ def _update_existing_cart_discount(
             )
             return
 
-        summary_info["cart_discounts"]["updated"].append(cart_discount)
+        summary_update_actions = ", ".join(
+            update_action["action"]
+            for update_action in update_actions_for_cart_discount
+        )
+
+        summary_info["cart_discounts"]["updated"].append(
+            (cart_discount["name"], summary_update_actions)
+        )
+
+
+def _update_existing_discount(
+    *,
+    client: CommercetoolsAPIClient,
+    cart_discount: Dict,
+    cart_discount_for_program: Dict,
+    discount_codes: List[Dict],
+    excluded_discount_codes: List[str],
+    existing_discount_in_ct: PairedDiscount,
+    existing_discount_in_ct_for_program: Optional[PairedDiscount],
+    summary_info: Dict,
+) -> None:
+    cart_discount_in_ct, discount_codes_in_ct = existing_discount_in_ct
+    cart_discount_ids = [cart_discount_in_ct["id"]]
+
+    _update_existing_cart_discount(
+        client=client,
+        cart_discount=cart_discount,
+        cart_discount_in_ct=cart_discount_in_ct,
+        summary_info=summary_info,
+    )
+
+    if cart_discount_for_program and existing_discount_in_ct_for_program:
+        cart_discount_in_ct_for_program = (
+            existing_discount_in_ct_for_program.cart_discount
+        )
+        cart_discount_ids.append(cart_discount_in_ct_for_program["id"])
+
+        _update_existing_cart_discount(
+            client=client,
+            cart_discount=cart_discount_for_program,
+            cart_discount_in_ct=cart_discount_in_ct_for_program,
+            summary_info=summary_info,
+        )
 
     for discount_code in discount_codes:
         discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
@@ -585,7 +701,7 @@ def _update_existing_cart_discount(
         else:
             _create_discount_code(
                 client=client,
-                cart_discount_id=cart_discount_in_ct["id"],
+                cart_discount_ids=cart_discount_ids,
                 discount_code=discount_code,
                 summary_info=summary_info,
             )
@@ -635,7 +751,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     }
 
     site_configuration = SiteConfiguration.objects.first()
-    coupons = _get_non_multiuse_course_coupons(site_configuration.partner_id)
+    coupons = _get_course_coupons(site_configuration.partner_id)
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
         coupons, site_configuration, summary_info
     )
@@ -645,18 +761,31 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     sort_order += 0.00000001
 
     if not existing_discounts_in_ct:
-        raise CommandError("Failed to get existing discounts from Commercetools. Exiting command.")
+        raise CommandError(
+            "Failed to get existing discounts from Commercetools. Exiting command."
+        )
 
-    for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:
+    for (
+        cart_discount,
+        discount_codes,
+        excluded_discount_codes,
+        cart_discount_for_program,
+    ) in mapped_discounts:
         if cart_discount["key"] in existing_discounts_in_ct:
-            _update_existing_cart_discount(
+            _update_existing_discount(
                 client=client,
                 cart_discount=cart_discount,
+                cart_discount_for_program=cart_discount_for_program,
                 discount_codes=discount_codes,
                 excluded_discount_codes=excluded_discount_codes,
                 existing_discount_in_ct=existing_discounts_in_ct[
                     cart_discount["key"]
                 ],
+                existing_discount_in_ct_for_program=(
+                    existing_discounts_in_ct[cart_discount_for_program["key"]]
+                    if cart_discount_for_program
+                    else None
+                ),
                 summary_info=summary_info,
             )
         else:
@@ -664,34 +793,35 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
                 # No need to create cart discount if there are no discount codes.
                 continue
 
-            cart_discount_response = client.create_cart_discount(
-                sortOrder=sort_order,
-                target={"type": "totalPrice"},
-                **cart_discount
-            )
+            cart_discount_ids = []
 
-            if not cart_discount_response:
-                logger.error(
-                    f"Failed to create cart discount with name: {cart_discount['name']}."
+            cart_discount_id, sort_order = _create_cart_discount(
+                client=client,
+                cart_discount=cart_discount,
+                sort_order=sort_order,
+                summary_info=summary_info,
+            )
+            if cart_discount_id:
+                cart_discount_ids.append(cart_discount_id)
+
+            if cart_discount_for_program:
+                cart_discount_id, sort_order = _create_cart_discount(
+                    client=client,
+                    cart_discount=cart_discount_for_program,
+                    sort_order=sort_order,
+                    summary_info=summary_info,
+                    for_program=True,
                 )
-                summary_info["cart_discounts"]["failed"].append(
-                    {
-                        "name": cart_discount["name"],
-                        "reason": "Error while creating cart discount.",
-                    }
-                )
+                if cart_discount_id:
+                    cart_discount_ids.append(cart_discount_id)
+
+            if not cart_discount_ids:
                 continue
-
-            sort_order += 0.00000001
-            logger.info(
-                f"Cart discount created successfully with name: {cart_discount['name']}."
-            )
-            summary_info["cart_discounts"]["created"].append(cart_discount)
 
             for discount_code in discount_codes:
                 _create_discount_code(
                     client=client,
-                    cart_discount_id=cart_discount_response["id"],
+                    cart_discount_ids=cart_discount_ids,
                     discount_code=discount_code,
                     summary_info=summary_info,
                 )
