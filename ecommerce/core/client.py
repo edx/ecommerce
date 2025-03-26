@@ -261,7 +261,7 @@ class CommercetoolsAPIClient:
             "value": value,
             "cartPredicate": cartPredicate,
             "target": target,
-            "sortOrder": f"{sortOrder:.14f}".rstrip("0").rstrip("."),
+            "sortOrder": f"{sortOrder:.11f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": True,
             "stackingMode": "StopAfterThisDiscount",
