@@ -1,4 +1,5 @@
 """Constants core to the ecommerce app."""
+
 from enum import Enum
 
 ISO_8601_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -396,6 +397,7 @@ class UnavailabilityMessage:
     """Messages to be logged when services are unavailable."""
     DATABASE = 'Unable to connect to database'
     LMS = 'Unable to connect to LMS'
+
 
 class ProxyClassDiscountType(Enum):
     """Enumeration of discount types in the proxy class."""

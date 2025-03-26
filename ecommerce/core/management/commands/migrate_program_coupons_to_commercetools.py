@@ -36,7 +36,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
         float: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-       where='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+        where='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
     )
 
     if not response:
