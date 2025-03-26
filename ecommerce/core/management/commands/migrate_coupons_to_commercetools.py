@@ -110,6 +110,7 @@ def _map_voucher_criteria_to_cart_predicate(
     email_domains: Optional[str],
     catalog_query: Optional[str],
     site_configuration,
+    summary_info: Dict,
 ) -> str:
 
     def _join_conditions(conditions: List[str]) -> str:
@@ -141,7 +142,7 @@ def _map_voucher_criteria_to_cart_predicate(
 
     if catalog_query:
         predicate = convert_querystring_to_predicate(
-            catalog_query, site_configuration
+            catalog_query, site_configuration, summary_info
         ).strip()
         if predicate:
             lineItemConditions.append(predicate)
@@ -161,7 +162,7 @@ def _map_voucher_criteria_to_cart_predicate(
 
 
 def _map_coupons_to_ct_cart_discounts_and_discount_codes(
-    coupons, site_configuration
+    coupons, site_configuration, summary_info
 ) -> List:
     """
     Map coupons to Commercetools cart discounts and discount codes.
@@ -196,6 +197,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
                 email_domains=offer.email_domains,
                 catalog_query=offer_range.catalog_query,
                 site_configuration=site_configuration,
+                summary_info=summary_info,
             ),
             "value": _map_benefit_to_ct_value(offer.benefit),
         }
@@ -617,20 +619,6 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
     """
-
-    site_configuration = SiteConfiguration.objects.first()
-    coupons = _get_non_multiuse_course_coupons()
-    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
-        coupons, site_configuration
-    )
-
-    existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    sort_order = _get_highest_sort_order(client)
-    sort_order += 0.00000001
-
-    if not existing_discounts_in_ct:
-        raise CommandError("Failed to get existing discounts from Commercetools. Exiting command.")
-
     summary_info = {
         "cart_discounts": {
             "created": [],
@@ -644,6 +632,19 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
             "deleted": [],
         },
     }
+
+    site_configuration = SiteConfiguration.objects.first()
+    coupons = _get_non_multiuse_course_coupons()
+    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
+        coupons, site_configuration, summary_info
+    )
+
+    existing_discounts_in_ct = client.get_ct_discounts_with_code()
+    sort_order = _get_highest_sort_order(client)
+    sort_order += 0.00000001
+
+    if not existing_discounts_in_ct:
+        raise CommandError("Failed to get existing discounts from Commercetools. Exiting command.")
 
     for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:
         if cart_discount["key"] in existing_discounts_in_ct:
