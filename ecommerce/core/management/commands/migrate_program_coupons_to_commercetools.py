@@ -113,10 +113,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
             ...
 
         # Exclude consumed vouchers
-        vouchers = coupon.attr.coupon_vouchers.vouchers.exclude(
-            usage="Single use",
-            num_orders=1,
-        )
+        vouchers = coupon.attr.coupon_vouchers.vouchers
 
         voucher = vouchers.first()
         offer = voucher.best_offer
@@ -151,9 +148,16 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
                 ),
             }
             for voucher in vouchers.all()
+            if not (voucher.usage == "Single use" and voucher.num_orders == 1)
         ]
 
-        results.append((cart_discount, discount_codes))
+        excluded_discount_codes = [
+            voucher.code
+            for voucher in vouchers.all()
+            if voucher.usage == "Single use" and voucher.num_orders == 1
+        ]
+
+        results.append((cart_discount, discount_codes, excluded_discount_codes))
     return results
 
 
@@ -455,7 +459,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 }
             )
 
-    for cart_discount, discount_codes in mapped_discounts:  # pylint: disable=too-many-nested-blocks
+    for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:  # pylint: disable=too-many-nested-blocks
         if cart_discount["key"] in existing_discounts_in_ct:
             cart_discount_in_ct, discount_codes_in_ct = existing_discounts_in_ct[
                 cart_discount["key"]
@@ -524,7 +528,31 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 else:
                     _migrate_discount_code(discount_code, cart_discount_in_ct["id"])
 
+            for discount_code_key in excluded_discount_codes:
+                discount_code_in_ct = discount_codes_in_ct.get(discount_code_key)
+
+                if discount_code_in_ct:
+                    discount_code_response = client.delete_discount_code_by_key(
+                        discount_code_key, discount_code_in_ct["version"]
+                    )
+
+                    if not discount_code_response:
+                        logger.error(
+                            f"Failed to delete discount code with code: {discount_code_key}."
+                        )
+                        summary_info["discount_codes"]["failed"].append(
+                            {
+                                "name": discount_code_in_ct["name"],
+                                "code": discount_code_in_ct["code"],
+                                "reason": "Error while deleting discount code.",
+                            }
+                        )
+                        continue
         else:
+            if not discount_codes:
+                # No need to create cart discount if there are no discount codes.
+                continue
+
             cart_discount_response = client.create_cart_discount(sortOrder=sort_order, **cart_discount)
 
             if not cart_discount_response:
