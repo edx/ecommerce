@@ -74,22 +74,27 @@ def _map_benefit_to_ct_value(benefit):
     }[benefit.proxy_class]
 
 
-def _map_voucher_usage_to_ct_code_applications(usage, max_global_applications):
+def _map_voucher_usage_to_ct_code_applications(voucher, max_global_applications):
     """
     Map Voucher usage to Commercetools code applications.
     """
+    max_applications = (
+        (max_global_applications) - voucher.num_orders
+        if max_global_applications
+        else None
+    )
     return {
         "Single use": {
             "maxApplications": 1,
         },
         "Multi-use": {
-            "maxApplications": max_global_applications,
+            "maxApplications": max_applications,
         },
         "Once per customer": {
-            "maxApplications": max_global_applications,
+            "maxApplications": max_applications,
             "maxApplicationsPerCustomer": 1,
         },
-    }[usage]
+    }[voucher.usage]
 
 
 def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
@@ -142,7 +147,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
                 "validFrom": voucher.start_datetime.isoformat(),
                 "validUntil": voucher.end_datetime.isoformat(),
                 **_map_voucher_usage_to_ct_code_applications(
-                    voucher.usage, offer.max_global_applications
+                    voucher, offer.max_global_applications
                 ),
             }
             for voucher in vouchers.all()
