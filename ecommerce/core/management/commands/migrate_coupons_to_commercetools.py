@@ -153,8 +153,8 @@ def _map_voucher_criteria_to_cart_predicate(
     else:
         lineItemConditions.extendleft(
             [
-                "quantity = 1",
                 "custom.bundleId is not defined",
+                "quantity = 1",
             ]
         )
         cart_conditions.appendleft(
@@ -197,9 +197,9 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             ).strip()
 
         name = (
-            f"[Migrated - Multiuse for Course] - {coupon.title}"
+            f"[Migrated - Multiuse Course Discount] - {coupon.title}"
             if voucher.usage == Voucher.MULTI_USE
-            else f"[Migrated] - {coupon.title}"
+            else f"[Migrated - Course Discount] - {coupon.title}"
         )
 
         cart_discount = {
