@@ -120,7 +120,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
         cart_discount = {
             "name": f'[Migrated Program Coupon] - {coupon.title}',
             "key": coupon.slug,
-            "description": _get_note_for_coupon(coupon),
+            "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
                 "category": _get_category_for_coupon(coupon),
@@ -208,8 +208,10 @@ def _get_program_coupons(partner_id):
         condition__program_uuid__isnull=False,
         partner_id=partner_id
     ).exclude(
-        benefit__type=Benefit.PERCENTAGE, benefit__value=100.00
+        Q(benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value, benefit__value=100.00) |
+        Q(benefit__value=0.00)
     )
+    print(included_offers)
 
     coupons = (
         Product.objects.filter(
@@ -426,9 +428,9 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
         },
     }
 
-    def _migrate_discount_code(discount_code, cartDiscountId):
+    def _migrate_discount_code(discount_code, cart_discount_id):
         discount_code_response = client.create_discount_code(
-            cartDiscountId=cartDiscountId, **discount_code
+            cartDiscountIds=[cart_discount_id], **discount_code
         )
 
         if discount_code_response:
