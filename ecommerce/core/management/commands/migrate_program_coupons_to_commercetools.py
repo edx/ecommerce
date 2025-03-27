@@ -101,7 +101,8 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
     for coupon in coupons:
         try:
             if coupon.attr.inactive:
-                logger.info(f"Skipping coupon {coupon.title} as it is inactive")
+                log_message = f"Skipping coupon {coupon.title} as it is inactive"
+                logger.info(log_message)
                 continue
         except AttributeError:
             ...
@@ -163,7 +164,8 @@ def _get_client_for_coupon(coupon) -> Optional[str]:
         client = None
 
     if not client:
-        logger.warn(f"Client not found for coupon {coupon.title}.")
+        log_message = f"Client not found for coupon {coupon.title}."
+        logger.info(log_message)
 
     return client
 
@@ -190,7 +192,8 @@ def _get_category_for_coupon(coupon) -> Optional[str]:
         category = None
 
     if not category:
-        logger.warn(f"Category not found for coupon {coupon.title}.")
+        log_message = f"Category not found for coupon {coupon.title}."
+        logger.info(log_message)
 
     return category
 
@@ -205,8 +208,7 @@ def _get_program_coupons(partner_id):
         condition__program_uuid__isnull=False,
         partner_id=partner_id
     ).exclude(
-        Q(benefit__type=Benefit.FIXED) |
-        Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
+        benefit__type=Benefit.PERCENTAGE, benefit__value=100.00
     )
 
     coupons = (
@@ -364,7 +366,8 @@ def _generate_summary(summary_info):
 
     for key, value in success_summary.items():
         humanized = " ".join(key.capitalize() for key in key.split("_"))
-        logger.info(f"\nSummary of {humanized}:\n{value}\n")
+        log_message = f"\nSummary of {humanized}:\n{value}\n"
+        logger.info(log_message)
 
     if (
         summary_info["cart_discounts"]["failed"] or
@@ -390,7 +393,7 @@ def _generate_summary(summary_info):
         raise CommandError("Command run completed with errors.")
 
 
-def _migrate_program_coupons(client: CommercetoolsAPIClient):
+def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable=too-many-statements
     """
     Migrate program coupons to Commercetools.
 
@@ -429,14 +432,14 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
         )
 
         if discount_code_response:
-            logger.info(
-                f"Discount code created successfully with name: {discount_code['name']} and code: {discount_code['code']}."
-            )
+            log_message = f"Discount code created successfully with name: {discount_code['name']}"
+            log_message += f" and code: {discount_code['code']}."
+            logger.info(log_message)
             summary_info["discount_codes"]["created"].append(discount_code)
         else:
-            logger.error(
-                f"Failed to create discount code with name: {discount_code['name']} and code: {discount_code['code']}."
-            )
+            log_message = f"Failed to create discount code with name: {discount_code['name']}"
+            log_message += f" and code: {discount_code['code']}."
+            logger.error(log_message)
             summary_info["discount_codes"]["failed"].append(
                 {
                     "name": discount_code["name"],
@@ -445,7 +448,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
                 }
             )
 
-    for cart_discount, discount_codes in mapped_discounts:
+    for cart_discount, discount_codes in mapped_discounts:  # pylint: disable=too-many-nested-blocks
         if cart_discount["key"] in existing_discounts_in_ct:
             cart_discount_in_ct, discount_codes_in_ct = existing_discounts_in_ct[
                 cart_discount["key"]
@@ -467,9 +470,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
                 )
 
                 if not cart_discount_response:
-                    logger.error(
-                        f"Failed to update cart discount with name: {cart_discount['name']}."
-                    )
+                    log_message = f"Failed to update cart discount with name: {cart_discount['name']}."
+                    logger.error(log_message)
                     summary_info["cart_discounts"]["failed"].append(
                         {
                             "name": cart_discount["name"],
@@ -498,9 +500,9 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
                         )
 
                         if not discount_code_response:
-                            logger.error(
-                                f"Failed to update discount code with name: {discount_code['name']} and code: {discount_code['code']}."
-                            )
+                            log_message = f"Failed to update discount code with name: {discount_code['name']}"
+                            log_message += f" and code: {discount_code['code']}."
+                            logger.error(log_message)
                             summary_info["discount_codes"]["failed"].append(
                                 {
                                     "name": discount_code["name"],
@@ -519,9 +521,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
             cart_discount_response = client.create_cart_discount(sortOrder=sort_order, **cart_discount)
 
             if not cart_discount_response:
-                logger.error(
-                    f"Failed to create cart discount with name: {cart_discount['name']}."
-                )
+                log_message = f"Failed to create cart discount with name: {cart_discount['name']}."
+                logger.error(log_message)
                 summary_info["cart_discounts"]["failed"].append(
                     {
                         "name": cart_discount["name"],
@@ -532,9 +533,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):
 
             sort_order += 0.00000000001
 
-            logger.info(
-                f"Cart discount created successfully with name: {cart_discount['name']}."
-            )
+            log_message = f"Cart discount created successfully with name: {cart_discount['name']}."
+            logger.info(log_message)
             summary_info["cart_discounts"]["created"].append(cart_discount)
 
             for discount_code in discount_codes:
