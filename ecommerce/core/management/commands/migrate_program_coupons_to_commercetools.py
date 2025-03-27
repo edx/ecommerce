@@ -537,9 +537,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                     )
 
                     if not discount_code_response:
-                        logger.error(
-                            f"Failed to delete discount code with code: {discount_code_key}."
-                        )
+                        log_message = f"Failed to delete discount code with code: {discount_code_key}."
+                        logger.error(log_message)
                         summary_info["discount_codes"]["failed"].append(
                             {
                                 "name": discount_code_in_ct["name"],
@@ -549,9 +548,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                         )
                         continue
 
-                    logger.info(
-                        f"Discount code deleted successfully with code: {discount_code_key}."
-                    )
+                    log_message = f"Discount code deleted successfully with code: {discount_code_key}."
+                    logger.info(log_message)
         else:
             if not discount_codes:
                 # No need to create cart discount if there are no discount codes.
