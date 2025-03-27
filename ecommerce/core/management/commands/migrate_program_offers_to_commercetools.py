@@ -1,6 +1,5 @@
 import logging
 import re
-from enum import Enum
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -15,7 +14,8 @@ from ecommerce.core.constants import (
     CT_PERCENTAGE_DISCOUNT_TYPE,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
-    TEN_PERCENT_DISCOUNT_IN_CENTS
+    TEN_PERCENT_DISCOUNT_IN_CENTS,
+    ProxyClassDiscountType
 )
 from ecommerce.programs.utils import get_all_program_uuids
 
@@ -30,13 +30,6 @@ CT_CART_DISCOUNT_TYPE_MAP = {
     Benefit.FIXED: CT_ABSOLUTE_DISCOUNT_TYPE,
     Benefit.PERCENTAGE: CT_PERCENTAGE_DISCOUNT_TYPE
 }
-
-
-class ProxyClassDiscountType(Enum):
-    """Enumeration of discount types in the proxy class."""
-
-    PERCENTAGE = "ecommerce.programs.benefits.PercentageDiscountBenefitWithoutRange"
-    ABSOLUTE = "ecommerce.programs.benefits.AbsoluteDiscountBenefitWithoutRange"
 
 
 def _get_highest_sort_order(client: CommercetoolsAPIClient):
@@ -189,9 +182,8 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
     Returns:
         str: Target predicate for the cart discount.
     """
-    predicate = "custom.bundleId is defined and "
-
     if is_ten_percent_discount:
+        predicate = "custom.bundleId is defined and "
         predicate += "("
         predicate += " and ".join([f"custom.bundleId != \"{program_uuid}\"" for program_uuid in program_uuids])
         predicate += ")"

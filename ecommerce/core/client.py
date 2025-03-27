@@ -117,7 +117,7 @@ class CommercetoolsAPIClient:
         paired_discounts: Dict[str, PairedDiscount] = {}
         for discount_code in results:
             cart_discounts = discount_code.get("cartDiscounts", [{}])
-            discount_code = {
+            discount_code_data = {
                 "key": discount_code.get("key"),
                 "name": discount_code.get("name", {}).get("en-US"),
                 "code": discount_code.get("code"),
@@ -126,7 +126,7 @@ class CommercetoolsAPIClient:
                 "maxApplications": discount_code.get("maxApplications"),
                 "version": discount_code.get("version"),
             }
-            discount_code_key = discount_code["key"]
+            discount_code_key = discount_code_data["key"]
 
             for discount in cart_discounts:
                 cart_discount = discount.get("obj")
@@ -150,13 +150,13 @@ class CommercetoolsAPIClient:
                         # Add the discount code to the existing discount codes for the cart discount.
                         paired_discounts[cart_discount_key].discount_codes[
                             discount_code_key
-                        ] = discount_code
+                        ] = discount_code_data
                     else:
                         # Create a new paired discount with the cart discount and discount code.
                         paired_discounts[cart_discount_key] = PairedDiscount(
                             cart_discount=cart_discount,
                             discount_codes={
-                                discount_code_key: discount_code,
+                                discount_code_key: discount_code_data,
                             },
                         )
 
@@ -268,7 +268,7 @@ class CommercetoolsAPIClient:
             "value": value,
             "cartPredicate": cartPredicate,
             "target": target,
-            "sortOrder": f"{sortOrder:.8f}".rstrip("0").rstrip("."),
+            "sortOrder": f"{sortOrder:.11f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": True,
             "stackingMode": "StopAfterThisDiscount",
