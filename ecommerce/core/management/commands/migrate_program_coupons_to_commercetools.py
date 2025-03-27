@@ -220,7 +220,6 @@ def _get_program_coupons(partner_id):
         Q(benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value, benefit__value=100.00) |
         Q(benefit__value=0.00)
     )
-    print(included_offers)
 
     coupons = (
         Product.objects.filter(
@@ -548,6 +547,10 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                             }
                         )
                         continue
+
+                    logger.info(
+                        f"Discount code deleted successfully with code: {discount_code_key}."
+                    )
         else:
             if not discount_codes:
                 # No need to create cart discount if there are no discount codes.
