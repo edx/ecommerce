@@ -458,7 +458,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 }
             )
 
-    for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:  # pylint: disable=too-many-nested-blocks
+    # pylint: disable=too-many-nested-blocks
+    for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:
         if cart_discount["key"] in existing_discounts_in_ct:
             cart_discount_in_ct, discount_codes_in_ct = existing_discounts_in_ct[
                 cart_discount["key"]
