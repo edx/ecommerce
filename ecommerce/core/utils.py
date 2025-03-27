@@ -1,5 +1,3 @@
-
-
 import logging
 import re
 from urllib.parse import parse_qs, urlparse
@@ -485,7 +483,7 @@ def _fetch_catalog_course_runs(query, limit, site_configuration):
     from ecommerce.coupons.utils import get_catalog_course_runs  # pylint: disable=import-outside-toplevel
 
     try:
-        response = get_catalog_course_runs(site=site_configuration, query=query, limit=limit, offset=0)
+        response = get_catalog_course_runs(site=site_configuration.site, query=query, limit=limit, offset=0)
         results = response['results']
         course_ids = [result['key'] for result in results]
         return course_ids
@@ -533,7 +531,7 @@ def _concat_operator(operator):
     return f' {operator} ' if (operator is not None) else ''
 
 
-def _process_query_string(query, site_configuration):
+def _process_query_string(query, site_configuration, summary_info):
     """
     Processes a query string by detecting its type and generating the corresponding predicate.
 
@@ -549,6 +547,7 @@ def _process_query_string(query, site_configuration):
         'org:', 'number:', 'key:', or 'start:'.
         site_configuration (object): Configuration object required for some query
         handlers (e.g., 'number' and 'key').
+        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A processed predicate string for use in further filtering or querying.
@@ -590,7 +589,7 @@ def _process_query_string(query, site_configuration):
         query_type = _detect_string_type(component)
 
         if query_type in query_handlers_with_site_config:
-            predicate += query_handlers_with_site_config[query_type](component, site_configuration)
+            predicate += query_handlers_with_site_config[query_type](component, site_configuration, summary_info)
             predicate += _concat_operator(operator)
 
         elif query_type in query_handlers_without_site_config:
@@ -598,7 +597,11 @@ def _process_query_string(query, site_configuration):
             predicate += _concat_operator(operator)
 
         else:
-            logger.info('No match found for %s', component)
+            logger.error('Query type not handled in _process_query_string: %s', component)
+            summary_info["cart_discounts"]["failed"].append({
+                "name": component,
+                "reason": f"Query type not handled in _process_query_string: '{component}'"
+            })
 
     return predicate
 
@@ -653,18 +656,51 @@ def _convert_date_range_to_predicate(date_range):
     return predicate
 
 
-def _process_number(component, site_configuration):
+def _has_wildcards_or_negatives(component):
+    """
+    Check if the component contains wildcards or negative signs in course keys.
+    Only checks for negative signs within individual course keys after the prefix (key:, number:, etc.).
+
+    Args:
+        component (str): The component to check (e.g., "key:(-edx+DemoX AND -edx+InjuryPrevention)")
+
+    Returns:
+        bool: True if wildcards are found or negative signs are present in course keys, False otherwise.
+    """
+    if any(char in component for char in ['*', '?']) or component.startswith('-'):
+        return True
+
+    if ':' in component:
+        component = component.split(':', 1)[1].strip()
+
+    component = component.strip('()')
+    parts = re.split(r'\s+(?:AND|OR)\s+', component, flags=re.IGNORECASE)
+
+    # Checking each part for negative signs in keys
+    for part in parts:
+        part = part.strip()
+        key_parts = part.split('+')
+
+        if any(key_part.strip().startswith('-') for key_part in key_parts):
+            return True
+
+    return False
+
+
+def _process_number(component, site_configuration, summary_info):
     """
     Processes a course number component to generate a corresponding query predicate.
 
     This function checks if the provided component exists in the `KEY_TO_PREDICATE_DICT`
     dictionary and returns the corresponding predicate if found. If not found, it queries
     the catalog API to fetch course run IDs and generates a predicate using those IDs.
+    If the component contains wildcards or starts with a negative sign, it skips the fetch call and logs an error.
 
     Args:
         component (str): The course number component to be processed.
         site_configuration (object): The site configuration object used to interact
                                      with the catalog API.
+        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A predicate string representing the course number in the format:
@@ -672,14 +708,29 @@ def _process_number(component, site_configuration):
              course runs are found.
 
     Example:
-        >>> process_number("edX+CS50", site_configuration)
+        >>> process_number("edX+CS50", site_configuration, summary_info)
         'product.key in ("edX+CS50")'
 
-        >>> process_number("unknown_course", site_configuration)
+        >>> process_number("unknown_course", site_configuration, summary_info)
         ''
     """
     if component in KEY_TO_PREDICATE_DICT:
         return KEY_TO_PREDICATE_DICT[component]
+
+    logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
+
+    if _has_wildcards_or_negatives(component):
+        logger.error('Query contains wildcards or negative signs: %s', component)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": component,
+            "reason": f"Query contains wildcards or negative signs: '{component}'"
+        })
+        return ''
+
+    summary_info["cart_discounts"]["failed"].append({
+        "name": component,
+        "reason": f"Key '{component}' not found in KEY_TO_PREDICATE_DICT"
+    })
 
     course_ids = _fetch_catalog_course_runs(component, 1, site_configuration)
     if course_ids:
@@ -687,7 +738,7 @@ def _process_number(component, site_configuration):
     return ''
 
 
-def _process_key(component, site_configuration):
+def _process_key(component, site_configuration, summary_info):
     """
     Processes a key component to generate a corresponding query predicate.
 
@@ -695,11 +746,13 @@ def _process_key(component, site_configuration):
     dictionary and returns the corresponding predicate if found. If not, it modifies the
     key values, fetches matching course run IDs from the catalog API, and generates a
     predicate using the retrieved course runs.
+    If the component contains wildcards or starts with a negative sign, it skips the fetch call and logs an error.
 
     Args:
         component (str): The key component to be processed.
         site_configuration (object): The site configuration object used to interact
                                      with the catalog API.
+        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A predicate string representing the course key. If the component is not
@@ -707,14 +760,29 @@ def _process_key(component, site_configuration):
              returns an empty string.
 
     Example:
-        >>> process_key("edX+CS50", site_configuration)
+        >>> process_key("edX+CS50", site_configuration, summary_info)
         'variant.key in ("edX+CS50")'
 
-        >>> process_key("unknown_key", site_configuration)
+        >>> process_key("-unknown_key", site_configuration, summary_info)
         ''
     """
     if component in KEY_TO_PREDICATE_DICT:
         return KEY_TO_PREDICATE_DICT[component]
+
+    logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
+
+    if _has_wildcards_or_negatives(component):
+        logger.error('Query contains wildcards or negative signs: %s', component)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": component,
+            "reason": f"Query contains wildcards or negative signs: '{component}'"
+        })
+        return ''
+
+    summary_info["cart_discounts"]["failed"].append({
+        "name": component,
+        "reason": f"Key '{component}' not found in KEY_TO_PREDICATE_DICT"
+    })
 
     modified_str, all_changed_operators = _modify_key_values(component)
     course_ids = _fetch_catalog_course_runs(modified_str, 10000, site_configuration)
@@ -740,13 +808,25 @@ def _query_cleaning_process(query):
     return query
 
 
-def convert_querystring_to_predicate(query, site_configuration):
+def convert_querystring_to_predicate(query, site_configuration, summary_info):
+    """
+    Convert a catalog querystring to a Commercetools predicate.
 
+    Args:
+        query (str): Catalog querystring.
+        site_configuration: SiteConfiguration.
+        summary_info (Dict): The summary information to be updated.
+
+    Returns:
+        str: Commercetools predicate converted from catalog querystring.
+    """
     cleaned_query = _query_cleaning_process(query)
     logger.info('Query to be processed: %s', cleaned_query)
 
-    processed_query = _process_query_string(cleaned_query, site_configuration)
+    processed_query = _process_query_string(cleaned_query, site_configuration, summary_info)
     predicate = _remove_leading_trailing_and_or(processed_query)
 
-    logger.info('Query to be converted into predicate: %s', predicate)
+    if predicate:
+        logger.info('Catalog querystring converted into predicate: %s', predicate)
+
     return predicate
