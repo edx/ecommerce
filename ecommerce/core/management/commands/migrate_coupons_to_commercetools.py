@@ -222,7 +222,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         cart_discount_for_program = None
         if voucher.usage == Voucher.MULTI_USE:
             cart_discount_for_program = {
-                "name": f"[Migrated - Multiuse for Program] - {coupon.title}",
+                "name": f"[Migrated - Multiuse Program Discount] - {coupon.title}",
                 "key": f"program-{coupon.slug}",
                 "cartPredicate": _map_voucher_criteria_to_cart_predicate(
                     seat_types=offer_range.course_seat_types,
