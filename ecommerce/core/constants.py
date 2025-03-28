@@ -85,7 +85,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("AlaskaX+GRANT1x" OR "AlaskaX+GRANT2x" OR "AlaskaX+GRANT3x")':
     'product.key in ("AlaskaX+GRANT3x", "AlaskaX+GRANT2x", "AlaskaX+GRANT1x") ',
     'key: ("MITx+CTL.SC0x" OR "MITx+CTL.SC1x" OR "MITx+CTL.SC2x" OR "MITx+CTL.SC3x" OR "MITx+CTL.SC4x")':
-    'product.key in ("MITx+CTL.SC2x", "MITx+CTL.SC4x", "MITx+CTL.SC3x", "MITx+CTL.SC0x") ',
+    'product.key in ("MITx+CTL.SC0x", "MITx+CTL.SC1x", "MITx+CTL.SC2x", "MITx+CTL.SC3x", "MITx+CTL.SC4x") ',
     'key: "W3Cx+JS.0x"': 'product.key in ("W3Cx+JS.0x") ',
     'key: "RICEx+RiceSBE01"': 'product.key in ("RICEx+RiceSBE01") ',
     'key: "Statistics.comX+MLOps2-GCP"': 'product.key in ("Statistics.comX+MLOps2-GCP") ',
@@ -119,9 +119,9 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("AdelaideX+PolyTraX" OR "AdelaideX+SpecTraX" OR "AdelaideX+DiffTraX"'
     ' OR "AdelaideX+InteTraX" OR "AdelaideX+ProbTraX" OR "AdelaideX+StatTraX"'
     ' OR "AdelaideX+MathTrackX")':
-    'product.key in ("AdelaideX+StatTraX", "AdelaideX+ProbTraX", '
-    '"AdelaideX+PolyTraX", "AdelaideX+InteTraX", "AdelaideX+MathTrackX", '
-    '"AdelaideX+DiffTraX", "AdelaideX+MathTrackX")',
+    'product.key in ("AdelaideX+PolyTraX", "AdelaideX+SpecTraX", '
+    '"AdelaideX+DiffTraX", "AdelaideX+InteTraX", "AdelaideX+ProbTraX", '
+    '"AdelaideX+StatTraX", "AdelaideX+MathTrackX")',
     'key: "StanfordOnline+Eesley2022"': 'product.key in ("StanfordOnline+Eesley2022")',
     'key: "LouvainX+Louv36x"': 'product.key in ("LouvainX+Louv36x")',
     'key: ("UAMx+Griegox" OR "UAMx+Griego1.5x")': 'product.key in ("UAMx+Griegox", "UAMx+Griego1.5x")',
@@ -154,7 +154,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+OS101x"': 'product.key in ("DelftX+OS101x")',
     'key: ("UTAustinX+FINTECH-OVERVIEW" OR "UTAustinX+FINTECH-BT" OR'
     ' "UTAustinX+FINTECH-ML" OR "UTAustinX+FINTECH-IOT")':
-    'product.key in ("UTAustinX+FINTECH-OVERVIEW", "UTAustinX+FINTECH-B",'
+    'product.key in ("UTAustinX+FINTECH-OVERVIEW", "UTAustinX+FINTECH-BT",'
     ' "UTAustinX+FINTECH-ML", "UTAustinX+FINTECH-IOT")',
     'key:"IsraelX+1_2020"': 'product.key in ("IsraelX+1_2020")',
     'key: "DelftX+eCARS1x+2T2024"': 'product.key in ("DelftX+eCARS1x+2T2024")',
@@ -355,7 +355,8 @@ KEY_TO_PREDICATE_DICT = {
     'key:(-CSMM* AND -MGT6203x AND -CSE6040x AND -ISYE6501x)':
     'product.key not in ("ColumbiaX+CSMM.104x", '
     '"ColumbiaX+CSMM.103x", "ColumbiaX+CSMM.101x", '
-    '"ColumbiaX+CSMM.102x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x" )',
+    '"ColumbiaX+CSMM.102x", "MichiganX+CSMM.103x", '
+    '"MichiganX+CSMM.104x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x" )',
     'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND '
     '-ISYE6501x AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x AND -15.455x AND -15.516x)':
     'product.key not in ("CurtinX+IOT6x", "GTx+MGT6203x", '

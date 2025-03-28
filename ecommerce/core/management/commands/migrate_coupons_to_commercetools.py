@@ -30,7 +30,7 @@ ConditionalOffer = get_model("offer", "ConditionalOffer")
 SiteConfiguration = get_model("core", "SiteConfiguration")
 
 
-def _get_highest_sort_order(client: CommercetoolsAPIClient):
+def _get_highest_sort_order(client: CommercetoolsAPIClient, discount_type: str) -> float:
     """
     Get the highest sort order for cart discounts without discount codes.
 
@@ -41,7 +41,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
         float: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-        where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
+        where=f'requiresDiscountCode=true and custom(fields(discountType="{discount_type}"))'
     )
 
     if not response:
@@ -138,7 +138,11 @@ def _map_voucher_criteria_to_cart_predicate(
         )
 
     if query_predicate:
-        lineItemConditions.append(query_predicate)
+        lineItemConditions.append(
+            query_predicate.replace("product.key", "attributes.`course-key`")
+            if for_program
+            else query_predicate
+        )
 
     if email_domains:
         cart_conditions.append(
@@ -153,8 +157,8 @@ def _map_voucher_criteria_to_cart_predicate(
     else:
         lineItemConditions.extendleft(
             [
-                "quantity = 1",
                 "custom.bundleId is not defined",
+                "quantity = 1",
             ]
         )
         cart_conditions.appendleft(
@@ -197,9 +201,9 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             ).strip()
 
         name = (
-            f"[Migrated - Multiuse for Course] - {coupon.title}"
+            f"[Migrated - Multiuse Course Discount] - {coupon.title}"
             if voucher.usage == Voucher.MULTI_USE
-            else f"[Migrated] - {coupon.title}"
+            else f"[Migrated - Course Discount] - {coupon.title}"
         )
 
         cart_discount = {
@@ -222,7 +226,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         cart_discount_for_program = None
         if voucher.usage == Voucher.MULTI_USE:
             cart_discount_for_program = {
-                "name": f"[Migrated - Multiuse for Program] - {coupon.title}",
+                "name": f"[Migrated - Multiuse Program Discount] - {coupon.title}",
                 "key": f"program-{coupon.slug}",
                 "cartPredicate": _map_voucher_criteria_to_cart_predicate(
                     seat_types=offer_range.course_seat_types,
@@ -231,7 +235,11 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
                     for_program=True,
                 ),
                 "description": cart_discount["description"],
-                "customFields": cart_discount["customFields"],
+                "customFields": {
+                    "client": cart_discount["customFields"]["client"],
+                    "category": cart_discount["customFields"]["category"],
+                    "discountType": "program-discount",
+                },
                 "value": cart_discount["value"],
             }
 
@@ -757,8 +765,10 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     )
 
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    sort_order = _get_highest_sort_order(client)
-    sort_order += 0.00000001
+    course_sort_order = _get_highest_sort_order(client, "course-discount")
+    program_sort_order = _get_highest_sort_order(client, "program-discount")
+    course_sort_order += 0.00000001
+    program_sort_order += 0.00000000001
 
     if not existing_discounts_in_ct:
         raise CommandError(
@@ -795,20 +805,20 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
             cart_discount_ids = []
 
-            cart_discount_id, sort_order = _create_cart_discount(
+            cart_discount_id, course_sort_order = _create_cart_discount(
                 client=client,
                 cart_discount=cart_discount,
-                sort_order=sort_order,
+                sort_order=course_sort_order,
                 summary_info=summary_info,
             )
             if cart_discount_id:
                 cart_discount_ids.append(cart_discount_id)
 
             if cart_discount_for_program:
-                cart_discount_id, sort_order = _create_cart_discount(
+                cart_discount_id, program_sort_order = _create_cart_discount(
                     client=client,
                     cart_discount=cart_discount_for_program,
-                    sort_order=sort_order,
+                    sort_order=program_sort_order,
                     summary_info=summary_info,
                     for_program=True,
                 )

@@ -120,7 +120,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
         program_uuid = offer.condition.program_uuid
 
         cart_discount = {
-            "name": f'[Migrated Program Coupon] - {coupon.title}',
+            "name": f'[Migrated - Program Discount] - {coupon.title}',
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
