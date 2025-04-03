@@ -107,13 +107,14 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UQx+CORPINN3x"': 'product.key in ("UQx+CORPINN3x")',
     'key:(StudioX OR VideoX OR StudioAdv1 OR BlendedX OR edX101 OR '
     'BuildWedX OR RunningWedX OR DesignWedX OR BuildWedXNEW OR RunWedXNEW)':
-    'product.key in ("edX+RunWedXNEW", "edX+DesignWedX", "edX+StudioAdv1", '
+    'product.key in ("edX+RunWedXNEW", "edX+DesignWedX", "edX+BuildWedX", "edX+BuildWedXNEW",'
+    '"edX+StudioAdv1", '
     '"edX+VideoX", "edX+edX101", "edX+RunningWedX", "edX+BlendedX", "edX+StudioX")',
     'key: "UC3Mx IM.2-ESx"': 'product.key in ("UC3Mx+IM.2-ESx")',
     'key: (lead1x)': 'product.key in ("HarvardX+LEAD1x")',
     'key: ("AdelaideX+RiskX" OR "AdelaideX+Project101x" OR "AdelaideX+Entrep101X")':
     'product.key in ("AdelaideX+Entrep101X", "AdelaideX+Project101x", "AdelaideX+RiskX")',
-    'key: "DelftX+QTM4x+2T2024"': 'product.key in ("DelftX+QTM4x+2T2024")',
+    'key: "DelftX+QTM4x+2T2024"': 'variant.key in ("course-v1:DelftX+QTM4x+2T2024")',
     'key: "UQx+BUSLEAD1x"': 'product.key in ("UQx+BUSLEAD1x")',
     'key: "AlaskaX+DODGS-402"': 'product.key in ("AlaskaX+DODGS-402")',
     'key: ("AdelaideX+PolyTraX" OR "AdelaideX+SpecTraX" OR "AdelaideX+DiffTraX"'
@@ -157,7 +158,7 @@ KEY_TO_PREDICATE_DICT = {
     'product.key in ("UTAustinX+FINTECH-OVERVIEW", "UTAustinX+FINTECH-BT",'
     ' "UTAustinX+FINTECH-ML", "UTAustinX+FINTECH-IOT")',
     'key:"IsraelX+1_2020"': 'product.key in ("IsraelX+1_2020")',
-    'key: "DelftX+eCARS1x+2T2024"': 'product.key in ("DelftX+eCARS1x+2T2024")',
+    'key: "DelftX+eCARS1x+2T2024"': 'variant.key in ("course-v1:DelftX+eCARS1x+2T2024")',
     'key: ("DelftX+PV1Ex" OR "DelftX+PV2Ex" OR "DelftX+PV3Ex" OR "DelftX+PV4Ex")':
     'product.key in ("DelftX+PV1Ex", "DelftX+PV2Ex", "DelftX+PV3Ex", "DelftX+PV4Ex")',
     'key: "UQx+ACE201x"': 'product.key in ("UQx+ACE201x")',
@@ -266,9 +267,9 @@ KEY_TO_PREDICATE_DICT = {
     'product.key in ("MITx+6.86x", "MITx+14.310Fx", "MITx+DS.CFx", "MITx+6.419x", "MITx+18.6501x", "MITx+6.431x")',
     'key: "Statistics.comX+MLOps1-Azure"': 'product.key in ("Statistics.comX+MLOps1-Azure")',
     'key: ("15.415.1x/3T2024" OR "15.415.2x/2T2024" OR "15.516x/3T2024" OR "15.455x/1T2025")':
-    'variant.key in ("course-v1:MITx+15.455x+1T2025", '
+    'variant.key in ("course-v1:MITx+15.455x+1T2025", "course-v1:MITx+15.415.2x+2T2024" '
     '"course-v1:MITx+15.516x+3T2024", "course-v1:MITx+15.415.1x+3T2024" )',
-    'key: "DelftX+QTM2x+2T2024"': 'product.key in ("DelftX+QTM2x+2T2024")',
+    'key: "DelftX+QTM2x+2T2024"': 'variant.key in ("course-v1:DelftX+QTM2x+2T2024")',
     'key: "MITx+6.00.1x"': 'product.key in ("MITx+6.00.1x")',
     'key: ("AlaskaX+UAS1x" OR "AlaskaX+UAS2x")':
     'product.key in ("AlaskaX+UAS1x", "AlaskaX+UAS2x")',
@@ -320,9 +321,10 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("DelftX+AIfE5x" OR "DelftX+AIfE6x" OR "DelftX+AIfE3x")':
     'product.key in  ("DelftX+AIfE5x", "DelftX+AIfE6x", "DelftX+AIfE3x")',
     'key:(-IOT?x AND -MGT6203x AND -CSE6040x AND -ISYE6501x)':
-    'product.key not in ("CurtinX+IOT2x", "CurtinX+IOT4x", '
+    'product.key not in ("CurtinX+IOT2x",'
+    ' "CurtinX+IOT4x", '
     '"CurtinX+IOT3x", "CurtinX+IOT6x", "CurtinX+IOT5x", '
-    '"CurtinX+IOT1x", "GTx+MGT6203x",  "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x")',
+    '"CurtinX+IOT1x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x")',
     'key:(-MGT6203x AND -CSE6040x AND -ISYE6501x)':
     'product.key not in ("GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x")',
     'key:(-CORPFIN1x AND -CORPFIN2x AND -CORPFIN3x '
@@ -330,38 +332,18 @@ KEY_TO_PREDICATE_DICT = {
     'product.key not in ("ColumbiaX+CORPFIN1x", '
     '"ColumbiaX+CORPFIN2x", "ColumbiaX+CORPFIN3x", '
     '"GTx+CSE6040x", "GTx+ISYE6501x", "GTx+MGT6203x" )',
-    'key:(-IOT6x AND -3.46.2x AND -15.415.1x '
-    'AND -15.415.2x AND -15.435x AND -15.455x AND -15.516x '
-    'AND -TUMx+QPLS1x AND -TUMx+QPLS2x AND -TUMx+QPLS3x AND -TUMx+QPLS5x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", "MITx+15.415.1x", '
-    '"MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", "MITx+15.516x", '
-    '"TUMx+QPLS1x", "TUMx+QPLS2x", "TUMx+QPLS3x", "TUMx+QPLS5x" )',
     'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND -ISYE6501x AND -3.46.2x)':
     'product.key not in ("CurtinX+IOT6x", "GTx+MGT6203x", "GTx+CSE6040x", '
     '"GTx+ISYE6501x", "MITx+3.46.2x" )',
-    'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x '
-    'AND -15.455x AND -15.516x AND -QPLS1x AND -QPLS2x AND -QPLS3x AND -QPLS5x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", "MITx+15.415.2x", '
-    '"MITx+15.415.1x", "MITx+15.435x", "MITx+15.455x", "MITx+15.516x", '
-    '"TUMx+QPLS1x", "TUMx+QPLS2x", "TUMx+QPLS3x", "TUMx+QPLS5x" )',
     'key:(-CORPFIN2x AND -CORPFIN3x AND -CORPFIN1x AND -CSE6040x AND '
     '-ISYE6501x AND -MGT6203x)':
     'product.key not in ("ColumbiaX+CORPFIN2x", "ColumbiaX+CORPFIN3x", '
     '"ColumbiaX+CORPFIN1x","GTx+CSE6040x", "GTx+ISYE6501x", "GTx+MGT6203x" )',
-    'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x '
-    'AND -15.455x AND -15.516x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", "MITx+15.415.1x", '
-    '"MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", "MITx+15.516x" )',
     'key:(-CSMM* AND -MGT6203x AND -CSE6040x AND -ISYE6501x)':
     'product.key not in ("ColumbiaX+CSMM.104x", '
     '"ColumbiaX+CSMM.103x", "ColumbiaX+CSMM.101x", '
     '"ColumbiaX+CSMM.102x", "MichiganX+CSMM.103x", '
     '"MichiganX+CSMM.104x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x" )',
-    'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND '
-    '-ISYE6501x AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x AND -15.455x AND -15.516x)':
-    'product.key not in ("CurtinX+IOT6x", "GTx+MGT6203x", '
-    '"GTx+CSE6040x", "GTx+ISYE6501x", "MITx+3.46.2x", '
-    '"MITx+15.415.1x", "MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", "MITx+15.516x")',
     'number:"Louv25.1x"': 'product.key in ("LouvainX+Louv25.1")',
     'number:(LEAD1x)': 'product.key in ("HarvardX+LEAD1x")',
     'number:Louv21x': 'product.key in ("LouvainX+Louv21x")',
@@ -385,6 +367,37 @@ KEY_TO_PREDICATE_DICT = {
     '"course-v1:JuilliardOpenClassroom+JCx003+1T2017",'
     '"course-v1:JuilliardOpenClassroom+JC004+1T2017")',
     'key: ("DelftX" AND "AIfE6x")': 'product.key in ("DelftX+AIfE6x")',
+    'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
+    'AND -15.435x AND -15.455x AND -15.516x AND -TUMx+QPLS1x'
+    ' AND -TUMx+QPLS2x AND -TUMx+QPLS3x AND -TUMx+QPLS5x)':
+    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
+    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
+    '"MITx+15.415.2x", "TUMx+QPLS5x", "TUMx+QPLS2x", '
+    '"TUMx+QPLS3x", "TUMx+QPLS1x", "MITx+15.415.1x")',
+    'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
+    'AND -15.435x AND -15.455x AND -15.516x AND -QPLS1x '
+    'AND -QPLS2x AND -QPLS3x AND -QPLS5x)':
+    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
+    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
+    '"MITx+15.415.2x", "TUMx+QPLS5x", "TUMx+QPLS2x", '
+    '"TUMx+QPLS3x", "TUMx+QPLS1x", "MITx+15.415.1x")',
+    'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
+    'AND -15.435x AND -15.455x AND -15.516x)':
+    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
+    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
+    '"MITx+15.415.2x", "MITx+15.415.1x")',
+    'key: (-"MITx+DS.CFx" OR -"MITx+6.431x" OR -"MITx+6.86x" '
+    'OR -"MITx+18.6501x" OR -"MITx+6.419x" OR -"MITx+IDS.S24x" '
+    'OR -"MITx+14.310Fx")': '',
+    'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND -ISYE6501x '
+    'AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x '
+    'AND -15.455x AND -15.516x)':
+    'product.key not in ("CurtinX+IOT6x", "MITx+15.435x", '
+    '"GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x", '
+    '"MITx+3.46.2x", "MITx+15.415.1x", '
+    '"MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", '
+    '"MITx+15.516x" )'
+
 }
 
 
