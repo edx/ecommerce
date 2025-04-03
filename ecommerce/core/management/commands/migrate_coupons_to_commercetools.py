@@ -13,7 +13,7 @@ from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient, PairedDiscount
-from ecommerce.core.constants import(
+from ecommerce.core.constants import (
     COURSE_DISCOUNT_DEFAULT_SORT_ORDER,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE
@@ -45,7 +45,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient) -> float:
         float: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-        where=f'requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
+        where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
     )
 
     if not response:
