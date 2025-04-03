@@ -12,6 +12,7 @@ from ecommerce.core.constants import (
     BUNDLE_CART_DISCOUNT_KEY_FORMAT,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE,
+    PROGRAM_OFFER_DEFAULT_SORT_ORDER,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
     TEN_PERCENT_DISCOUNT_IN_CENTS,
@@ -52,7 +53,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     if response['count'] > 0:
         return float(response['results'][0]['sortOrder'])
 
-    return 0.00000000000001
+    return PROGRAM_OFFER_DEFAULT_SORT_ORDER
 
 
 def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient, failed_discounts: list):
@@ -431,7 +432,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 discount_type, discount_value
             )
 
-            sort_order += 0.00000000000001
+            sort_order += PROGRAM_OFFER_DEFAULT_SORT_ORDER
 
             if not is_ten_percent_discount:
                 logger.info(
