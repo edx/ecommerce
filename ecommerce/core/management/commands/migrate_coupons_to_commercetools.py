@@ -13,7 +13,11 @@ from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient, PairedDiscount
-from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE, CT_PERCENTAGE_DISCOUNT_TYPE
+from ecommerce.core.constants import (
+    COURSE_DISCOUNT_DEFAULT_SORT_ORDER,
+    CT_ABSOLUTE_DISCOUNT_TYPE,
+    CT_PERCENTAGE_DISCOUNT_TYPE
+)
 from ecommerce.core.utils import convert_querystring_to_predicate
 from ecommerce.invoice.models import Invoice
 
@@ -30,7 +34,7 @@ ConditionalOffer = get_model("offer", "ConditionalOffer")
 SiteConfiguration = get_model("core", "SiteConfiguration")
 
 
-def _get_highest_sort_order(client: CommercetoolsAPIClient, discount_type: str) -> float:
+def _get_highest_sort_order(client: CommercetoolsAPIClient) -> float:
     """
     Get the highest sort order for cart discounts without discount codes.
 
@@ -41,7 +45,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient, discount_type: str) 
         float: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-        where=f'requiresDiscountCode=true and custom(fields(discountType="{discount_type}"))'
+        where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
     )
 
     if not response:
@@ -50,7 +54,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient, discount_type: str) 
     if response["count"] > 0:
         return float(response["results"][0]["sortOrder"])
 
-    return 0.00000001
+    return COURSE_DISCOUNT_DEFAULT_SORT_ORDER
 
 
 def _get_cent_amount_from_value(value: Dict) -> Optional[int]:
@@ -235,11 +239,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
                     for_program=True,
                 ),
                 "description": cart_discount["description"],
-                "customFields": {
-                    "client": cart_discount["customFields"]["client"],
-                    "category": cart_discount["customFields"]["category"],
-                    "discountType": "program-discount",
-                },
+                "customFields": cart_discount["customFields"],
                 "value": cart_discount["value"],
             }
 
@@ -558,7 +558,7 @@ def _create_cart_discount(
         )
         return None, sort_order
 
-    sort_order += 0.00000001
+    sort_order += COURSE_DISCOUNT_DEFAULT_SORT_ORDER
     logger.info(
         f"Cart discount created successfully with name: {cart_discount['name']}."
     )
@@ -765,10 +765,8 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     )
 
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    course_sort_order = _get_highest_sort_order(client, "course-discount")
-    program_sort_order = _get_highest_sort_order(client, "program-discount")
-    course_sort_order += 0.00000001
-    program_sort_order += 0.00000000001
+    sort_order = _get_highest_sort_order(client)
+    sort_order += COURSE_DISCOUNT_DEFAULT_SORT_ORDER
 
     if not existing_discounts_in_ct:
         raise CommandError(
@@ -805,20 +803,20 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
             cart_discount_ids = []
 
-            cart_discount_id, course_sort_order = _create_cart_discount(
+            cart_discount_id, sort_order = _create_cart_discount(
                 client=client,
                 cart_discount=cart_discount,
-                sort_order=course_sort_order,
+                sort_order=sort_order,
                 summary_info=summary_info,
             )
             if cart_discount_id:
                 cart_discount_ids.append(cart_discount_id)
 
             if cart_discount_for_program:
-                cart_discount_id, program_sort_order = _create_cart_discount(
+                cart_discount_id, sort_order = _create_cart_discount(
                     client=client,
                     cart_discount=cart_discount_for_program,
-                    sort_order=program_sort_order,
+                    sort_order=sort_order,
                     summary_info=summary_info,
                     for_program=True,
                 )
@@ -842,7 +840,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
 
 class Command(BaseCommand):
-    """Command to migrate program offers to Commercetools."""
+    """Command to migrate course coupons to Commercetools."""
 
     def handle(self, *args, **options):
         """Handle the command."""

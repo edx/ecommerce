@@ -9,7 +9,12 @@ from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient
-from ecommerce.core.constants import CT_ABSOLUTE_DISCOUNT_TYPE, CT_PERCENTAGE_DISCOUNT_TYPE, ProxyClassDiscountType
+from ecommerce.core.constants import (
+    CT_ABSOLUTE_DISCOUNT_TYPE,
+    CT_PERCENTAGE_DISCOUNT_TYPE,
+    PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER,
+    ProxyClassDiscountType
+)
 from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
@@ -45,7 +50,7 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
     if response['count'] > 0:
         return float(response['results'][0]['sortOrder'])
 
-    return 0.00000000001
+    return PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
 
 
 def _get_cent_amount_from_value(value):
@@ -411,7 +416,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
         client (CommercetoolsAPIClient): Commercetools API client.
     """
     sort_order = _get_highest_sort_order(client)
-    sort_order += 0.00000000001
+    sort_order += PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
 
     site_configuration = SiteConfiguration.objects.first()
     partner_id = site_configuration.partner_id
@@ -568,7 +573,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 )
                 continue
 
-            sort_order += 0.00000000001
+            sort_order += PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
 
             log_message = f"Cart discount created successfully with name: {cart_discount['name']}."
             logger.info(log_message)
