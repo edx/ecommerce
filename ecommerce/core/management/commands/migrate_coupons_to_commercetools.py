@@ -171,7 +171,7 @@ def _map_voucher_criteria_to_cart_predicate(
 
 
 def _map_coupons_to_ct_cart_discounts_and_discount_codes(
-    coupons, site_configuration, summary_info
+    coupons, summary_info
 ) -> List:
     """
     Map coupons to Commercetools cart discounts and discount codes.
@@ -192,13 +192,23 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         offer = voucher.best_offer
         offer_range = offer.condition.range
 
-        query_predicate = offer_range.catalog_query
-        if not query_predicate or query_predicate.strip() in ("*", "key:(*)"):
+        catalog_query = offer_range.catalog_query
+        if not catalog_query or catalog_query.strip() in ("*", "key:(*)"):
             query_predicate = ""
         else:
-            query_predicate = convert_querystring_to_predicate(
-                query_predicate, site_configuration, summary_info
-            ).strip()
+            query_predicate = convert_querystring_to_predicate(catalog_query)
+
+            if not query_predicate:
+                log_message = f'Unable to convert catalog query to predicate. '
+                log_message += f'Check if the KEY_TO_PREDICATE_DICT needs to be updated with the new key. '
+                log_message += f'Skipping migration of coupon.'
+                logger.error(log_message)
+
+                summary_info["cart_discounts"]["failed"].append({
+                    "name": f'Coupon: {coupon.title} with Catalog Query: {catalog_query}',
+                    "reason": log_message,
+                })
+                continue
 
         name = (
             f"[Migrated - Multiuse Course Discount] - {coupon.title}"
@@ -512,7 +522,7 @@ def _generate_summary(summary_info: Dict) -> None:
             logger.error(
                 "Summary of failed cart discount migrations: %s",
                 ", ".join(
-                    f"{discount['name']} (Reason: {discount['reason']})"
+                    f"\n{discount['name']} (Reason: {discount['reason']})"
                     for discount in summary_info["cart_discounts"]["failed"]
                 ),
             )
@@ -761,7 +771,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     site_configuration = SiteConfiguration.objects.first()
     coupons = _get_course_coupons(site_configuration.partner_id)
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
-        coupons, site_configuration, summary_info
+        coupons, summary_info
     )
 
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
