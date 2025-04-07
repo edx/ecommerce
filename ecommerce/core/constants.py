@@ -397,7 +397,6 @@ KEY_TO_PREDICATE_DICT = {
     '"MITx+3.46.2x", "MITx+15.415.1x", '
     '"MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", '
     '"MITx+15.516x" )'
-
 }
 
 
