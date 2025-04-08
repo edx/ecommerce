@@ -304,8 +304,8 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key = "edX+BlendedX" or product.key = "edX+edX101" or product.key = "edX+StudioX"'
     ' or product.key = "edX+VideoX" or product.key = "edX+StudioAdv1")',
     'key: ("AlaskaX+GIS1x" OR "AlaskaX+GIS2x" OR "AlaskaX+GIS3x" OR "AlaskaX+RSW1")':
-    '(product.key = "AlaskaX+GIS1x" or product.key = "AlaskaX+GIS2x" or product.key = "AlaskaX+GIS3x")'
-    ' or product.key = "AlaskaX+RSW1"',
+    '(product.key = "AlaskaX+GIS1x" or product.key = "AlaskaX+GIS2x" or product.key = "AlaskaX+GIS3x"'
+    ' or product.key = "AlaskaX+RSW1")',
     'key: ("TecdeMonterreyX+HC_CDE.1x" OR "TecdeMonterreyX+HC_MRL.2x" OR "TecdeMonterreyX+EGT-TD1x" )':
     '(product.key = "TecdeMonterreyX+HC_CDE.1x" or product.key = "TecdeMonterreyX+HC_MRL.2x"'
     ' or product.key = "TecdeMonterreyX+EGT-TD1x")',
