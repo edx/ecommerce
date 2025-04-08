@@ -319,7 +319,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+QTM2x+2T2024"': 'variant.key = "course-v1:DelftX+QTM2x+2T2024"',
     'key: "MITx+6.00.1x"': 'product.key = "MITx+6.00.1x"',
     'key: ("AlaskaX+UAS1x" OR "AlaskaX+UAS2x")':
-    'product.key = "AlaskaX+UAS1x" or product.key = "AlaskaX+UAS2x"',
+    '(product.key = "AlaskaX+UAS1x" or product.key = "AlaskaX+UAS2x")',
     'key: ("TecdeMonterreyX+HC_CDE.1x" OR "TecdeMonterreyX+HC_PEA.2x" '
     'OR "TecdeMonterreyX+HC_IFA.1x" OR "TecdeMonterreyX+HC_MRL.2x")':
     '(product.key = "TecdeMonterreyX+HC_CDE.1x" or product.key = "TecdeMonterreyX+HC_PEA.2x"'
