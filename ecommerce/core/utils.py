@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import waffle
@@ -9,7 +10,11 @@ from edx_django_utils.cache import get_cache_key as get_django_cache_key
 from requests.exceptions import ConnectionError as ReqConnectionError
 from requests.exceptions import RequestException, Timeout
 
-from ecommerce.core.constants import KEY_TO_PREDICATE_DICT
+from ecommerce.core.constants import (
+    DEFAULT_PRODUCT_CATEGORY,
+    KEY_TO_PREDICATE_DICT,
+    LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING
+)
 
 logger = logging.getLogger(__name__)
 
@@ -830,3 +835,19 @@ def convert_querystring_to_predicate(query, site_configuration, summary_info):
         logger.info('Catalog querystring converted into predicate: %s', predicate)
 
     return predicate
+
+
+def get_category_for_coupon(coupon, product_category_model) -> Optional[str]:
+    """
+    Get the category for the coupon.
+    """
+    try:
+        category = product_category_model.objects.get(product=coupon).category.slug
+    except product_category_model.DoesNotExist:
+        category = DEFAULT_PRODUCT_CATEGORY
+
+    if not category:
+        log_message = f"Category not found for coupon {coupon.title}."
+        logger.info(log_message)
+
+    return LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING.get(category, DEFAULT_PRODUCT_CATEGORY)

@@ -18,7 +18,7 @@ from ecommerce.core.constants import (
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE
 )
-from ecommerce.core.utils import convert_querystring_to_predicate
+from ecommerce.core.utils import convert_querystring_to_predicate, get_category_for_coupon
 from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
@@ -216,7 +216,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
-                "category": _get_category_for_coupon(coupon),
+                "category": get_category_for_coupon(coupon, ProductCategory),
                 "discountType": "course-discount",
             },
             "cartPredicate": _map_voucher_criteria_to_cart_predicate(
@@ -302,21 +302,6 @@ def _get_note_for_coupon(coupon) -> Optional[str]:
         note = None
 
     return note
-
-
-def _get_category_for_coupon(coupon) -> Optional[str]:
-    """
-    Get the category for the coupon.
-    """
-    try:
-        category = ProductCategory.objects.get(product=coupon).category.name
-    except ProductCategory.DoesNotExist:
-        category = None
-
-    if not category:
-        logger.info(f"Category not found for coupon {coupon.title}.")
-
-    return category
 
 
 def _get_course_coupons(partner_id):
