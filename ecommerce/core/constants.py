@@ -87,9 +87,9 @@ PROGRAM_OFFER_DEFAULT_SORT_ORDER = 0.000000000000000001
 
 KEY_TO_PREDICATE_DICT = {
     'key: ("AlaskaX+GRANT1x" OR "AlaskaX+GRANT2x" OR "AlaskaX+GRANT3x")':
-    'product.key = "AlaskaX+GRANT3x" OR product.key = "AlaskaX+GRANT2x" OR product.key = "AlaskaX+GRANT1x" ',
+    'product.key = "AlaskaX+GRANT3x" or product.key = "AlaskaX+GRANT2x" or product.key = "AlaskaX+GRANT1x" ',
     'key: ("MITx+CTL.SC0x" OR "MITx+CTL.SC1x" OR "MITx+CTL.SC2x" OR "MITx+CTL.SC3x" OR "MITx+CTL.SC4x")':
-    'product.key = "MITx+CTL.SC0x" OR product.key = "MITx+CTL.SC1x" OR product.key = "MITx+CTL.SC2x" OR product.key = "MITx+CTL.SC3x" OR product.key = "MITx+CTL.SC4x" ',
+    'product.key = "MITx+CTL.SC0x" or product.key = "MITx+CTL.SC1x" or product.key = "MITx+CTL.SC2x" or product.key = "MITx+CTL.SC3x" or product.key = "MITx+CTL.SC4x" ',
     'key: "W3Cx+JS.0x"': 'product.key = "W3Cx+JS.0x"',
     'key: "RICEx+RiceSBE01"': 'product.key = "RICEx+RiceSBE01"',
     'key: "Statistics.comX+MLOps2-GCP"': 'product.key = "Statistics.comX+MLOps2-GCP"',
@@ -109,40 +109,37 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UQx+CORPINN3x"': 'product.key = "UQx+CORPINN3x"',
     'key:(StudioX OR VideoX OR StudioAdv1 OR BlendedX OR edX101 OR '
     'BuildWedX OR RunningWedX OR DesignWedX OR BuildWedXNEW OR RunWedXNEW)':
-    'product.key = "edX+RunWedXNEW" OR product.key = "edX+DesignWedX" OR product.key = "edX+BuildWedX" OR product.key = "edX+BuildWedXNEW" OR product.key = "edX+StudioAdv1" OR product.key = "edX+VideoX" OR product.key = "edX+edX101" OR product.key = "edX+RunningWedX" OR product.key = "edX+BlendedX" OR product.key = "edX+StudioX"',
+    'product.key = "edX+RunWedXNEW" or product.key = "edX+DesignWedX" or product.key = "edX+BuildWedX" or product.key = "edX+BuildWedXNEW" or product.key = "edX+StudioAdv1" or product.key = "edX+VideoX" or product.key = "edX+edX101" or product.key = "edX+RunningWedX" or product.key = "edX+BlendedX" or product.key = "edX+StudioX"',
     'key: "UC3Mx IM.2-ESx"': 'product.key = "UC3Mx+IM.2-ESx"',
     'key: (lead1x)': 'product.key = "HarvardX+LEAD1x"',
     'key: ("AdelaideX+RiskX" OR "AdelaideX+Project101x" OR "AdelaideX+Entrep101X")':
-    'product.key = "AdelaideX+Entrep101X" OR product.key = "AdelaideX+Project101x" OR product.key = "AdelaideX+RiskX"',
+    'product.key = "AdelaideX+Entrep101X" or product.key = "AdelaideX+Project101x" or product.key = "AdelaideX+RiskX"',
     'key: "DelftX+QTM4x+2T2024"': 'variant.key = "course-v1:DelftX+QTM4x+2T2024"',
     'key: "UQx+BUSLEAD1x"': 'product.key = "UQx+BUSLEAD1x"',
     'key: "AlaskaX+DODGS-402"': 'product.key = "AlaskaX+DODGS-402"',
     'key: ("AdelaideX+PolyTraX" OR "AdelaideX+SpecTraX" OR "AdelaideX+DiffTraX"'
     ' OR "AdelaideX+InteTraX" OR "AdelaideX+ProbTraX" OR "AdelaideX+StatTraX"'
     ' OR "AdelaideX+MathTrackX")':
-    'product.key = "AdelaideX+PolyTraX" OR product.key = "AdelaideX+SpecTraX" OR product.key = "AdelaideX+DiffTraX" OR product.key = "AdelaideX+InteTraX" OR product.key = "AdelaideX+ProbTraX" OR product.key = "AdelaideX+StatTraX" OR product.key = "AdelaideX+MathTrackX"',
+    'product.key = "AdelaideX+PolyTraX" or product.key = "AdelaideX+SpecTraX" or product.key = "AdelaideX+DiffTraX" or product.key = "AdelaideX+InteTraX" or product.key = "AdelaideX+ProbTraX" or product.key = "AdelaideX+StatTraX" or product.key = "AdelaideX+MathTrackX"',
     'key: "StanfordOnline+Eesley2022"': 'product.key = "StanfordOnline+Eesley2022"',
     'key: "LouvainX+Louv36x"': 'product.key = "LouvainX+Louv36x"',
-    'key: ("UAMx+Griegox" OR "UAMx+Griego1.5x")': 'product.key = "UAMx+Griegox" OR product.key = "UAMx+Griego1.5x"',
+    'key: ("UAMx+Griegox" OR "UAMx+Griego1.5x")': 'product.key = "UAMx+Griegox" or product.key = "UAMx+Griego1.5x"',
     'key: "TecdeMonterreyX+HC_MFN.1x"': 'product.key = "TecdeMonterreyX+HC_MFN.1x"',
     'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
     'key: "HKUx+HKU_09x"': 'product.key = "HKUx+HKU_09x"',
     'key:("MITx+6.431x" OR "MITx+6.86x" OR "MITx+18.6501x" '
     'OR "MITx+6.419x" OR "MITx+14.310Fx" OR "MITx+DS.CFx")':
-    'product.key = "MITx+6.431x" OR product.key = "MITx+6.86x" OR product.key = "MITx+18.6501x" OR product.key = "MITx+6.419x" OR product.key = "MITx+14.310Fx" OR product.key = "MITx+DS.CFx"',
+    'product.key = "MITx+6.431x" or product.key = "MITx+6.86x" or product.key = "MITx+18.6501x" or product.key = "MITx+6.419x" or product.key = "MITx+14.310Fx" or product.key = "MITx+DS.CFx"',
     'key: "HKPolyUx+OPT101x"': 'product.key = "HKPolyUx+OPT101x"',
-    'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMLO01I.x" '
-    'OR "TecdeMonterreyX+MMLF01I.x")':
-    'product.key = "TecdeMonterreyX+CT01I.x" OR product.key = "TecdeMonterreyX+MMLO01I.x" OR product.key = "TecdeMonterreyX+MMLF01I.x"',
+    'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMLO01I.x" OR "TecdeMonterreyX+MMLF01I.x")':
+    'product.key = "TecdeMonterreyX+CT01I.x" or product.key = "TecdeMonterreyX+MMLO01I.x" or product.key = "TecdeMonterreyX+MMLF01I.x"',
     'key: "UQx+BUSLEAD4x"': 'product.key = "UQx+BUSLEAD4x"',
     'key:"UQx+CORPINN5x"': 'product.key = "UQx+CORPINN5x"',
     'key: "BerkeleyX+GG201x"': 'product.key = "BerkeleyX+GG201x"',
     'key: "RICEx+RiceSBE02"': 'product.key = "RICEx+RiceSBE02"',
     'key: "TUMx+iLabx"': 'product.key = "TUMx+iLabx"',
-    'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMEC01I.x" OR '
-    '"TecdeMonterreyX+MMLF01I.x" OR "TecdeMonterreyX+MMSE01I.x" OR'
-    ' "TecdeMonterreyX+MMSS01I.x" OR "TecdeMonterreyX+MMLO01I.x")':
-    'product.key = "TecdeMonterreyX+CT01I.x" OR product.key = "TecdeMonterreyX+MMEC01I.x" OR product.key = "TecdeMonterreyX+MMLF01I.x" OR product.key = "TecdeMonterreyX+MMSE01I.x" OR product.key = "TecdeMonterreyX+MMSS01I.x" OR product.key = "TecdeMonterreyX+MMLO01I.x"',
+    'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMEC01I.x" OR "TecdeMonterreyX+MMLF01I.x" OR "TecdeMonterreyX+MMSE01I.x" OR "TecdeMonterreyX+MMSS01I.x" OR "TecdeMonterreyX+MMLO01I.x")':
+    'product.key = "TecdeMonterreyX+CT01I.x" or product.key = "TecdeMonterreyX+MMEC01I.x" or product.key = "TecdeMonterreyX+MMLF01I.x" or product.key = "TecdeMonterreyX+MMSE01I.x" or product.key = "TecdeMonterreyX+MMSS01I.x" or product.key = "TecdeMonterreyX+MMLO01I.x"',
     'key: "AlaskaX+DODGS-400"': 'product.key = "AlaskaX+DODGS-400"',
     'key: "BayreuthX+ubt205mun"': 'product.key = "BayreuthX+ubt205mun"',
     'key: "TUGrazX+EMC1"': 'product.key = "TUGrazX+EMC1"',
@@ -330,15 +327,12 @@ KEY_TO_PREDICATE_DICT = {
     'number:"Louv25.2x"': 'product.key in ("LouvainX+Louv25.2x")',
     'number:Louv31x': 'product.key in ("LouvainX+Louv31x")',
     'number:(CONVERT OR resilience911 OR KAB1010x OR EPS1x OR WECS)':
-    'product.key = "IsraelX+EPS1x" OR product.key = "IsraelX+resilience911" OR product.key = "IsraelX+CONVERT" OR product.key = "IsraelX+KAB1010x" OR product.key = "IsraelX+WECS" ',
+    'product.key = "IsraelX+EPS1x" or product.key = "IsraelX+resilience911" or product.key = "IsraelX+CONVERT" or product.key = "IsraelX+KAB1010x" or product.key = "IsraelX+WECS"',
     'key:("6.419x" or ""6.86x" or "DS.CFx" or "14.310Fx" or "6.431x" or "18.6501x")':
-    'product.key = "MITx+6.419x" OR product.key = "MITx+DS.CFx" OR product.key = "MITx+14.310Fx" OR product.key = "MITx+6.86x" OR product.key = "MITx+6.431x" OR product.key = "MITx+18.6501" ',
+    'product.key = "MITx+6.419x" or product.key = "MITx+DS.CFx" or product.key = "MITx+14.310Fx" or product.key = "MITx+6.86x" or product.key = "MITx+6.431x" or product.key = "MITx+18.6501"',
     'start:[2023-01-01 TO 2061-12-31]': '',
-    'key:(JuilliardOpenClassroom+JCx001+2T2017 OR '
-    'JuilliardOpenClassroom+JCx002+3T2017 OR '
-    'JuilliardOpenClassroom+JCx003+1T2017 OR '
-    'JuilliardOpenClassroom+JC004+1T2017)':
-    'variant.key = "course-v1:JuilliardOpenClassroom+JCx001+2T2017" OR variant.key = "course-v1:JuilliardOpenClassroom+JCx002+3T2017" OR variant.key = "course-v1:JuilliardOpenClassroom+JCx003+1T2017" OR variant.key = "course-v1:JuilliardOpenClassroom+JC004+1T2017"',
+    'key:(JuilliardOpenClassroom+JCx001+2T2017 OR JuilliardOpenClassroom+JCx002+3T2017 OR JuilliardOpenClassroom+JCx003+1T2017 OR JuilliardOpenClassroom+JC004+1T2017)':
+    'variant.key = "course-v1:JuilliardOpenClassroom+JCx001+2T2017" or variant.key = "course-v1:JuilliardOpenClassroom+JCx002+3T2017" or variant.key = "course-v1:JuilliardOpenClassroom+JCx003+1T2017" or variant.key = "course-v1:JuilliardOpenClassroom+JC004+1T2017"',
     'key: ("DelftX" AND "AIfE6x")': 'product.key = "DelftX+AIfE6x"',
     'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
     'AND -15.435x AND -15.455x AND -15.516x AND -TUMx+QPLS1x'
