@@ -5,7 +5,6 @@ from dateutil import parser as dateutil_parser
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Prefetch, Q
 from django.utils import timezone
-from ecommerce.core.utils import get_category_for_coupon
 from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
@@ -16,6 +15,7 @@ from ecommerce.core.constants import (
     PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER,
     ProxyClassDiscountType
 )
+from ecommerce.core.utils import get_category_for_coupon
 from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
