@@ -203,9 +203,9 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             query_predicate = convert_querystring_to_predicate(catalog_query)
 
             if not query_predicate:
-                log_message = f'Unable to convert catalog query to predicate. '
-                log_message += f'Check if the KEY_TO_PREDICATE_DICT needs to be updated with the new key. '
-                log_message += f'Skipping migration of coupon.'
+                log_message = 'Unable to convert catalog query to predicate. '
+                log_message += 'Check if the KEY_TO_PREDICATE_DICT needs to be updated with the new key. '
+                log_message += 'Skipping migration of coupon.'
                 logger.error(log_message)
 
                 summary_info["cart_discounts"]["failed"].append({
