@@ -538,6 +538,7 @@ def get_category_for_coupon(coupon, product_category_model, summary_info) -> Opt
 
     return ct_category, channel
 
+
 def get_next_sort_order_for_coupons(client) -> Decimal:
     """
     Get the highest sort order for cart discounts without discount codes.

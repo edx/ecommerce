@@ -117,7 +117,7 @@ LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING = {
 }
 
 LEGACY_CATEGORY_TO_CHANNEL_MAPPING = {
-   'affiliate-promotion': 'affiliate',
+    'affiliate-promotion': 'affiliate',
     'b2b-affiliate-promotion': 'enterprise-b2b',
     'bulk-enrollment': 'enterprise-b2b',
     'bulk-enrollment-integration': 'enterprise-b2b',
