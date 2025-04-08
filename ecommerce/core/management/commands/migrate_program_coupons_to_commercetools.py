@@ -5,6 +5,7 @@ from dateutil import parser as dateutil_parser
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Prefetch, Q
 from django.utils import timezone
+from ecommerce.core.utils import get_category_for_coupon
 from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
@@ -130,7 +131,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
-                "category": _get_category_for_coupon(coupon),
+                "category": get_category_for_coupon(coupon, ProductCategory),
                 "discountType": "program-discount",
             },
             "cartPredicate": f'forAllLineItems(custom.bundleId = "{program_uuid}") = true',
@@ -194,22 +195,6 @@ def _get_note_for_coupon(coupon) -> Optional[str]:
         note = None
 
     return note
-
-
-def _get_category_for_coupon(coupon) -> Optional[str]:
-    """
-    Get the category for the coupon.
-    """
-    try:
-        category = ProductCategory.objects.get(product=coupon).category.name
-    except ProductCategory.DoesNotExist:
-        category = None
-
-    if not category:
-        log_message = f"Category not found for coupon {coupon.title}."
-        logger.info(log_message)
-
-    return category
 
 
 def _get_program_coupons(partner_id):

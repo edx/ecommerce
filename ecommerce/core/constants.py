@@ -85,6 +85,37 @@ COURSE_DISCOUNT_DEFAULT_SORT_ORDER = 0.00000001
 PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER = 0.0000000000001
 PROGRAM_OFFER_DEFAULT_SORT_ORDER = 0.000000000000000001
 
+DEFAULT_PRODUCT_CATEGORY = 'other'
+
+LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING = {
+    'affiliate-promotion': 'affiliate-promotion',
+    'b2b-affiliate-promotion': 'b2b-affiliate-promotion',
+    'bulk-enrollment': 'bulk-enrollment-prepay',
+    'bulk-enrollment-integration': 'bulk-enrollment-prepay',
+    'bulk-enrollment-prepay': 'bulk-enrollment-prepay',
+    'bulk-enrollment-upon-redemption': 'bulk-enrollment-upon-redemption',
+    'connected': 'other',
+    'course-promotion': 'other',  # TODO: update this based on reply from cmelo
+    'customer-service': 'customer-service',
+    'edx-employee-request': 'other',
+    'financial-assistance': 'financial-assistance',
+    'geography-promotion': 'marketing-other',
+    'marketing-other': 'marketing-other',
+    'marketing-partner-promotion': 'marketing-other',
+    'on-campus-learners': 'on-campus-learners',
+    'other': 'other',
+    'partner-no-rev-orap': 'other',  # TODO: update this based on reply from cmelo
+    'partner-no-rev-prepay': 'partner-no-rev-prepay',
+    'partner-no-rev-rap': 'other',  # TODO: update this based on reply from cmelo
+    'partner-no-rev-upon-redemption': 'partner-no-rev-prepay',
+    'retention-promotion': 'marketing-other',
+    'scholarship': 'other',
+    'security-disclosure-reward': 'other',
+    'services-other': 'customer-service',
+    'support-other': 'customer-service',
+    'upsell-promotion': 'marketing-other'
+}
+
 KEY_TO_PREDICATE_DICT = {
     'key: ("AlaskaX+GRANT1x" OR "AlaskaX+GRANT2x" OR "AlaskaX+GRANT3x")':
     'product.key in ("AlaskaX+GRANT3x", "AlaskaX+GRANT2x", "AlaskaX+GRANT1x") ',
