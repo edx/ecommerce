@@ -375,7 +375,7 @@ class CommercetoolsAPIClient:
                 "type": "lineItems",
                 "predicate": predicate,
             },
-            "sortOrder": f"{sort_order:.14f}".rstrip("0").rstrip("."),
+            "sortOrder": f"{sort_order:.18f}".rstrip("0").rstrip("."),
             "isActive": True,
             "requiresDiscountCode": False,
             "stackingMode": "StopAfterThisDiscount",
