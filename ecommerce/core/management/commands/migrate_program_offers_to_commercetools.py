@@ -1,6 +1,6 @@
-from decimal import Decimal
 import logging
 import re
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -13,9 +13,9 @@ from ecommerce.core.constants import (
     BUNDLE_CART_DISCOUNT_KEY_FORMAT,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE,
-    PROGRAM_OFFERS_DEFAULT_SORT_ORDER,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
+    PROGRAM_OFFERS_DEFAULT_SORT_ORDER,
     TEN_PERCENT_DISCOUNT_IN_CENTS,
     ProxyClassDiscountType
 )

@@ -13,11 +13,7 @@ from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient, PairedDiscount
-from ecommerce.core.constants import (
-    COUPONS_DEFAULT_SORT_ORDER,
-    CT_ABSOLUTE_DISCOUNT_TYPE,
-    CT_PERCENTAGE_DISCOUNT_TYPE,
-)
+from ecommerce.core.constants import COUPONS_DEFAULT_SORT_ORDER, CT_ABSOLUTE_DISCOUNT_TYPE, CT_PERCENTAGE_DISCOUNT_TYPE
 from ecommerce.core.utils import (
     convert_querystring_to_predicate,
     get_category_for_coupon,

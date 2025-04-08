@@ -1,13 +1,13 @@
-from decimal import Decimal
 import logging
 import re
+from decimal import Decimal
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import waffle
-from django.core.management.base import CommandError
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.management.base import CommandError
 from edx_django_utils.cache import get_cache_key as get_django_cache_key
 
 from ecommerce.core.constants import (
@@ -15,7 +15,7 @@ from ecommerce.core.constants import (
     DEFAULT_PRODUCT_CATEGORY,
     KEY_TO_PREDICATE_DICT,
     LEGACY_CATEGORY_TO_CHANNEL_MAPPING,
-    LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING,
+    LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING
 )
 
 logger = logging.getLogger(__name__)
@@ -511,7 +511,7 @@ def get_category_for_coupon(coupon, product_category_model, summary_info) -> Opt
         log_message = f"Product category object not found for for coupon {coupon.title}."
         logger.error(log_message)
         summary_info["cart_discounts"]["failed"].append({
-            "name": f'Product category object not found.',
+            "name": 'Product category object not found.',
             "reason": log_message,
         })
         category = DEFAULT_PRODUCT_CATEGORY
@@ -521,7 +521,7 @@ def get_category_for_coupon(coupon, product_category_model, summary_info) -> Opt
         log_message = f"Category mapping not found for for coupon {coupon.title} with legacy category {category}."
         logger.error(log_message)
         summary_info["cart_discounts"]["failed"].append({
-            "name": f'Category mapping not found.',
+            "name": 'Category mapping not found.',
             "reason": log_message,
         })
         ct_category = DEFAULT_PRODUCT_CATEGORY
@@ -531,7 +531,7 @@ def get_category_for_coupon(coupon, product_category_model, summary_info) -> Opt
         log_message = f"Channel mapping not found for for coupon {coupon.title} with legacy category {category}."
         logger.error(log_message)
         summary_info["cart_discounts"]["failed"].append({
-            "name": f'Channel mapping not found.',
+            "name": 'Channel mapping not found.',
             "reason": log_message,
         })
         channel = DEFAULT_PRODUCT_CATEGORY

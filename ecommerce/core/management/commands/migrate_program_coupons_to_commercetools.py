@@ -379,18 +379,6 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
     """
-    sort_order = get_next_sort_order_for_coupons(client)
-
-    site_configuration = SiteConfiguration.objects.first()
-    partner_id = site_configuration.partner_id
-
-    coupons = _get_program_coupons(partner_id)
-    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
-
-    existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    if not existing_discounts_in_ct:
-        raise CommandError("Failed to get existing discounts in Commercetools. Exiting command.")
-
     summary_info = {
         "cart_discounts": {
             "created": [],
@@ -403,6 +391,18 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
             "failed": [],
         },
     }
+
+    sort_order = get_next_sort_order_for_coupons(client)
+
+    site_configuration = SiteConfiguration.objects.first()
+    partner_id = site_configuration.partner_id
+
+    coupons = _get_program_coupons(partner_id)
+    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
+
+    existing_discounts_in_ct = client.get_ct_discounts_with_code()
+    if not existing_discounts_in_ct:
+        raise CommandError("Failed to get existing discounts in Commercetools. Exiting command.")
 
     def _migrate_discount_code(discount_code, cart_discount_id):
         discount_code_response = client.create_discount_code(
