@@ -296,29 +296,19 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("DelftX+AIfE5x" OR "DelftX+AIfE6x" OR "DelftX+AIfE3x")':
     'product.key = "DelftX+AIfE5x" or product.key = "DelftX+AIfE6x" or product.key = "DelftX+AIfE3x"',
     'key:(-IOT?x AND -MGT6203x AND -CSE6040x AND -ISYE6501x)':
-    'product.key not in ("CurtinX+IOT2x",'
-    ' "CurtinX+IOT4x", '
-    '"CurtinX+IOT3x", "CurtinX+IOT6x", "CurtinX+IOT5x", '
-    '"CurtinX+IOT1x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x")',
+    'product.key != "CurtinX+IOT2x" and product.key != "CurtinX+IOT4x" and product.key != "CurtinX+IOT3x" and product.key != "CurtinX+IOT6x" and product.key != "CurtinX+IOT5x" and product.key != "CurtinX+IOT1x" and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x"',
     'key:(-MGT6203x AND -CSE6040x AND -ISYE6501x)':
-    'product.key not in ("GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x")',
+    'product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x"',
     'key:(-CORPFIN1x AND -CORPFIN2x AND -CORPFIN3x '
     'AND -CSE6040x AND -ISYE6501x AND -MGT6203x)':
-    'product.key not in ("ColumbiaX+CORPFIN1x", '
-    '"ColumbiaX+CORPFIN2x", "ColumbiaX+CORPFIN3x", '
-    '"GTx+CSE6040x", "GTx+ISYE6501x", "GTx+MGT6203x" )',
+    'product.key != "ColumbiaX+CORPFIN1x" and product.key != "ColumbiaX+CORPFIN2x" and product.key != "ColumbiaX+CORPFIN3x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "GTx+MGT6203x"',
     'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND -ISYE6501x AND -3.46.2x)':
-    'product.key not in ("CurtinX+IOT6x", "GTx+MGT6203x", "GTx+CSE6040x", '
-    '"GTx+ISYE6501x", "MITx+3.46.2x" )',
+    'product.key != "CurtinX+IOT6x" and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "MITx+3.46.2x"',
     'key:(-CORPFIN2x AND -CORPFIN3x AND -CORPFIN1x AND -CSE6040x AND '
     '-ISYE6501x AND -MGT6203x)':
-    'product.key not in ("ColumbiaX+CORPFIN2x", "ColumbiaX+CORPFIN3x", '
-    '"ColumbiaX+CORPFIN1x","GTx+CSE6040x", "GTx+ISYE6501x", "GTx+MGT6203x" )',
+    'product.key != "ColumbiaX+CORPFIN2x" and product.key != "ColumbiaX+CORPFIN3x" and product.key != "ColumbiaX+CORPFIN1x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "GTx+MGT6203x"',
     'key:(-CSMM* AND -MGT6203x AND -CSE6040x AND -ISYE6501x)':
-    'product.key not in ("ColumbiaX+CSMM.104x", '
-    '"ColumbiaX+CSMM.103x", "ColumbiaX+CSMM.101x", '
-    '"ColumbiaX+CSMM.102x", "MichiganX+CSMM.103x", '
-    '"MichiganX+CSMM.104x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x" )',
+    'product.key != "ColumbiaX+CSMM.104x" and product.key != "ColumbiaX+CSMM.103x" and product.key != "ColumbiaX+CSMM.101x" and product.key != "ColumbiaX+CSMM.102x" and product.key != "MichiganX+CSMM.103x" and product.key != "MichiganX+CSMM.104x" and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x"',
     'number:"Louv25.1x"': 'product.key = "LouvainX+Louv25.1"',
     'number:(LEAD1x)': 'product.key = "HarvardX+LEAD1x"',
     'number:Louv21x': 'product.key = "LouvainX+Louv21x"',
@@ -337,33 +327,21 @@ KEY_TO_PREDICATE_DICT = {
     'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
     'AND -15.435x AND -15.455x AND -15.516x AND -TUMx+QPLS1x'
     ' AND -TUMx+QPLS2x AND -TUMx+QPLS3x AND -TUMx+QPLS5x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
-    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
-    '"MITx+15.415.2x", "TUMx+QPLS5x", "TUMx+QPLS2x", '
-    '"TUMx+QPLS3x", "TUMx+QPLS1x", "MITx+15.415.1x")',
+    'product.key != "CurtinX+IOT6x" and product.key != "MITx+3.46.2x" and product.key != "MITx+15.435x" and product.key != "MITx+15.455x" and product.key != "MITx+15.516x" and product.key != "MITx+15.415.2x" and product.key != "TUMx+QPLS5x" and product.key != "TUMx+QPLS2x" and product.key != "TUMx+QPLS3x" and product.key != "TUMx+QPLS1x" and product.key != "MITx+15.415.1x"',
     'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
     'AND -15.435x AND -15.455x AND -15.516x AND -QPLS1x '
     'AND -QPLS2x AND -QPLS3x AND -QPLS5x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
-    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
-    '"MITx+15.415.2x", "TUMx+QPLS5x", "TUMx+QPLS2x", '
-    '"TUMx+QPLS3x", "TUMx+QPLS1x", "MITx+15.415.1x")',
+    'product.key != "CurtinX+IOT6x" and product.key != "MITx+3.46.2x" and product.key != "MITx+15.435x" and product.key != "MITx+15.455x" and product.key != "MITx+15.516x" and product.key != "MITx+15.415.2x" and product.key != "TUMx+QPLS5x" and product.key != "TUMx+QPLS2x" and product.key != "TUMx+QPLS3x" and product.key != "TUMx+QPLS1x" and product.key != "MITx+15.415.1x"',
     'key:(-IOT6x AND -3.46.2x AND -15.415.1x AND -15.415.2x '
     'AND -15.435x AND -15.455x AND -15.516x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+3.46.2x", '
-    '"MITx+15.435x", "MITx+15.455x",  "MITx+15.516x", '
-    '"MITx+15.415.2x", "MITx+15.415.1x")',
+    'product.key != "CurtinX+IOT6x" and product.key != "MITx+3.46.2x" and product.key != "MITx+15.435x" and product.key != "MITx+15.455x" and product.key != "MITx+15.516x" and product.key != "MITx+15.415.2x" and product.key != "MITx+15.415.1x"',
     'key: (-"MITx+DS.CFx" OR -"MITx+6.431x" OR -"MITx+6.86x" '
     'OR -"MITx+18.6501x" OR -"MITx+6.419x" OR -"MITx+IDS.S24x" '
     'OR -"MITx+14.310Fx")': '',
     'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND -ISYE6501x '
     'AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x '
     'AND -15.455x AND -15.516x)':
-    'product.key not in ("CurtinX+IOT6x", "MITx+15.435x", '
-    '"GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x", '
-    '"MITx+3.46.2x", "MITx+15.415.1x", '
-    '"MITx+15.415.2x", "MITx+15.435x", "MITx+15.455x", '
-    '"MITx+15.516x" )'
+    'product.key != "CurtinX+IOT6x" and product.key != "MITx+15.435x" and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "MITx+3.46.2x" and product.key != "MITx+15.415.1x" and product.key != "MITx+15.415.2x" and product.key != "MITx+15.435x" and product.key != "MITx+15.455x" and product.key != "MITx+15.516x"',
 }
 
 
