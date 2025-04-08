@@ -90,10 +90,10 @@ KEY_TO_PREDICATE_DICT = {
     'product.key in ("AlaskaX+GRANT3x", "AlaskaX+GRANT2x", "AlaskaX+GRANT1x") ',
     'key: ("MITx+CTL.SC0x" OR "MITx+CTL.SC1x" OR "MITx+CTL.SC2x" OR "MITx+CTL.SC3x" OR "MITx+CTL.SC4x")':
     'product.key in ("MITx+CTL.SC0x", "MITx+CTL.SC1x", "MITx+CTL.SC2x", "MITx+CTL.SC3x", "MITx+CTL.SC4x") ',
-    'key: "W3Cx+JS.0x"': 'product.key in ("W3Cx+JS.0x") ',
-    'key: "RICEx+RiceSBE01"': 'product.key in ("RICEx+RiceSBE01") ',
-    'key: "Statistics.comX+MLOps2-GCP"': 'product.key in ("Statistics.comX+MLOps2-GCP") ',
-    'key:"IsraelX+CriticalThinking"': 'product.key in ("IsraelX+CriticalThinking") ',
+    'key: "W3Cx+JS.0x"': 'product.key = "W3Cx+JS.0x"',
+    'key: "RICEx+RiceSBE01"': 'product.key = "RICEx+RiceSBE01"',
+    'key: "Statistics.comX+MLOps2-GCP"': 'product.key = "Statistics.comX+MLOps2-GCP"',
+    'key:"IsraelX+CriticalThinking"': 'product.key = "IsraelX+CriticalThinking"',
     'key: ("HP+HPGG01.en" OR "HP+HPGG01.es" OR "HP+HPGG02.en" OR "HP+HPGG03.en" '
     'OR "HP+HPGG01.ar" OR "HP+HPGG02.ar" OR "HP+HPGG02.es" OR "HP+HPGG03.ar" '
     'OR "HP+HPGG03.es" OR "HP+HPGG04.en")':
@@ -102,112 +102,112 @@ KEY_TO_PREDICATE_DICT = {
     '"HP+HPGG03.ar", "HP+HPGG03.es", "HP+HPGG04.en")',
     'key: ("GalileoX+EticaIA_01" OR "GalileoX+MM_01" OR "GalileoX+GalileoXAI002")': ''
     'product.key in ("GalileoX+EticaIA_01", "GalileoX+MM_01", "GalileoX+GalileoXAI002")',
-    'key: "DelftX+AIfE5x"': 'product.key in ("DelftX+AIfE5x")',
-    'key: "Statistics.comX+MLOps1-GCP"': 'product.key in ("Statistics.comX+MLOps1-GCP")',
-    'key: "UQx+Employ101x"': 'product.key in ("UQx+Employ101x")',
-    'key: "WasedaX+SIP111x"': 'product.key in ("WasedaX+SIP111x")',
-    'key: "UQx+CORPINN2x"': 'product.key in ("UQx+CORPINN2x")',
-    'key: "TUMx+LOOPx"': 'product.key in ("TUMx+LOOPx")',
-    'key: "UQx+CORPINN3x"': 'product.key in ("UQx+CORPINN3x")',
+    'key: "DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
+    'key: "Statistics.comX+MLOps1-GCP"': 'product.key = "Statistics.comX+MLOps1-GCP"',
+    'key: "UQx+Employ101x"': 'product.key = "UQx+Employ101x"',
+    'key: "WasedaX+SIP111x"': 'product.key = "WasedaX+SIP111x"',
+    'key: "UQx+CORPINN2x"': 'product.key = "UQx+CORPINN2x"',
+    'key: "TUMx+LOOPx"': 'product.key = "TUMx+LOOPx"',
+    'key: "UQx+CORPINN3x"': 'product.key = "UQx+CORPINN3x"',
     'key:(StudioX OR VideoX OR StudioAdv1 OR BlendedX OR edX101 OR '
     'BuildWedX OR RunningWedX OR DesignWedX OR BuildWedXNEW OR RunWedXNEW)':
     'product.key in ("edX+RunWedXNEW", "edX+DesignWedX", "edX+BuildWedX", "edX+BuildWedXNEW",'
     '"edX+StudioAdv1", '
     '"edX+VideoX", "edX+edX101", "edX+RunningWedX", "edX+BlendedX", "edX+StudioX")',
-    'key: "UC3Mx IM.2-ESx"': 'product.key in ("UC3Mx+IM.2-ESx")',
-    'key: (lead1x)': 'product.key in ("HarvardX+LEAD1x")',
+    'key: "UC3Mx IM.2-ESx"': 'product.key = "UC3Mx+IM.2-ESx"',
+    'key: (lead1x)': 'product.key = "HarvardX+LEAD1x"',
     'key: ("AdelaideX+RiskX" OR "AdelaideX+Project101x" OR "AdelaideX+Entrep101X")':
     'product.key in ("AdelaideX+Entrep101X", "AdelaideX+Project101x", "AdelaideX+RiskX")',
     'key: "DelftX+QTM4x+2T2024"': 'variant.key in ("course-v1:DelftX+QTM4x+2T2024")',
-    'key: "UQx+BUSLEAD1x"': 'product.key in ("UQx+BUSLEAD1x")',
-    'key: "AlaskaX+DODGS-402"': 'product.key in ("AlaskaX+DODGS-402")',
+    'key: "UQx+BUSLEAD1x"': 'product.key = "UQx+BUSLEAD1x"',
+    'key: "AlaskaX+DODGS-402"': 'product.key = "AlaskaX+DODGS-402"',
     'key: ("AdelaideX+PolyTraX" OR "AdelaideX+SpecTraX" OR "AdelaideX+DiffTraX"'
     ' OR "AdelaideX+InteTraX" OR "AdelaideX+ProbTraX" OR "AdelaideX+StatTraX"'
     ' OR "AdelaideX+MathTrackX")':
     'product.key in ("AdelaideX+PolyTraX", "AdelaideX+SpecTraX", '
     '"AdelaideX+DiffTraX", "AdelaideX+InteTraX", "AdelaideX+ProbTraX", '
     '"AdelaideX+StatTraX", "AdelaideX+MathTrackX")',
-    'key: "StanfordOnline+Eesley2022"': 'product.key in ("StanfordOnline+Eesley2022")',
-    'key: "LouvainX+Louv36x"': 'product.key in ("LouvainX+Louv36x")',
+    'key: "StanfordOnline+Eesley2022"': 'product.key = "StanfordOnline+Eesley2022"',
+    'key: "LouvainX+Louv36x"': 'product.key = "LouvainX+Louv36x"',
     'key: ("UAMx+Griegox" OR "UAMx+Griego1.5x")': 'product.key in ("UAMx+Griegox", "UAMx+Griego1.5x")',
-    'key: "TecdeMonterreyX+HC_MFN.1x"': 'product.key in ("TecdeMonterreyX+HC_MFN.1x")',
-    'key: "edX+BC-OC-ai"': 'product.key in ("edX+BC-OC-ai")',
-    'key: "HKUx+HKU_09x"': 'product.key in ("HKUx+HKU_09x")',
+    'key: "TecdeMonterreyX+HC_MFN.1x"': 'product.key = "TecdeMonterreyX+HC_MFN.1x"',
+    'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
+    'key: "HKUx+HKU_09x"': 'product.key = "HKUx+HKU_09x"',
     'key:("MITx+6.431x" OR "MITx+6.86x" OR "MITx+18.6501x" '
     'OR "MITx+6.419x" OR "MITx+14.310Fx" OR "MITx+DS.CFx")':
     'product.key in ("MITx+6.431x" , "MITx+6.86x",  "MITx+18.6501x", '
     '"MITx+6.419x", "MITx+14.310Fx", "MITx+DS.CFx")',
-    'key: "HKPolyUx+OPT101x"': 'product.key in ("HKPolyUx+OPT101x")',
+    'key: "HKPolyUx+OPT101x"': 'product.key = "HKPolyUx+OPT101x"',
     'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMLO01I.x" '
     'OR "TecdeMonterreyX+MMLF01I.x")':
     'product.key in ("TecdeMonterreyX+CT01I.x", "TecdeMonterreyX+MMLO01I.x", "TecdeMonterreyX+MMLF01I.x")',
-    'key: "UQx+BUSLEAD4x"': 'product.key in ("UQx+BUSLEAD4x")',
-    'key:"UQx+CORPINN5x"': 'product.key in ("UQx+CORPINN5x")',
-    'key: "BerkeleyX+GG201x"': 'product.key in ("BerkeleyX+GG201x")',
-    'key: "RICEx+RiceSBE02"': 'product.key in ("RICEx+RiceSBE02")',
-    'key: "TUMx+iLabx"': 'product.key in ("TUMx+iLabx")',
+    'key: "UQx+BUSLEAD4x"': 'product.key = "UQx+BUSLEAD4x"',
+    'key:"UQx+CORPINN5x"': 'product.key = "UQx+CORPINN5x"',
+    'key: "BerkeleyX+GG201x"': 'product.key = "BerkeleyX+GG201x"',
+    'key: "RICEx+RiceSBE02"': 'product.key = "RICEx+RiceSBE02"',
+    'key: "TUMx+iLabx"': 'product.key = "TUMx+iLabx"',
     'key: ("TecdeMonterreyX+CT01I.x" OR "TecdeMonterreyX+MMEC01I.x" OR '
     '"TecdeMonterreyX+MMLF01I.x" OR "TecdeMonterreyX+MMSE01I.x" OR'
     ' "TecdeMonterreyX+MMSS01I.x" OR "TecdeMonterreyX+MMLO01I.x")':
     'product.key in ("TecdeMonterreyX+CT01I.x", "TecdeMonterreyX+MMEC01I.x",'
     ' "TecdeMonterreyX+MMLF01I.x", "TecdeMonterreyX+MMSE01I.x",'
     ' "TecdeMonterreyX+MMSS01I.x", "TecdeMonterreyX+MMLO01I.x")',
-    'key: "AlaskaX+DODGS-400"': 'product.key in ("AlaskaX+DODGS-400")',
-    'key: "BayreuthX+ubt205mun"': 'product.key in ("BayreuthX+ubt205mun")',
-    'key: "TUGrazX+EMC1"': 'product.key in ("TUGrazX+EMC1")',
-    'key: "UQx+CALDCOMM1x"': 'product.key in ("UQx+CALDCOMM1x")',
-    'key: "DelftX+OS101x"': 'product.key in ("DelftX+OS101x")',
+    'key: "AlaskaX+DODGS-400"': 'product.key = "AlaskaX+DODGS-400"',
+    'key: "BayreuthX+ubt205mun"': 'product.key = "BayreuthX+ubt205mun"',
+    'key: "TUGrazX+EMC1"': 'product.key = "TUGrazX+EMC1"',
+    'key: "UQx+CALDCOMM1x"': 'product.key = "UQx+CALDCOMM1x"',
+    'key: "DelftX+OS101x"': 'product.key = "DelftX+OS101x"',
     'key: ("UTAustinX+FINTECH-OVERVIEW" OR "UTAustinX+FINTECH-BT" OR'
     ' "UTAustinX+FINTECH-ML" OR "UTAustinX+FINTECH-IOT")':
     'product.key in ("UTAustinX+FINTECH-OVERVIEW", "UTAustinX+FINTECH-BT",'
     ' "UTAustinX+FINTECH-ML", "UTAustinX+FINTECH-IOT")',
-    'key:"IsraelX+1_2020"': 'product.key in ("IsraelX+1_2020")',
+    'key:"IsraelX+1_2020"': 'product.key = "IsraelX+1_2020"',
     'key: "DelftX+eCARS1x+2T2024"': 'variant.key in ("course-v1:DelftX+eCARS1x+2T2024")',
     'key: ("DelftX+PV1Ex" OR "DelftX+PV2Ex" OR "DelftX+PV3Ex" OR "DelftX+PV4Ex")':
     'product.key in ("DelftX+PV1Ex", "DelftX+PV2Ex", "DelftX+PV3Ex", "DelftX+PV4Ex")',
-    'key: "UQx+ACE201x"': 'product.key in ("UQx+ACE201x")',
-    'key: "UQx+BUSLEAD5x"': 'product.key in ("UQx+BUSLEAD5x")',
-    'key: "DECx+B101Cx2"': 'product.key in ("DECx+B101Cx2")',
+    'key: "UQx+ACE201x"': 'product.key = "UQx+ACE201x"',
+    'key: "UQx+BUSLEAD5x"': 'product.key = "UQx+BUSLEAD5x"',
+    'key: "DECx+B101Cx2"': 'product.key = "DECx+B101Cx2"',
     'key:("ColumbiaX+CU.OC.AI001" OR "ColumbiaX+CU.OC.AI002")':
     'product.key in ("ColumbiaX+CU.OC.AI001", "ColumbiaX+CU.OC.AI002")',
-    'key: "LouvainX+Louv32x"': 'product.key in ("LouvainX+Louv32x")',
-    'key: "AlaskaX+SPRT1x"': 'product.key in ("AlaskaX+SPRT1x")',
-    'key: "TUMx+MYOAx"': 'product.key in ("TUMx+MYOAx")',
+    'key: "LouvainX+Louv32x"': 'product.key = "LouvainX+Louv32x"',
+    'key: "AlaskaX+SPRT1x"': 'product.key = "AlaskaX+SPRT1x"',
+    'key: "TUMx+MYOAx"': 'product.key = "TUMx+MYOAx"',
     'key: "MITx+15.516x+3T2024"': 'variant.key in ("course-v1:MITx+15.516x+3T2024")',
-    'key: "DelftX+OS101x+"': 'product.key in ("DelftX+OS101x")',
-    'key: "UQx+Teams101x"': 'product.key in ("UQx+Teams101x")',
-    'key: "TUGrazX+Pharm02"': 'product.key in ("TUGrazX+Pharm02")',
-    'key: "MITx+6.00.2x"': 'product.key in ("MITx+6.00.2x")',
-    'key: "UBCx+Biobank2x"': 'product.key in ("UBCx+Biobank2x")',
-    'key: "AlaskaX+DODGS-401"': 'product.key in ("AlaskaX+DODGS-401")',
+    'key: "DelftX+OS101x+"': 'product.key = "DelftX+OS101x"',
+    'key: "UQx+Teams101x"': 'product.key = "UQx+Teams101x"',
+    'key: "TUGrazX+Pharm02"': 'product.key = "TUGrazX+Pharm02"',
+    'key: "MITx+6.00.2x"': 'product.key = "MITx+6.00.2x"',
+    'key: "UBCx+Biobank2x"': 'product.key = "UBCx+Biobank2x"',
+    'key: "AlaskaX+DODGS-401"': 'product.key = "AlaskaX+DODGS-401"',
     'key: ("AlaskaX+DODGS-400" OR "AlaskaX+DODGS-401" OR "AlaskaX+DODGS-402")':
     'product.key in ("AlaskaX+DODGS-400", "AlaskaX+DODGS-401", "AlaskaX+DODGS-402")',
-    'key: "AlaskaX+MAKE1x"': 'product.key in ("AlaskaX+MAKE1x")',
-    'key: "Teams101x"': 'product.key in ("UQx+Teams101x")',
-    'key: "AlaskaX+SPRT3x"': 'product.key in ("AlaskaX+SPRT3x")',
-    'key: "CurtinX+NSSI1x"': 'product.key in ("CurtinX+NSSI1x")',
+    'key: "AlaskaX+MAKE1x"': 'product.key = "AlaskaX+MAKE1x"',
+    'key: "Teams101x"': 'product.key = "UQx+Teams101x"',
+    'key: "AlaskaX+SPRT3x"': 'product.key = "AlaskaX+SPRT3x"',
+    'key: "CurtinX+NSSI1x"': 'product.key = "CurtinX+NSSI1x"',
     'key: ("UBCx+Biobank1x" OR "UBCx+Biobank2x")':
     'product.key in ("UBCx+Biobank1x", "UBCx+Biobank2x")',
     'key: "DelftX+eCARS2x+2T2024"': 'variant.key in ("course-v1:DelftX+eCARS2x+2T2024")',
-    'key: "AlaskaX+AI01x"': 'product.key in ("AlaskaX+AI01x")',
-    'key: "JesusCollegeCambridge+JCedX001"': 'product.key in ("JesusCollegeCambridge+JCedX001")',
-    'key: "UQx+ACE101x"': 'product.key in ("UQx+ACE101x")',
+    'key: "AlaskaX+AI01x"': 'product.key = "AlaskaX+AI01x"',
+    'key: "JesusCollegeCambridge+JCedX001"': 'product.key = "JesusCollegeCambridge+JCedX001"',
+    'key: "UQx+ACE101x"': 'product.key = "UQx+ACE101x"',
     'key: ("TecdeMonterreyX+HC_CDE.1x" OR "TecdeMonterreyX+HC_AB.2x")':
     'product.key in ("TecdeMonterreyX+HC_CDE.1x", "TecdeMonterreyX+HC_AB.2x")',
-    'key: "AlaskaX+UAS1x"': 'product.key in ("AlaskaX+UAS1x")',
-    'key: "UQx+CORPINN4x"': 'product.key in ("UQx+CORPINN4x")',
-    'key: "HKUx+Dentistry_6x"': 'product.key in ("HKUx+Dentistry_6x")',
-    'key: "UC3Mx IM.1x"': 'product.key in ("UC3Mx+IM.1x")',
+    'key: "AlaskaX+UAS1x"': 'product.key = "AlaskaX+UAS1x"',
+    'key: "UQx+CORPINN4x"': 'product.key = "UQx+CORPINN4x"',
+    'key: "HKUx+Dentistry_6x"': 'product.key = "HKUx+Dentistry_6x"',
+    'key: "UC3Mx IM.1x"': 'product.key = "UC3Mx+IM.1x"',
     'key: "DelftX+AIfE3x+3T2024"': 'variant.key in ("course-v1:DelftX+AIfE3x+3T2024")',
-    'key: "DelftX+TUDF-FE01x"': 'product.key in ("DelftX+TUDF-FE01x")',
-    'key: "UQx+BUSLEAD2x"': 'product.key in ("UQx+BUSLEAD2x")',
+    'key: "DelftX+TUDF-FE01x"': 'product.key = "DelftX+TUDF-FE01x"',
+    'key: "UQx+BUSLEAD2x"': 'product.key = "UQx+BUSLEAD2x"',
     'key: ("TUGrazX+SCS1" OR "TUGrazX+SCS2" OR "TUGrazX+SCS3" '
     'OR "TUGrazX+SCS4" OR "TUGrazX+SCS5" OR "TUGrazX+SCS6")':
     'product.key in ("TUGrazX+SCS1", "TUGrazX+SCS2", "TUGrazX+SCS3", '
     '"TUGrazX+SCS4","TUGrazX+SCS5", "TUGrazX+SCS6")',
-    'key: "IsraelX+CriticalThinking"': 'product.key in ("IsraelX+CriticalThinking")',
-    'key: "Statistics.comX+MLOps2-AWS"': 'product.key in ("Statistics.comX+MLOps2-AWS")',
-    'key: "DECx+DA101Cx1"': 'product.key in ("DECx+DA101Cx1")',
+    'key: "IsraelX+CriticalThinking"': 'product.key = "IsraelX+CriticalThinking"',
+    'key: "Statistics.comX+MLOps2-AWS"': 'product.key = "Statistics.comX+MLOps2-AWS"',
+    'key: "DECx+DA101Cx1"': 'product.key = "DECx+DA101Cx1"',
     'key: ("MITx+DS.CFx" OR "MITx+6.431x" OR "MITx+6.86x" '
     'OR "MITx+18.6501x" OR "MITx+6.419x" OR "MITx+IDS.S24x" '
     'OR "MITx+14.310Fx")':
@@ -215,37 +215,37 @@ KEY_TO_PREDICATE_DICT = {
     '"MITx+18.6501x", "MITx+6.419x", "MITx+IDS.S24x", "MITx+14.310Fx")',
     'key: ("DelftX+QTM1x" OR "DelftX+QTM2x" OR "DelftX+QTM3x")':
     'product.key in ("DelftX+QTM1x", "DelftX+QTM2x", "DelftX+QTM3x")',
-    'key: "TUMx+AWMEx"': 'product.key in ("TUMx+AWMEx")',
-    'key: "UQx+DEEPx"': 'product.key in ("UQx+DEEPx")',
+    'key: "TUMx+AWMEx"': 'product.key = "TUMx+AWMEx"',
+    'key: "UQx+DEEPx"': 'product.key = "UQx+DEEPx"',
     'key: ("DECx+B101Cx1" OR "DECx+B101Cx2" OR "DECx+DA101Cx1" OR "DECx+DA101Cx2")':
     'product.key in ("DECx+B101Cx1", "DECx+B101Cx2", "DECx+DA101Cx1", "DECx+DA101Cx2")',
-    'key: "IsraelX+0109434x"': 'product.key in ("IsraelX+0109434x")',
+    'key: "IsraelX+0109434x"': 'product.key = "IsraelX+0109434x"',
     'key: ("DelftX+OS101x+1T2025" OR "DelftX+MathMod1x+1T2025" OR "DelftX+OT.1x+1T2025")':
     'variant.key in ("course-v1:DelftX+OT.1x+1T2025", '
     '"course-v1:DelftX+MathMod1x+1T2025", "course-v1:DelftX+OS101x+1T2025")',
-    'key: "UQx+Write101x"': 'product.key in ("UQx+Write101x")',
-    'key: "IsraelX+1_2020"': 'product.key in ("IsraelX+1_2020")',
+    'key: "UQx+Write101x"': 'product.key = "UQx+Write101x"',
+    'key: "IsraelX+1_2020"': 'product.key = "IsraelX+1_2020"',
     'key: ("TecdeMonterreyX+HC_AB.2x" OR "TecdeMonterreyX+HC_MFN.1x")':
     'product.key in ("TecdeMonterreyX+HC_AB.2x", "TecdeMonterreyX+HC_MFN.1x")',
     'key: "DelftX+OS101x+1T2025"': 'variant.key in ("course-v1:DelftX+OS101x+1T2025")',
-    'key: "HKUx+Genderx"': 'product.key in ("HKUx+Genderx")',
-    'key:"AlaskaX+GIS1x"': 'product.key in ("AlaskaX+GIS1x")',
+    'key: "HKUx+Genderx"': 'product.key = "HKUx+Genderx"',
+    'key:"AlaskaX+GIS1x"': 'product.key = "AlaskaX+GIS1x"',
     'key: ("IsraelX+MBSE101" OR "IsraelX+MBSE102")':
     'product.key in ("IsraelX+MBSE101", "IsraelX+MBSE102")',
-    'key:"TUMx+MYOAx"': 'product.key in ("TUMx+MYOAx")',
+    'key:"TUMx+MYOAx"': 'product.key = "TUMx+MYOAx"',
     'key: ("RiskX" OR "Entrep101x" OR "Project101x")':
     'product.key in ("AdelaideX+Project101x", "AdelaideX+RiskX", "AdelaideX+Entrep101X")',
     'key: ("IsraelX+CONVERT" OR "IsraelX+resilience911" OR'
     ' "IsraelX+KAB1010x" OR "IsraelX+EPS1x" OR "IsraelX+WECS")':
     'product.key in ("IsraelX+CONVERT", "IsraelX+resilience911",'
     ' "IsraelX+KAB1010x", "IsraelX+EPS1x", "IsraelX+WECS")',
-    'key: "SDGAcademyX+AMZN001"': 'product.key in ("SDGAcademyX+AMZN001")',
-    'key: "RITx+THINK501x"': 'product.key in ("RITx+THINK501x")',
-    'key: "UC3Mx+IM.3x"': 'product.key in ("UC3Mx+IM.3x")',
-    'key: "AdelaideX+Project101x"': 'product.key in ("AdelaideX+Project101x")',
-    'key: "IsraelX+gabi+"': 'product.key in ("IsraelX+gabi")',
-    'key:"LouvainX+Louv29x"': 'product.key in ("LouvainX+Louv29x")',
-    'key: ("TecdeMonterreyX+HC_AB.2x")': 'product.key in ("TecdeMonterreyX+HC_AB.2x")',
+    'key: "SDGAcademyX+AMZN001"': 'product.key = "SDGAcademyX+AMZN001"',
+    'key: "RITx+THINK501x"': 'product.key = "RITx+THINK501x"',
+    'key: "UC3Mx+IM.3x"': 'product.key = "UC3Mx+IM.3x"',
+    'key: "AdelaideX+Project101x"': 'product.key = "AdelaideX+Project101x"',
+    'key: "IsraelX+gabi+"': 'product.key = "IsraelX+gabi"',
+    'key:"LouvainX+Louv29x"': 'product.key = "LouvainX+Louv29x"',
+    'key: ("TecdeMonterreyX+HC_AB.2x")': 'product.key = "TecdeMonterreyX+HC_AB.2x"',
     'key: ("TAUx+Viruses101" OR "TAUx+Viruses102")':
     'product.key in ("TAUx+Viruses101", "TAUx+Viruses102")',
     'key: "UQx+CORPINN1x"': 'product.key in ("UQx+CORPINN1x")',
