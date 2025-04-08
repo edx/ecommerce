@@ -87,9 +87,9 @@ PROGRAM_OFFER_DEFAULT_SORT_ORDER = 0.000000000000000001
 
 KEY_TO_PREDICATE_DICT = {
     'key: ("AlaskaX+GRANT1x" OR "AlaskaX+GRANT2x" OR "AlaskaX+GRANT3x")':
-    'product.key = "AlaskaX+GRANT3x" or product.key = "AlaskaX+GRANT2x" or product.key = "AlaskaX+GRANT1x" ',
+    'product.key = "AlaskaX+GRANT3x" or product.key = "AlaskaX+GRANT2x" or product.key = "AlaskaX+GRANT1x"',
     'key: ("MITx+CTL.SC0x" OR "MITx+CTL.SC1x" OR "MITx+CTL.SC2x" OR "MITx+CTL.SC3x" OR "MITx+CTL.SC4x")':
-    'product.key = "MITx+CTL.SC0x" or product.key = "MITx+CTL.SC1x" or product.key = "MITx+CTL.SC2x" or product.key = "MITx+CTL.SC3x" or product.key = "MITx+CTL.SC4x" ',
+    'product.key = "MITx+CTL.SC0x" or product.key = "MITx+CTL.SC1x" or product.key = "MITx+CTL.SC2x" or product.key = "MITx+CTL.SC3x" or product.key = "MITx+CTL.SC4x"',
     'key: "W3Cx+JS.0x"': 'product.key = "W3Cx+JS.0x"',
     'key: "RICEx+RiceSBE01"': 'product.key = "RICEx+RiceSBE01"',
     'key: "Statistics.comX+MLOps2-GCP"': 'product.key = "Statistics.comX+MLOps2-GCP"',
@@ -319,13 +319,13 @@ KEY_TO_PREDICATE_DICT = {
     '"ColumbiaX+CSMM.103x", "ColumbiaX+CSMM.101x", '
     '"ColumbiaX+CSMM.102x", "MichiganX+CSMM.103x", '
     '"MichiganX+CSMM.104x", "GTx+MGT6203x", "GTx+CSE6040x", "GTx+ISYE6501x" )',
-    'number:"Louv25.1x"': 'product.key in ("LouvainX+Louv25.1")',
-    'number:(LEAD1x)': 'product.key in ("HarvardX+LEAD1x")',
-    'number:Louv21x': 'product.key in ("LouvainX+Louv21x")',
-    'number:Louv13x': 'product.key in ("LouvainX+Louv13x")',
-    'number:URX37': 'product.key in ("URosarioX+URX37")',
-    'number:"Louv25.2x"': 'product.key in ("LouvainX+Louv25.2x")',
-    'number:Louv31x': 'product.key in ("LouvainX+Louv31x")',
+    'number:"Louv25.1x"': 'product.key = "LouvainX+Louv25.1"',
+    'number:(LEAD1x)': 'product.key = "HarvardX+LEAD1x"',
+    'number:Louv21x': 'product.key = "LouvainX+Louv21x"',
+    'number:Louv13x': 'product.key = "LouvainX+Louv13x"',
+    'number:URX37': 'product.key = "URosarioX+URX37"',
+    'number:"Louv25.2x"': 'product.key = "LouvainX+Louv25.2x"',
+    'number:Louv31x': 'product.key = "LouvainX+Louv31x"',
     'number:(CONVERT OR resilience911 OR KAB1010x OR EPS1x OR WECS)':
     'product.key = "IsraelX+EPS1x" or product.key = "IsraelX+resilience911" or product.key = "IsraelX+CONVERT" or product.key = "IsraelX+KAB1010x" or product.key = "IsraelX+WECS"',
     'key:("6.419x" or ""6.86x" or "DS.CFx" or "14.310Fx" or "6.431x" or "18.6501x")':
