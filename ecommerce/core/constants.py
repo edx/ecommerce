@@ -274,24 +274,24 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("TecdeMonterreyX+HC_CDE.1x" OR "TecdeMonterreyX+HC_IFA.1x" '
     'OR "TecdeMonterreyX+HC_MFN.1x" OR "TecdeMonterreyX+HC_PEA.2x" '
     'OR "TecdeMonterreyX+HC_AB.2x" OR "TecdeMonterreyX+HC_MRL.2x")':
-    'product.key = "TecdeMonterreyX+HC_CDE.1x" OR product.key = "TecdeMonterreyX+HC_IFA.1x" OR product.key = "TecdeMonterreyX+HC_MFN.1x" OR product.key = "TecdeMonterreyX+HC_PEA.2x" OR product.key = "TecdeMonterreyX+HC_AB.2x" OR product.key = "TecdeMonterreyX+HC_MRL.2x"',
+    'product.key = "TecdeMonterreyX+HC_CDE.1x" or product.key = "TecdeMonterreyX+HC_IFA.1x" or product.key = "TecdeMonterreyX+HC_MFN.1x" or product.key = "TecdeMonterreyX+HC_PEA.2x" or product.key = "TecdeMonterreyX+HC_AB.2x" or product.key = "TecdeMonterreyX+HC_MRL.2x"',
     'key: ("TecdeMonterreyX+EGT-TD1x" OR "TecdeMonterreyX+HC_CDE.1x" OR "TecdeMonterreyX+HC_MRL.2x")':
-    'product.key = "TecdeMonterreyX+EGT-TD1x" OR product.key = "TecdeMonterreyX+HC_CDE.1x" OR product.key = "TecdeMonterreyX+HC_MRL.2x"',
+    'product.key = "TecdeMonterreyX+EGT-TD1x" or product.key = "TecdeMonterreyX+HC_CDE.1x" or product.key = "TecdeMonterreyX+HC_MRL.2x"',
     'key: "Statistics.comX+MLOps1-AWS"': 'product.key = "Statistics.comX+MLOps1-AWS"',
     'key: ("MITx+18.6501x" OR "MITx+6.419x" OR '
     '"MITx+6.431x" OR "MITx+6.86x" OR "MITx+DS.CFx" OR "MITx+IDS.S24x" OR "MITx+14.310Fx")':
-    'product.key = "MITx+18.6501x" OR product.key = "MITx+6.419x" OR product.key = "MITx+6.431x" OR product.key = "MITx+6.86x" OR product.key = "MITx+DS.CFx" OR product.key = "MITx+IDS.S24x" OR product.key = "MITx+14.310Fx"',
+    'product.key = "MITx+18.6501x" or product.key = "MITx+6.419x" or product.key = "MITx+6.431x" or product.key = "MITx+6.86x" or product.key = "MITx+DS.CFx" or product.key = "MITx+IDS.S24x" or product.key = "MITx+14.310Fx"',
     'key: ("HP+HPGG01.en" OR "HP+HPGG01.es" OR '
     '"HP+HPGG02.en" OR "HP+HPGG03.en" OR "HP+HPGG01.ar" OR '
     '"HP+HPGG02.ar" OR "HP+HPGG02.es" OR "HP+HPGG03.ar" OR '
     '"HP+HPGG03.es" OR "HP+HPGG04.en" OR "HP+HPGG04.ar" OR "HP+HPGG04.es")':
-    'product.key = "HP+HPGG01.en" OR product.key = "HP+HPGG01.es" OR product.key = "HP+HPGG02.en" OR product.key = "HP+HPGG03.en" OR product.key = "HP+HPGG01.ar" OR product.key = "HP+HPGG02.ar" OR product.key = "HP+HPGG02.es" OR product.key = "HP+HPGG03.ar" OR product.key = "HP+HPGG03.es" OR product.key = "HP+HPGG04.en" OR product.key = "HP+HPGG04.ar" OR product.key = "HP+HPGG04.es"',
+    'product.key = "HP+HPGG01.en" or product.key = "HP+HPGG01.es" or product.key = "HP+HPGG02.en" or product.key = "HP+HPGG03.en" or product.key = "HP+HPGG01.ar" or product.key = "HP+HPGG02.ar" or product.key = "HP+HPGG02.es" or product.key = "HP+HPGG03.ar" or product.key = "HP+HPGG03.es" or product.key = "HP+HPGG04.en" or product.key = "HP+HPGG04.ar" or product.key = "HP+HPGG04.es"',
     'key: "MITx+FIN.CFx"': 'product.key = "MITx+FIN.CFx"',
-    'key: ("ChalmersX+ChM005x" OR "ChalmersX+ChM006x")': 'product.key = "ChalmersX+ChM005x" OR product.key = "ChalmersX+ChM006x"',
+    'key: ("ChalmersX+ChM005x" OR "ChalmersX+ChM006x")': 'product.key = "ChalmersX+ChM005x" or product.key = "ChalmersX+ChM006x"',
     'key: ("TecdeMonterreyX+EGT-TD1x" OR "TecdeMonterreyX+HC_CDE.1x" '
     'OR "TecdeMonterreyX+HC_MRL.2x" OR "TecdeMonterreyX+MMEC01I.x" '
     'OR "TecdeMonterreyX+MMSE01I.x" OR "TecdeMonterreyX+MMSS01I.x")':
-    'product.key = "TecdeMonterreyX+EGT-TD1x" OR product.key = "TecdeMonterreyX+HC_CDE.1x" OR product.key = "TecdeMonterreyX+HC_MRL.2x" OR product.key = "TecdeMonterreyX+MMEC01I.x" OR product.key = "TecdeMonterreyX+MMSE01I.x" OR product.key = "TecdeMonterreyX+MMSS01I.x"',
+    'product.key = "TecdeMonterreyX+EGT-TD1x" or product.key = "TecdeMonterreyX+HC_CDE.1x" or product.key = "TecdeMonterreyX+HC_MRL.2x" or product.key = "TecdeMonterreyX+MMEC01I.x" or product.key = "TecdeMonterreyX+MMSE01I.x" or product.key = "TecdeMonterreyX+MMSS01I.x"',
     'key: "DECx+B101Cx1"': 'product.key = "DECx+B101Cx1"',
     'key: ("DelftX+AIfE5x" OR "DelftX+AIfE6x" OR "DelftX+AIfE3x")':
     'product.key = "DelftX+AIfE5x" or product.key = "DelftX+AIfE6x" or product.key = "DelftX+AIfE3x"',
