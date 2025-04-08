@@ -14,11 +14,15 @@ from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient, PairedDiscount
 from ecommerce.core.constants import (
-    COURSE_DISCOUNT_DEFAULT_SORT_ORDER,
+    COUPONS_DEFAULT_SORT_ORDER,
     CT_ABSOLUTE_DISCOUNT_TYPE,
-    CT_PERCENTAGE_DISCOUNT_TYPE
+    CT_PERCENTAGE_DISCOUNT_TYPE,
 )
-from ecommerce.core.utils import convert_querystring_to_predicate, get_category_for_coupon
+from ecommerce.core.utils import (
+    convert_querystring_to_predicate,
+    get_category_for_coupon,
+    get_next_sort_order_for_coupons
+)
 from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
@@ -32,29 +36,6 @@ Benefit = get_model("offer", "Benefit")
 Condition = get_model("offer", "Condition")
 ConditionalOffer = get_model("offer", "ConditionalOffer")
 SiteConfiguration = get_model("core", "SiteConfiguration")
-
-
-def _get_highest_sort_order(client: CommercetoolsAPIClient) -> float:
-    """
-    Get the highest sort order for cart discounts without discount codes.
-
-    Args:
-        client (CommercetoolsAPIClient): Commercetools API client.
-
-    Returns:
-        float: The highest sort order.
-    """
-    response = client.get_highest_sort_order_for_cart_discount(
-        where='requiresDiscountCode=true and custom(fields(discountType="course-discount"))'
-    )
-
-    if not response:
-        raise CommandError("Failed to get highest sort order. Exiting command.")
-
-    if response["count"] > 0:
-        return float(response["results"][0]["sortOrder"])
-
-    return COURSE_DISCOUNT_DEFAULT_SORT_ORDER
 
 
 def _get_cent_amount_from_value(value: Dict) -> Optional[int]:
@@ -220,13 +201,15 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
             else f"[Migrated - Course Discount] - {coupon.title}"
         )
 
+        ct_category, channel = get_category_for_coupon(coupon, ProductCategory, summary_info)
         cart_discount = {
             "name": name,
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
-                "category": get_category_for_coupon(coupon, ProductCategory),
+                "category": ct_category,
+                "channel": channel,
                 "discountType": "course-discount",
             },
             "cartPredicate": _map_voucher_criteria_to_cart_predicate(
@@ -553,7 +536,7 @@ def _create_cart_discount(
         )
         return None, sort_order
 
-    sort_order += COURSE_DISCOUNT_DEFAULT_SORT_ORDER
+    sort_order += COUPONS_DEFAULT_SORT_ORDER
     logger.info(
         f"Cart discount created successfully with name: {cart_discount['name']}."
     )
@@ -760,8 +743,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     )
 
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    sort_order = _get_highest_sort_order(client)
-    sort_order += COURSE_DISCOUNT_DEFAULT_SORT_ORDER
+    sort_order = get_next_sort_order_for_coupons(client)
 
     if not existing_discounts_in_ct:
         raise CommandError(

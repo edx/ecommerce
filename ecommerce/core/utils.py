@@ -1,17 +1,21 @@
+from decimal import Decimal
 import logging
 import re
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import waffle
+from django.core.management.base import CommandError
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from edx_django_utils.cache import get_cache_key as get_django_cache_key
 
 from ecommerce.core.constants import (
+    COUPONS_DEFAULT_SORT_ORDER,
     DEFAULT_PRODUCT_CATEGORY,
     KEY_TO_PREDICATE_DICT,
-    LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING
+    LEGACY_CATEGORY_TO_CHANNEL_MAPPING,
+    LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING,
 )
 
 logger = logging.getLogger(__name__)
@@ -494,17 +498,65 @@ def convert_querystring_to_predicate(query):
     return predicate.strip()
 
 
-def get_category_for_coupon(coupon, product_category_model) -> Optional[str]:
+def get_category_for_coupon(coupon, product_category_model, summary_info) -> Optional[str]:
     """
     Get the category for the coupon.
     """
     try:
         category = product_category_model.objects.get(product=coupon).category.slug
     except product_category_model.DoesNotExist:
-        category = DEFAULT_PRODUCT_CATEGORY
+        category = None
 
     if not category:
-        log_message = f"Category not found for coupon {coupon.title}."
-        logger.info(log_message)
+        log_message = f"Product category object not found for for coupon {coupon.title}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": f'Product category object not found.',
+            "reason": log_message,
+        })
+        category = DEFAULT_PRODUCT_CATEGORY
 
-    return LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING.get(category, DEFAULT_PRODUCT_CATEGORY)
+    ct_category = LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING.get(category)
+    if not ct_category:
+        log_message = f"Category mapping not found for for coupon {coupon.title} with legacy category {category}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": f'Category mapping not found.',
+            "reason": log_message,
+        })
+        ct_category = DEFAULT_PRODUCT_CATEGORY
+
+    channel = LEGACY_CATEGORY_TO_CHANNEL_MAPPING.get(category)
+    if not channel:
+        log_message = f"Channel mapping not found for for coupon {coupon.title} with legacy category {category}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": f'Channel mapping not found.',
+            "reason": log_message,
+        })
+        channel = DEFAULT_PRODUCT_CATEGORY
+
+    return ct_category, channel
+
+def get_next_sort_order_for_coupons(client) -> Decimal:
+    """
+    Get the highest sort order for cart discounts without discount codes.
+
+    Args:
+        client (CommercetoolsAPIClient): Commercetools API client.
+
+    Returns:
+        Decimal: The highest sort order.
+    """
+    response = client.get_highest_sort_order_for_cart_discount(
+        where='requiresDiscountCode=true and custom(fields(discountType in ("course-discount", "program-discount")))'
+    )
+
+    if not response:
+        raise CommandError("Failed to get highest sort order. Exiting command.")
+
+    if response["count"] > 0:
+        highest_sort_order = Decimal(response["results"][0]["sortOrder"])
+        return highest_sort_order + COUPONS_DEFAULT_SORT_ORDER
+
+    return COUPONS_DEFAULT_SORT_ORDER

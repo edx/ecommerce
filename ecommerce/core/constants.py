@@ -1,5 +1,6 @@
 """Constants core to the ecommerce app."""
 
+from decimal import Decimal
 from enum import Enum
 
 ISO_8601_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -81,9 +82,8 @@ PROGRAM_OFFER_NAME = 'Program Offer'
 
 BUNDLE_CART_DISCOUNT_KEY_FORMAT = "{type}-{value}"
 
-COURSE_DISCOUNT_DEFAULT_SORT_ORDER = 0.00000001
-PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER = 0.0000000000001
-PROGRAM_OFFER_DEFAULT_SORT_ORDER = 0.000000000000000001
+COUPONS_DEFAULT_SORT_ORDER = Decimal('0.0000000001')  # 10 decimal places
+PROGRAM_OFFERS_DEFAULT_SORT_ORDER = Decimal('0.000000000000001')  # 15 decimal places
 
 DEFAULT_PRODUCT_CATEGORY = 'other'
 
@@ -95,7 +95,7 @@ LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING = {
     'bulk-enrollment-prepay': 'bulk-enrollment-prepay',
     'bulk-enrollment-upon-redemption': 'bulk-enrollment-upon-redemption',
     'connected': 'other',
-    'course-promotion': 'other',  # TODO: update this based on reply from cmelo
+    'course-promotion': 'other',
     'customer-service': 'customer-service',
     'edx-employee-request': 'other',
     'financial-assistance': 'financial-assistance',
@@ -104,9 +104,9 @@ LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING = {
     'marketing-partner-promotion': 'marketing-other',
     'on-campus-learners': 'on-campus-learners',
     'other': 'other',
-    'partner-no-rev-orap': 'other',  # TODO: update this based on reply from cmelo
+    'partner-no-rev-orap': 'other',
     'partner-no-rev-prepay': 'partner-no-rev-prepay',
-    'partner-no-rev-rap': 'other',  # TODO: update this based on reply from cmelo
+    'partner-no-rev-rap': 'other',
     'partner-no-rev-upon-redemption': 'partner-no-rev-prepay',
     'retention-promotion': 'marketing-other',
     'scholarship': 'other',
@@ -114,6 +114,35 @@ LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING = {
     'services-other': 'customer-service',
     'support-other': 'customer-service',
     'upsell-promotion': 'marketing-other'
+}
+
+LEGACY_CATEGORY_TO_CHANNEL_MAPPING = {
+   'affiliate-promotion': 'affiliate',
+    'b2b-affiliate-promotion': 'enterprise-b2b',
+    'bulk-enrollment': 'enterprise-b2b',
+    'bulk-enrollment-integration': 'enterprise-b2b',
+    'bulk-enrollment-prepay': 'enterprise-b2by',
+    'bulk-enrollment-upon-redemption': 'enterprise-b2b',
+    'connected': 'other',
+    'course-promotion': 'other',
+    'customer-service': 'other',
+    'edx-employee-request': 'other',
+    'financial-assistance': 'organic-edx',
+    'geography-promotion': 'display-pmax',
+    'marketing-other': 'organic-edx',
+    'marketing-partner-promotion': 'organic-edx',
+    'on-campus-learners': 'email',
+    'other': 'other',
+    'partner-no-rev-orap': 'enterprise-b2b',
+    'partner-no-rev-prepay': 'enterprise-b2b',
+    'partner-no-rev-rap': 'enterprise-b2b',
+    'partner-no-rev-upon-redemption': 'enterprise-b2b',
+    'retention-promotion': 'email',
+    'scholarship': 'other',
+    'security-disclosure-reward': 'other',
+    'services-other': 'other',
+    'support-other': 'other',
+    'upsell-promotion': 'email'
 }
 
 KEY_TO_PREDICATE_DICT = {
