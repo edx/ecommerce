@@ -403,9 +403,9 @@ KEY_TO_PREDICATE_DICT = {
     ' and product.key != "MITx+15.415.1x"',
     'key: (-"MITx+DS.CFx" OR -"MITx+6.431x" OR -"MITx+6.86x" '
     'OR -"MITx+18.6501x" OR -"MITx+6.419x" OR -"MITx+IDS.S24x" '
-    'OR -"MITx+14.310Fx")': 'product.key != "MITx+DS.CFx" or product.key != "MITx+6.431x"'
+    'OR -"MITx+14.310Fx")': '(product.key != "MITx+DS.CFx" or product.key != "MITx+6.431x"'
     ' or product.key != "MITx+6.86x" or product.key != "MITx+18.6501x" or product.key != "MITx+6.419x"'
-    ' or product.key != "MITx+IDS.S24x" or product.key != "MITx+14.310Fx"',
+    ' or product.key != "MITx+IDS.S24x" or product.key != "MITx+14.310Fx")',
     'key:(-IOT6x AND -MGT6203x AND -CSE6040x AND -ISYE6501x '
     'AND -3.46.2x AND -15.415.1x AND -15.415.2x AND -15.435x '
     'AND -15.455x AND -15.516x)':
