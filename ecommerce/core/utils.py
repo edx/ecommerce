@@ -6,8 +6,6 @@ import waffle
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from edx_django_utils.cache import get_cache_key as get_django_cache_key
-from requests.exceptions import ConnectionError as ReqConnectionError
-from requests.exceptions import RequestException, Timeout
 
 from ecommerce.core.constants import KEY_TO_PREDICATE_DICT
 
