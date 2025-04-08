@@ -413,6 +413,7 @@ KEY_TO_PREDICATE_DICT = {
     ' and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "MITx+3.46.2x"'
     ' and product.key != "MITx+15.415.1x" and product.key != "MITx+15.415.2x" and product.key != "MITx+15.435x"'
     ' and product.key != "MITx+15.455x" and product.key != "MITx+15.516x"',
+    'key: "UBCx+AI.02x"': 'product.key = "UBCx+AI.02x"',
 }
 
 
