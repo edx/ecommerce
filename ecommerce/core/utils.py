@@ -1,18 +1,20 @@
 import logging
 import re
+from decimal import Decimal
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import waffle
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.management.base import CommandError
 from edx_django_utils.cache import get_cache_key as get_django_cache_key
-from requests.exceptions import ConnectionError as ReqConnectionError
-from requests.exceptions import RequestException, Timeout
 
 from ecommerce.core.constants import (
+    COUPONS_DEFAULT_SORT_ORDER,
     DEFAULT_PRODUCT_CATEGORY,
     KEY_TO_PREDICATE_DICT,
+    LEGACY_CATEGORY_TO_CHANNEL_MAPPING,
     LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING
 )
 
@@ -80,46 +82,6 @@ def use_read_replica_if_available(queryset):
     If there is a database called 'read_replica', use that database for the queryset.
     """
     return queryset.using("read_replica") if "read_replica" in settings.DATABASES else queryset
-
-
-def _extract_orgs(text: str) -> str:
-    """
-    Extracts organization values from a query string and formats them into a predicate.
-
-    This function identifies and processes organization values provided in the input string
-    (in formats such as `org:(A OR B)` or `org:"A"` or `org:A`). It handles multiple organizations,
-    splits them on logical operators (AND/OR), removes duplicates, and returns a formatted predicate
-    for querying.
-
-    Args:
-        text (str): The input query string containing organization information.
-
-    Returns:
-        str: A formatted predicate string of the form:
-            'attributes.`brand-text` in ("org1", "org2", "org3")'
-
-    Examples:
-        >>> extract_orgs('org:(MITx OR HarvardX)')
-        'attributes.`brand-text` in ("HarvardX","MITx")'
-
-    Notes:
-        - Supports organization values with or without parentheses or quotes.
-        - Case-insensitive handling of logical operators (AND, OR).
-        - Removes duplicate organization values from the output.
-    """
-    # Regular expression to find values after 'org:'
-    org_pattern = re.findall(r'org:\s*(?:\((.*?)\)|"(.*?)"|([\w]+))', text)
-
-    # Extract and clean orgs from the captured groups
-    orgs = [org.strip().replace('"', '') for group in org_pattern for org in group if org]
-
-    # Split on AND/OR (case-insensitive) and flatten the list
-    split_orgs = [item for org in orgs for item in re.split(r'\s+(?:AND|OR)\s+', org, flags=re.IGNORECASE)]
-
-    # Removing duplicates and joining as a single string
-    orgs_str = ",".join(sorted(set(f'"{org}"' for org in split_orgs)))
-
-    return f'attributes.`brand-text` in ({orgs_str})'
 
 
 def _process_org_values(input_string):
@@ -309,250 +271,22 @@ def _split_components_on_operator(input_string):
     return result
 
 
-def _process_values(values):
-    """
-    Processes a string of values by transforming logical operators and removing hyphens.
-
-    This function performs the following transformations:
-    1. Splits the input string on the logical operators "AND" and "OR" (case-insensitive),
-       while preserving the delimiters.
-    2. Swaps "AND" with "OR" and vice versa, tracking the changes.
-    3. Removes any hyphens from the values.
-    4. Returns the processed string and a list of the changed operators.
-
-    Args:
-        values (str): The input string containing values and logical operators.
-
-    Returns:
-        tuple:
-            - str: The processed string with modified logical operators and hyphen-free values.
-            - list: A list of strings describing the changed operators (e.g., "AND → OR").
-
-    Example:
-        >>> _process_values("A AND B OR -C")
-        ('A OR B AND C', ['AND → OR', 'OR → AND'])
-
-        >>> _process_values("A AND -B")
-        ('A OR B', ['AND → OR'])
-    """
-    # Split on AND/OR (case-insensitive) while keeping delimiters
-    tokens = re.split(r'(\s+(?i:AND|OR)\s+)', values)
-
-    # Track changed operators
-    changed_operators = []
-
-    # Process each token
-    processed_tokens = []
-    for token in tokens:
-        token_upper = token.strip().upper()
-        if token_upper == "AND":
-            processed_tokens.append(" OR ")
-            changed_operators.append("AND → OR")
-        elif token_upper == "OR":
-            processed_tokens.append(" AND ")
-            changed_operators.append("OR → AND")
-        else:
-            # Remove '-' from values
-            processed_tokens.append(token.replace("-", ""))
-
-    return "".join(processed_tokens), changed_operators
-
-
-def _modify_key_values(input_string):
-    # Regex pattern to find key, org, or number values
-    pattern = r'(key|number|org|start):\((.*?)\)'
-
-    modified_string = input_string
-    all_changed_operators = []
-
-    for match in re.finditer(pattern, input_string):
-        category, values = match.groups()
-        if "-" in values:  # Only modify if values contain '-'
-            modified_values, changed_operators = _process_values(values)
-            all_changed_operators.extend(changed_operators)
-            modified_string = modified_string.replace(match.group(0), f"{category}:({modified_values})")
-
-    return modified_string, all_changed_operators
-
-
-def _extract_course_info(course_string):
-    """
-    Extracts organization, course number, and course run information from a course string.
-
-    This function parses a course identifier in the format `course-v1:<org>+<number>+<courserun>`
-    and extracts the corresponding values for 'org', 'number', and 'courserun'.
-
-    Args:
-        course_string (str): The input string containing the course identifier.
-
-    Returns:
-        dict or str:
-            - If the course string matches the expected format, a dictionary is returned with:
-                - 'org' (str): The organization offering the course.
-                - 'number' (str): The course number.
-                - 'courserun' (str): The specific course run identifier.
-            - If the input does not match the expected format, the string "Invalid course format" is returned.
-
-    Example:
-        >>> extract_course_info("course-v1:MITx+6.00.1x+2024_T1")
-        {
-            'org': 'MITx',
-            'number': '6.00.1x',
-            'courserun': '2024_T1'
-        }
-
-        >>> extract_course_info("invalid-course-string")
-        "Invalid course format"
-
-    Notes:
-        - The function assumes the course identifier is in the format: `course-v1:<org>+<number>+<courserun>`.
-        - If the format does not match, the function returns an error message instead of raising an exception.
-    """
-    # Define the regex pattern to extract org, number, and courserun
-    pattern = r'course-v1:([a-zA-Z0-9_]+)\+([a-zA-Z0-9_\.]+)\+([a-zA-Z0-9_]+)'
-
-    # Search for the pattern in the input string
-    match = re.search(pattern, course_string)
-
-    if match:
-        org, number, courserun = match.groups()
-        return {
-            'org': org,
-            'number': number,
-            'courserun': courserun
-        }
-    logger.error('Invalid course format: %s', course_string)
-    return "Invalid course format"
-
-
-def _process_number_value(course_ids):
-    """
-    Generates a product key predicate from a list of course identifiers.
-
-    This function takes a list of course IDs, extracts the organization and course number
-    from the first course ID using the `extract_course_info` function, and returns a predicate
-    in the format `product.key in (<org>+<number>)`.
-
-    Args:
-        course_ids (list of str): A list of course identifier strings in the format:
-                                  "course-v1:<org>+<number>+<courserun>".
-
-    Returns:
-        str: A predicate string in the format `product.key in (<org>+<number>)` based on the
-             organization and course number extracted from the first course ID.
-
-    Example:
-        >>> process_number_value(["course-v1:MITx+6.00.1x+2024_T1"])
-        'product.key in (MITx+6.00.1x)'
-
-    Notes:
-        - This function only processes the first course ID from the input list.
-        - Ensure the input is in the correct course identifier format. If the input does not match
-          the expected format, the function may raise a KeyError or return incorrect results.
-    """
-    course_run_parsed_info = _extract_course_info(course_ids[0])
-    return f'product.key in ({course_run_parsed_info["org"]}+{course_run_parsed_info["number"]})'
-
-
-def _fetch_catalog_course_runs(query, limit, site_configuration):
-    """
-    Fetches a list of course run keys from the catalog service.
-
-    This function queries the catalog service using the provided search query and limit,
-    retrieves the matching course runs, and returns their course keys.
-
-    Args:
-        query (str): The search query to filter the catalog course runs.
-        limit (int): The maximum number of course runs to retrieve.
-        site_configuration (SiteConfiguration): The current site configuration object used
-                                                to identify the partner's default site.
-
-    Returns:
-        list of str: A list of course run keys (e.g., "course-v1:MITx+6.00.1x+2024_T1").
-                     Returns an empty list if the Catalog API request fails or no results are found.
-
-    Raises:
-        None: All exceptions related to the Catalog API request are caught and logged.
-
-    Example:
-        >>> fetch_catalog_course_runs("data science", 5, site_configuration)
-        ['course-v1:HarvardX+PH526.1x+2024_T1', 'course-v1:MITx+6.00.1x+2024_T2']
-
-    Notes:
-        - The function assumes the catalog service is accessible and the partner with
-          short code 'edX' exists in the database.
-        - If the Catalog API request fails due to connection issues, it logs an error
-          and returns an empty list.
-    """
-
-    from ecommerce.coupons.utils import get_catalog_course_runs  # pylint: disable=import-outside-toplevel
-
-    try:
-        response = get_catalog_course_runs(site=site_configuration.site, query=query, limit=limit, offset=0)
-        results = response['results']
-        course_ids = [result['key'] for result in results]
-        return course_ids
-    except (ReqConnectionError, RequestException, Timeout) as exc:
-        logger.error('Unable to connect to Catalog API. %s', exc)
-        return []
-
-
-def _create_predicate_from_course_run(course_rns, all_changed_operators):
-    """
-    Generates a predicate string based on course run keys and specified operators.
-
-    This function takes a list of course run identifiers and a list of operators. It removes duplicates,
-    sorts the course runs for consistency, and formats them into a predicate string suitable for use in queries.
-    If `all_changed_operators` contains any elements, the predicate uses `not in`, otherwise it uses `in`.
-
-    Args:
-        course_rns (list of str): A list of course run identifiers (e.g., ["org+number+run"]).
-        all_changed_operators (list): A list indicating whether to apply exclusion logic (`not in`).
-
-    Returns:
-        str: A predicate string in the form of either:
-             - `"variant.key not in (<formatted_courses>)"` if `all_changed_operators` is not empty.
-             - `"variant.key in (<formatted_courses>)"` otherwise.
-
-    Example:
-        >>> create_predicate_from_course_run(["MITx+CS101+2024", "HarvardX+CS50+2023"], [])
-        'variant.key in ("HarvardX+CS50+2023", "MITx+CS101+2024")'
-
-        >>> create_predicate_from_course_run(["MITx+CS101+2024", "HarvardX+CS50+2023"], ["NOT"])
-        'variant.key not in ("HarvardX+CS50+2023", "MITx+CS101+2024")'
-    """
-    # Remove duplicates and sort for consistency
-    unique_courses = set(course_rns)
-
-    # Properly format the output string
-    formatted_courses = ', '.join(f'"{course}"' for course in unique_courses)
-    if len(all_changed_operators) > 0:
-        return f"variant.key not in ({formatted_courses})"
-    # Return the desired output
-    return f"variant.key in ({formatted_courses})"
-
-
 def _concat_operator(operator):
     return f' {operator} ' if (operator is not None) else ''
 
 
-def _process_query_string(query, site_configuration, summary_info):
+def _process_query_string(query):
     """
     Processes a query string by detecting its type and generating the corresponding predicate.
 
     This function parses the input query string, determines the type of each component (
     e.g., 'org', 'number', 'key', 'start'),
     and applies the appropriate processing function to generate a predicate.
-    Certain query types require the `site_configuration`
-    argument, while others do not. The resulting predicates are concatenated
-    using the detected logical operators ('AND' or 'OR').
+    The resulting predicates are concatenated using the detected logical operators ('AND' or 'OR').
 
     Args:
         query (str): The query string to be processed, containing components like
         'org:', 'number:', 'key:', or 'start:'.
-        site_configuration (object): Configuration object required for some query
-        handlers (e.g., 'number' and 'key').
-        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A processed predicate string for use in further filtering or querying.
@@ -560,17 +294,16 @@ def _process_query_string(query, site_configuration, summary_info):
              it returns ''.
 
     Query Types and Handlers:
-        - 'number': Processed by `process_number` (requires `site_configuration`)
-        - 'key': Processed by `process_key` (requires `site_configuration`)
-        - 'org': Processed by `process_org_values` (does not require `site_configuration`)
-        - 'start': Processed by `process_date` (does not require `site_configuration`)
+        - 'number': Processed by `process_number`
+        - 'key': Processed by `process_key`
+        - 'org': Processed by `process_org_values`
+        - 'start': Processed by `process_date`
 
     Example:
-        >>> process_query_string('org: ("edX" OR "MITx") AND number: ("CS101")', site_config)
+        >>> process_query_string('org: ("edX" OR "MITx") AND number: ("CS101")')
         'attributes.`brand-text` in ("MITx", "edX") AND product.key in ("edX+CS101")'
 
-        >>> process_query_string('key: ("CS50") OR start: [2023-01-01 TO 2024-01-01]',
-        site_config)
+        >>> process_query_string('key: ("CS50") OR start: [2023-01-01 TO 2024-01-01]')
         'variant.key in ("CS50") OR attributes.`courserun-start` >= "2023-01-01"
         AND attributes.`courserun-start` < "2024-01-02"'
     """
@@ -594,7 +327,11 @@ def _process_query_string(query, site_configuration, summary_info):
         query_type = _detect_string_type(component)
 
         if query_type in query_handlers_with_site_config:
-            predicate += query_handlers_with_site_config[query_type](component, site_configuration, summary_info)
+            query_predicate = query_handlers_with_site_config[query_type](component)
+            if not query_predicate:
+                return None
+
+            predicate += query_predicate
             predicate += _concat_operator(operator)
 
         elif query_type in query_handlers_without_site_config:
@@ -603,10 +340,7 @@ def _process_query_string(query, site_configuration, summary_info):
 
         else:
             logger.error('Query type not handled in _process_query_string: %s', component)
-            summary_info["cart_discounts"]["failed"].append({
-                "name": component,
-                "reason": f"Query type not handled in _process_query_string: '{component}'"
-            })
+            return None
 
     return predicate
 
@@ -661,38 +395,7 @@ def _convert_date_range_to_predicate(date_range):
     return predicate
 
 
-def _has_wildcards_or_negatives(component):
-    """
-    Check if the component contains wildcards or negative signs in course keys.
-    Only checks for negative signs within individual course keys after the prefix (key:, number:, etc.).
-
-    Args:
-        component (str): The component to check (e.g., "key:(-edx+DemoX AND -edx+InjuryPrevention)")
-
-    Returns:
-        bool: True if wildcards are found or negative signs are present in course keys, False otherwise.
-    """
-    if any(char in component for char in ['*', '?']) or component.startswith('-'):
-        return True
-
-    if ':' in component:
-        component = component.split(':', 1)[1].strip()
-
-    component = component.strip('()')
-    parts = re.split(r'\s+(?:AND|OR)\s+', component, flags=re.IGNORECASE)
-
-    # Checking each part for negative signs in keys
-    for part in parts:
-        part = part.strip()
-        key_parts = part.split('+')
-
-        if any(key_part.strip().startswith('-') for key_part in key_parts):
-            return True
-
-    return False
-
-
-def _process_number(component, site_configuration, summary_info):
+def _process_number(component):
     """
     Processes a course number component to generate a corresponding query predicate.
 
@@ -703,9 +406,6 @@ def _process_number(component, site_configuration, summary_info):
 
     Args:
         component (str): The course number component to be processed.
-        site_configuration (object): The site configuration object used to interact
-                                     with the catalog API.
-        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A predicate string representing the course number in the format:
@@ -713,37 +413,20 @@ def _process_number(component, site_configuration, summary_info):
              course runs are found.
 
     Example:
-        >>> process_number("edX+CS50", site_configuration, summary_info)
+        >>> process_number("edX+CS50")
         'product.key in ("edX+CS50")'
 
-        >>> process_number("unknown_course", site_configuration, summary_info)
+        >>> process_number("unknown_course")
         ''
     """
     if component in KEY_TO_PREDICATE_DICT:
         return KEY_TO_PREDICATE_DICT[component]
 
     logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
-
-    if _has_wildcards_or_negatives(component):
-        logger.error('Query contains wildcards or negative signs: %s', component)
-        summary_info["cart_discounts"]["failed"].append({
-            "name": component,
-            "reason": f"Query contains wildcards or negative signs: '{component}'"
-        })
-        return ''
-
-    summary_info["cart_discounts"]["failed"].append({
-        "name": component,
-        "reason": f"Key '{component}' not found in KEY_TO_PREDICATE_DICT"
-    })
-
-    course_ids = _fetch_catalog_course_runs(component, 1, site_configuration)
-    if course_ids:
-        return _process_number_value(course_ids)
-    return ''
+    return None
 
 
-def _process_key(component, site_configuration, summary_info):
+def _process_key(component):
     """
     Processes a key component to generate a corresponding query predicate.
 
@@ -755,9 +438,6 @@ def _process_key(component, site_configuration, summary_info):
 
     Args:
         component (str): The key component to be processed.
-        site_configuration (object): The site configuration object used to interact
-                                     with the catalog API.
-        summary_info (dict): Dictionary to store summary information including failures.
 
     Returns:
         str: A predicate string representing the course key. If the component is not
@@ -765,37 +445,17 @@ def _process_key(component, site_configuration, summary_info):
              returns an empty string.
 
     Example:
-        >>> process_key("edX+CS50", site_configuration, summary_info)
+        >>> process_key("edX+CS50")
         'variant.key in ("edX+CS50")'
 
-        >>> process_key("-unknown_key", site_configuration, summary_info)
+        >>> process_key("-unknown_key")
         ''
     """
     if component in KEY_TO_PREDICATE_DICT:
         return KEY_TO_PREDICATE_DICT[component]
 
     logger.error('Key not found in KEY_TO_PREDICATE_DICT: %s', component)
-
-    if _has_wildcards_or_negatives(component):
-        logger.error('Query contains wildcards or negative signs: %s', component)
-        summary_info["cart_discounts"]["failed"].append({
-            "name": component,
-            "reason": f"Query contains wildcards or negative signs: '{component}'"
-        })
-        return ''
-
-    summary_info["cart_discounts"]["failed"].append({
-        "name": component,
-        "reason": f"Key '{component}' not found in KEY_TO_PREDICATE_DICT"
-    })
-
-    modified_str, all_changed_operators = _modify_key_values(component)
-    course_ids = _fetch_catalog_course_runs(modified_str, 10000, site_configuration)
-
-    if course_ids:
-        return _create_predicate_from_course_run(course_ids, all_changed_operators)
-
-    return ''
+    return None
 
 
 def _remove_leading_trailing_and_or(query):
@@ -813,14 +473,12 @@ def _query_cleaning_process(query):
     return query
 
 
-def convert_querystring_to_predicate(query, site_configuration, summary_info):
+def convert_querystring_to_predicate(query):
     """
     Convert a catalog querystring to a Commercetools predicate.
 
     Args:
         query (str): Catalog querystring.
-        site_configuration: SiteConfiguration.
-        summary_info (Dict): The summary information to be updated.
 
     Returns:
         str: Commercetools predicate converted from catalog querystring.
@@ -828,26 +486,78 @@ def convert_querystring_to_predicate(query, site_configuration, summary_info):
     cleaned_query = _query_cleaning_process(query)
     logger.info('Query to be processed: %s', cleaned_query)
 
-    processed_query = _process_query_string(cleaned_query, site_configuration, summary_info)
+    processed_query = _process_query_string(cleaned_query)
+    if not processed_query:
+        return None
+
     predicate = _remove_leading_trailing_and_or(processed_query)
 
     if predicate:
         logger.info('Catalog querystring converted into predicate: %s', predicate)
 
-    return predicate
+    return predicate.strip()
 
 
-def get_category_for_coupon(coupon, product_category_model) -> Optional[str]:
+def get_category_for_coupon(coupon, product_category_model, summary_info) -> Optional[str]:
     """
     Get the category for the coupon.
     """
     try:
         category = product_category_model.objects.get(product=coupon).category.slug
     except product_category_model.DoesNotExist:
-        category = DEFAULT_PRODUCT_CATEGORY
+        category = None
 
     if not category:
-        log_message = f"Category not found for coupon {coupon.title}."
-        logger.info(log_message)
+        log_message = f"Product category object not found for for coupon {coupon.title}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": 'Product category object not found.',
+            "reason": log_message,
+        })
+        category = DEFAULT_PRODUCT_CATEGORY
 
-    return LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING.get(category, DEFAULT_PRODUCT_CATEGORY)
+    ct_category = LEGACY_CATEGORY_TO_CT_CATEGORY_MAPPING.get(category)
+    if not ct_category:
+        log_message = f"Category mapping not found for for coupon {coupon.title} with legacy category {category}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": 'Category mapping not found.',
+            "reason": log_message,
+        })
+        ct_category = DEFAULT_PRODUCT_CATEGORY
+
+    channel = LEGACY_CATEGORY_TO_CHANNEL_MAPPING.get(category)
+    if not channel:
+        log_message = f"Channel mapping not found for for coupon {coupon.title} with legacy category {category}."
+        logger.error(log_message)
+        summary_info["cart_discounts"]["failed"].append({
+            "name": 'Channel mapping not found.',
+            "reason": log_message,
+        })
+        channel = DEFAULT_PRODUCT_CATEGORY
+
+    return ct_category, channel
+
+
+def get_next_sort_order_for_coupons(client) -> Decimal:
+    """
+    Get the highest sort order for cart discounts without discount codes.
+
+    Args:
+        client (CommercetoolsAPIClient): Commercetools API client.
+
+    Returns:
+        Decimal: The highest sort order.
+    """
+    response = client.get_highest_sort_order_for_cart_discount(
+        where='requiresDiscountCode=true and custom(fields(discountType in ("course-discount", "program-discount")))'
+    )
+
+    if not response:
+        raise CommandError("Failed to get highest sort order. Exiting command.")
+
+    if response["count"] > 0:
+        highest_sort_order = Decimal(response["results"][0]["sortOrder"])
+        return highest_sort_order + COUPONS_DEFAULT_SORT_ORDER
+
+    return COUPONS_DEFAULT_SORT_ORDER

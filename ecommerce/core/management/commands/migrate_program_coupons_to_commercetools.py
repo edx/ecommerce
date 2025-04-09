@@ -10,12 +10,12 @@ from requests.exceptions import HTTPError
 
 from ecommerce.core.client import CommercetoolsAPIClient
 from ecommerce.core.constants import (
+    COUPONS_DEFAULT_SORT_ORDER,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE,
-    PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER,
     ProxyClassDiscountType
 )
-from ecommerce.core.utils import get_category_for_coupon
+from ecommerce.core.utils import get_category_for_coupon, get_next_sort_order_for_coupons
 from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
@@ -29,29 +29,6 @@ Benefit = get_model("offer", "Benefit")
 Condition = get_model("offer", "Condition")
 ConditionalOffer = get_model("offer", "ConditionalOffer")
 SiteConfiguration = get_model("core", "SiteConfiguration")
-
-
-def _get_highest_sort_order(client: CommercetoolsAPIClient):
-    """
-    Get the highest sort order for cart discounts without discount codes.
-
-    Args:
-        client (CommercetoolsAPIClient): Commercetools API client.
-
-    Returns:
-        float: The highest sort order.
-    """
-    response = client.get_highest_sort_order_for_cart_discount(
-        where='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
-    )
-
-    if not response:
-        raise CommandError("Failed to get highest sort order. Exiting command.")
-
-    if response['count'] > 0:
-        return float(response['results'][0]['sortOrder'])
-
-    return PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
 
 
 def _get_cent_amount_from_value(value):
@@ -103,7 +80,7 @@ def _map_voucher_usage_to_ct_code_applications(voucher, max_global_applications)
     }[voucher.usage]
 
 
-def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
+def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
     """
     Map coupons to Commercetools cart discounts and discount codes.
     """
@@ -125,13 +102,15 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons):
         offer = voucher.best_offer
         program_uuid = offer.condition.program_uuid
 
+        ct_category, channel = get_category_for_coupon(coupon, ProductCategory, summary_info)
         cart_discount = {
             "name": f'[Migrated - Program Discount] - {coupon.title}',
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
-                "category": get_category_for_coupon(coupon, ProductCategory),
+                "category": ct_category,
+                "channel": channel,
                 "discountType": "program-discount",
             },
             "cartPredicate": f'forAllLineItems(custom.bundleId = "{program_uuid}") = true',
@@ -400,19 +379,6 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     Args:
         client (CommercetoolsAPIClient): Commercetools API client.
     """
-    sort_order = _get_highest_sort_order(client)
-    sort_order += PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
-
-    site_configuration = SiteConfiguration.objects.first()
-    partner_id = site_configuration.partner_id
-
-    coupons = _get_program_coupons(partner_id)
-    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons)
-
-    existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    if not existing_discounts_in_ct:
-        raise CommandError("Failed to get existing discounts in Commercetools. Exiting command.")
-
     summary_info = {
         "cart_discounts": {
             "created": [],
@@ -425,6 +391,18 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
             "failed": [],
         },
     }
+
+    sort_order = get_next_sort_order_for_coupons(client)
+
+    site_configuration = SiteConfiguration.objects.first()
+    partner_id = site_configuration.partner_id
+
+    coupons = _get_program_coupons(partner_id)
+    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
+
+    existing_discounts_in_ct = client.get_ct_discounts_with_code()
+    if not existing_discounts_in_ct:
+        raise CommandError("Failed to get existing discounts in Commercetools. Exiting command.")
 
     def _migrate_discount_code(discount_code, cart_discount_id):
         discount_code_response = client.create_discount_code(
@@ -558,7 +536,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 )
                 continue
 
-            sort_order += PROGRAM_DISCOUNT_DEFAULT_SORT_ORDER
+            sort_order += COUPONS_DEFAULT_SORT_ORDER
 
             log_message = f"Cart discount created successfully with name: {cart_discount['name']}."
             logger.info(log_message)

@@ -1,5 +1,6 @@
 import logging
 import re
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -12,9 +13,9 @@ from ecommerce.core.constants import (
     BUNDLE_CART_DISCOUNT_KEY_FORMAT,
     CT_ABSOLUTE_DISCOUNT_TYPE,
     CT_PERCENTAGE_DISCOUNT_TYPE,
-    PROGRAM_OFFER_DEFAULT_SORT_ORDER,
     PROGRAM_OFFER_KEY,
     PROGRAM_OFFER_NAME,
+    PROGRAM_OFFERS_DEFAULT_SORT_ORDER,
     TEN_PERCENT_DISCOUNT_IN_CENTS,
     ProxyClassDiscountType
 )
@@ -41,19 +42,19 @@ def _get_highest_sort_order(client: CommercetoolsAPIClient):
         client (CommercetoolsAPIClient): Commercetools API client.
 
     Returns:
-        float: The highest sort order.
+        Decimal: The highest sort order.
     """
     response = client.get_highest_sort_order_for_cart_discount(
-        where='requiresDiscountCode=false and target(type="lineItems")'
+        where='requiresDiscountCode=false and target(type="lineItems") and custom(fields(discountType="program-offer"))'
     )
 
     if not response:
         raise CommandError("Failed to get highest sort order for cart discounts without codes. Exiting command.")
 
     if response['count'] > 0:
-        return float(response['results'][0]['sortOrder'])
+        return Decimal(response['results'][0]['sortOrder'])
 
-    return PROGRAM_OFFER_DEFAULT_SORT_ORDER
+    return PROGRAM_OFFERS_DEFAULT_SORT_ORDER
 
 
 def _get_ct_bundle_offers_without_code(client: CommercetoolsAPIClient, failed_discounts: list):
@@ -432,14 +433,14 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 discount_type, discount_value
             )
 
-            sort_order += PROGRAM_OFFER_DEFAULT_SORT_ORDER
+            sort_order += PROGRAM_OFFERS_DEFAULT_SORT_ORDER
 
             if not is_ten_percent_discount:
                 logger.info(
                     "Creating cart discount with type: %s, value: %s, sort order: %s, including program uuids: %s.",
                     discount_type,
                     discount_value,
-                    f"{sort_order:.18f}".rstrip("0").rstrip("."),
+                    f"{sort_order:.15f}".rstrip("0").rstrip("."),
                     ", ".join(discount_data["program_uuids"])
                 )
             else:
@@ -447,7 +448,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                     "Creating cart discount with type: %s, value: %s, and sort order: %s.",
                     discount_type,
                     discount_value,
-                    f"{sort_order:.18f}".rstrip("0").rstrip(".")
+                    f"{sort_order:.15f}".rstrip("0").rstrip(".")
                 )
 
             response = _create_cart_discount(
