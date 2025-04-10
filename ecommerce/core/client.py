@@ -84,7 +84,7 @@ class CommercetoolsAPIClient:
                 logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
 
             return None
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
             return None
 
@@ -97,6 +97,22 @@ class CommercetoolsAPIClient:
         Returns a dictionary where the key is the cart discount key and
         the value is a tuple of the cart discount and the discount code.
         """
+        existing_cart_discounts_in_ct = self.get_ct_cart_discounts(
+            query_params='requiresDiscountCode=true'
+        )
+
+        paired_discounts = {
+            key: PairedDiscount(
+                cart_discount=value,
+                discount_codes={}
+            )
+            for key, value in existing_cart_discounts_in_ct.items()
+        }
+
+        if existing_cart_discounts_in_ct is None:
+            logger.error("Failed to get existing cart discounts with code from Commercetools.")
+            return None
+
         lastId = None
         should_continue = True
         while should_continue:
@@ -123,11 +139,14 @@ class CommercetoolsAPIClient:
                         "where": f'id > "{lastId}"'
                     }
                 )
+            if not response:
+                logger.error("Failed to get discount codes with code from Commercetools.")
+                return None
+
             results = response["results"]
             should_continue = (len(results) == page_size)
             lastId = results[-1]["id"]
 
-        paired_discounts: Dict[str, PairedDiscount] = {}
         for discount_code in results:
             cart_discounts = discount_code.get("cartDiscounts", [{}])
             discount_code_data = {
@@ -159,51 +178,40 @@ class CommercetoolsAPIClient:
 
                 # Almost non existent case for a cart discount to not have a key.
                 if cart_discount_key is not None:
-                    if cart_discount_key in paired_discounts:
-                        # Add the discount code to the existing discount codes for the cart discount.
-                        paired_discounts[cart_discount_key].discount_codes[
-                            discount_code_key
-                        ] = discount_code_data
-                    else:
-                        # Create a new paired discount with the cart discount and discount code.
-                        paired_discounts[cart_discount_key] = PairedDiscount(
-                            cart_discount=cart_discount,
-                            discount_codes={
-                                discount_code_key: discount_code_data,
-                            },
-                        )
+                    # Add the discount code to the existing discount codes for the cart discount.
+                    paired_discounts[cart_discount_key].discount_codes[
+                        discount_code_key
+                    ] = discount_code_data
 
         return paired_discounts
 
-    def get_ct_program_discounts(self) -> Optional[Dict]:
+    def get_ct_cart_discounts(self, query_params: str) -> Optional[Dict]:
         """
-        Fetch program cart discounts from Commercetools.
+        Fetch cart discounts from Commercetools.
         """
-        query_params = 'requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
-
-        get_ct_program_discounts = self._make_request(
+        response = self._make_request(
             "GET",
             "cart-discounts",
             params={"where": query_params},
         )
-        if not get_ct_program_discounts:
-            logger.error("Failed to get program cart discounts from Commercetools.")
+        if not response:
+            logger.error("Failed to get cart discounts from Commercetools.")
             return None
 
         return {
             cart_discount.get("key"): {
-                    "id": cart_discount.get("id"),
-                    "key": cart_discount.get("key"),
-                    "name": cart_discount.get("name", {}).get("en-US"),
-                    "description": cart_discount.get("description", {}).get("en-US"),
-                    "cartPredicate": cart_discount.get("cartPredicate"),
-                    "value": cart_discount.get("value"),
-                    "customFields": cart_discount.get("custom", {}).get(
-                        "fields", {}
-                    ),
-                    "version": cart_discount.get("version"),
-                }
-            for cart_discount in get_ct_program_discounts.get("results", [])
+                "id": cart_discount.get("id"),
+                "key": cart_discount.get("key"),
+                "name": cart_discount.get("name", {}).get("en-US"),
+                "description": cart_discount.get("description", {}).get("en-US"),
+                "cartPredicate": cart_discount.get("cartPredicate"),
+                "value": cart_discount.get("value"),
+                "customFields": cart_discount.get("custom", {}).get(
+                    "fields", {}
+                ),
+                "version": cart_discount.get("version"),
+            }
+            for cart_discount in response.get("results", [])
         }
 
     def get_discount_codes_for_cart_discount(
@@ -247,7 +255,6 @@ class CommercetoolsAPIClient:
             }
             for discount_code in discount_codes.get("results", [])
         }
-
 
     def get_ct_bundle_offers_without_code(
         self, failed_discounts: List

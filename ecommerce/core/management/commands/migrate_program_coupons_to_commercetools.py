@@ -400,7 +400,9 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     coupons = _get_program_coupons(partner_id)
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
 
-    existing_program_discounts_in_ct = client.get_ct_program_discounts()
+    existing_program_discounts_in_ct = client.get_ct_cart_discounts(
+        query_params='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+    )
 
     if existing_program_discounts_in_ct is None:
         raise CommandError("Failed to get existing program discounts in Commercetools. Exiting command.")
