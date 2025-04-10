@@ -3,6 +3,7 @@
 import logging
 import re
 from collections import deque
+from time import sleep
 from typing import Deque, Dict, List, Optional, Tuple
 
 from dateutil import parser as dateutil_parser
@@ -23,6 +24,8 @@ from ecommerce.invoice.models import Invoice
 
 logger = logging.getLogger(__name__)
 
+COOLDOWN_TIME = 5
+COOLDOWN_LIMIT = 5000
 
 Product = get_model("catalogue", "Product")
 ProductCategory = get_model("catalogue", "ProductCategory")
@@ -550,6 +553,12 @@ def _create_discount_code(
     discount_code_response = client.create_discount_code(
         cartDiscountIds=cart_discount_ids, **discount_code
     )
+    if (
+        summary_info["discount_codes"]["created"] and
+        len(summary_info["discount_codes"]["created"]) % COOLDOWN_LIMIT == 0
+    ):
+        logger.info("Cooling down for 5 seconds...")
+        sleep(COOLDOWN_TIME)
 
     if discount_code_response:
         logger.info(
@@ -741,7 +750,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
     sort_order = get_next_sort_order_for_coupons(client)
 
-    if not existing_discounts_in_ct:
+    if existing_discounts_in_ct is None:
         raise CommandError(
             "Failed to get existing discounts from Commercetools. Exiting command."
         )

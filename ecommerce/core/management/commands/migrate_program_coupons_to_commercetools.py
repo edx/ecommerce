@@ -400,9 +400,12 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     coupons = _get_program_coupons(partner_id)
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
 
-    existing_discounts_in_ct = client.get_ct_discounts_with_code()
-    if not existing_discounts_in_ct:
-        raise CommandError("Failed to get existing discounts in Commercetools. Exiting command.")
+    existing_program_discounts_in_ct = client.get_ct_cart_discounts(
+        query_params='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+    )
+
+    if existing_program_discounts_in_ct is None:
+        raise CommandError("Failed to get existing program discounts in Commercetools. Exiting command.")
 
     def _migrate_discount_code(discount_code, cart_discount_id):
         discount_code_response = client.create_discount_code(
@@ -428,8 +431,8 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
 
     # pylint: disable=too-many-nested-blocks
     for cart_discount, discount_codes, excluded_discount_codes in mapped_discounts:
-        if cart_discount["key"] in existing_discounts_in_ct:
-            cart_discount_in_ct, discount_codes_in_ct = existing_discounts_in_ct[
+        if cart_discount["key"] in existing_program_discounts_in_ct:
+            cart_discount_in_ct = existing_program_discounts_in_ct[
                 cart_discount["key"]
             ]
 
@@ -459,6 +462,22 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                     )
                     continue
                 summary_info["cart_discounts"]["updated"].append(cart_discount)
+
+            discount_codes_in_ct = client.get_discount_codes_for_cart_discount(
+                cart_discount_name=cart_discount["name"],
+                cart_discount_id=cart_discount_in_ct["id"],
+            )
+
+            if discount_codes_in_ct is None:
+                log_message = f"Failed to get discount codes for cart discount: {cart_discount['name']}."
+                logger.error(log_message)
+                summary_info["cart_discounts"]["failed"].append(
+                    {
+                        "name": cart_discount["name"],
+                        "reason": "Error while getting discount codes.",
+                    }
+                )
+                continue
 
             for discount_code in discount_codes:
                 discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
