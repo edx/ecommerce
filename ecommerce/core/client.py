@@ -187,7 +187,7 @@ class CommercetoolsAPIClient:
 
         return paired_discounts
 
-    def get_ct_cart_discounts(self, query_params: str, page_size: int = 15) -> Optional[Dict]:
+    def get_ct_cart_discounts(self, query_params: str, page_size: int = 500) -> Optional[Dict]:
         """
         Fetch cart discounts from Commercetools.
         """
