@@ -115,6 +115,7 @@ class CommercetoolsAPIClient:
 
         lastId = None
         should_continue = True
+        results = []
         while should_continue:
             if lastId is None:
                 response = self._make_request(
@@ -143,9 +144,10 @@ class CommercetoolsAPIClient:
                 logger.error("Failed to get discount codes with code from Commercetools.")
                 return None
 
-            results = response["results"]
-            should_continue = (len(results) == page_size)
-            lastId = results[-1]["id"]
+            batch_results = response["results"]
+            results.extend(batch_results)
+            should_continue = (len(batch_results) == page_size)
+            lastId = batch_results[-1]["id"]
 
         for discount_code in results:
             cart_discounts = discount_code.get("cartDiscounts", [{}])
