@@ -147,7 +147,8 @@ class CommercetoolsAPIClient:
             batch_results = response["results"]
             results.extend(batch_results)
             should_continue = (len(batch_results) == page_size)
-            lastId = batch_results[-1]["id"]
+            if batch_results:
+                lastId = batch_results[-1]["id"]
 
         for discount_code in results:
             cart_discounts = discount_code.get("cartDiscounts", [{}])
