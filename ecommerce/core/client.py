@@ -71,7 +71,11 @@ class CommercetoolsAPIClient:
             return response.json()
         except HTTPError as err:
             if response is not None:
-                response_message = response.json().get('message', 'No message provided.')
+                try:
+                    response_message = response.json().get('message', 'No message provided.')
+                except (ValueError, AttributeError):
+                    response_message = 'Response could not be parsed as JSON'
+
                 logger.error(
                     "API request for endpoint: %s failed with error: %s and message: %s",
                     endpoint, err, response_message
@@ -79,6 +83,9 @@ class CommercetoolsAPIClient:
             else:
                 logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
 
+            return None
+        except Exception as err:
+            logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
             return None
 
     def get_ct_discounts_with_code(
@@ -90,29 +97,35 @@ class CommercetoolsAPIClient:
         Returns a dictionary where the key is the cart discount key and
         the value is a tuple of the cart discount and the discount code.
         """
-        expansion_query = "cartDiscounts[*]"
-
-        results = []
-        offset = 0
-        while True:
-            discount_codes = self._make_request(
-                "GET",
-                "discount-codes",
-                params={
-                    "expand": expansion_query,
-                    "offset": offset,
-                    "limit": page_size,
-                },
-            )
-            if not discount_codes:
-                logger.error("Failed to get discount codes from Commercetools.")
-                return None
-
-            results.extend(discount_codes["results"])
-            offset += page_size
-
-            if discount_codes["count"] != page_size:
-                break
+        lastId = None
+        should_continue = True
+        while should_continue:
+            if lastId is None:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "expand": "cartDiscounts[*]",
+                        "withTotal": False,
+                        "limit": page_size,
+                        "sort": "id asc"
+                    }
+                )
+            else:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "expand": "cartDiscounts[*]",
+                        "withTotal": False,
+                        "limit": page_size,
+                        "sort": "id asc",
+                        "where": f'id > "{lastId}"'
+                    }
+                )
+            results = response["results"]
+            should_continue = (len(results) == page_size)
+            lastId = results[-1]["id"]
 
         paired_discounts: Dict[str, PairedDiscount] = {}
         for discount_code in results:
