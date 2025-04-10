@@ -73,8 +73,8 @@ class CommercetoolsAPIClient:
             if response is not None:
                 try:
                     response_message = response.json().get('message', 'No message provided.')
-                except (ValueError, AttributeError):
-                    response_message = 'Response could not be parsed as JSON'
+                except (ValueError, AttributeError) as error:
+                    response_message = str(error)
 
                 logger.error(
                     "API request for endpoint: %s failed with error: %s and message: %s",
