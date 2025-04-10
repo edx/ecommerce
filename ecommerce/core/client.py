@@ -187,18 +187,46 @@ class CommercetoolsAPIClient:
 
         return paired_discounts
 
-    def get_ct_cart_discounts(self, query_params: str) -> Optional[Dict]:
+    def get_ct_cart_discounts(self, query_params: str, page_size: int = 15) -> Optional[Dict]:
         """
         Fetch cart discounts from Commercetools.
         """
-        response = self._make_request(
-            "GET",
-            "cart-discounts",
-            params={"where": query_params},
-        )
-        if not response:
-            logger.error("Failed to get cart discounts from Commercetools.")
-            return None
+        lastId = None
+        should_continue = True
+        results = []
+        while should_continue:
+            if lastId is None:
+                response = self._make_request(
+                    "GET",
+                    "cart-discounts",
+                    params={
+                        "withTotal": False,
+                        "limit": page_size,
+                        "sort": "id asc",
+                        "where": query_params
+                    }
+                )
+            else:
+                response = self._make_request(
+                    "GET",
+                    "cart-discounts",
+                    params={
+                        "withTotal": False,
+                        "limit": page_size,
+                        "sort": "id asc",
+                        "where": f'id>"{lastId}" and {query_params}'
+                    }
+                )
+            if not response:
+                logger.error("Failed to get cart discounts from Commercetools.")
+                return None
+
+            batch_results = response["results"]
+            results.extend(batch_results)
+            should_continue = (len(batch_results) == page_size)
+
+            if batch_results:
+                lastId = batch_results[-1]["id"]
 
         return {
             cart_discount.get("key"): {
@@ -213,7 +241,7 @@ class CommercetoolsAPIClient:
                 ),
                 "version": cart_discount.get("version"),
             }
-            for cart_discount in response.get("results", [])
+            for cart_discount in results
         }
 
     def get_discount_codes_for_cart_discount(
