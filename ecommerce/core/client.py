@@ -162,6 +162,61 @@ class CommercetoolsAPIClient:
 
         return paired_discounts
 
+    def get_ct_program_discounts(self) -> Optional[Dict]:
+        """
+        Fetch program cart discounts from Commercetools.
+        """
+        query_params = 'requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+
+        get_ct_program_discounts = self._make_request(
+            "GET",
+            "cart-discounts",
+            params={"where": query_params},
+        )
+        if not get_ct_program_discounts:
+            logger.error("Failed to get program cart discounts from Commercetools.")
+            return None
+
+        return {
+            cart_discount.get("key"): cart_discount
+            for cart_discount in get_ct_program_discounts.get("results", [])
+        }
+
+    def get_discount_codes_for_cart_discount(
+        self,
+        *,
+        cart_discount_name: str,
+        cart_discount_id: str,
+    ) -> Optional[Dict]:
+        """
+        Fetch discount codes for a specific cart discount ID.
+
+        Args:
+            cart_discount_id (str): ID of the cart discount.
+
+        Returns:
+            List[Dict]: List of discount codes associated with the cart discount.
+        """
+        query_params = f'cartDiscounts(id="{cart_discount_id}")'
+
+        discount_codes = self._make_request(
+            "GET",
+            "discount-codes",
+            params={"where": query_params},
+        )
+        if not discount_codes:
+            logger.error(
+                "Failed to get discount codes for cart discount '%s' from Commercetools.",
+                cart_discount_name,
+            )
+            return None
+
+        return {
+            discount_code.get("key"): discount_code
+            for discount_code in discount_codes.get("results", [])
+        }
+
+
     def get_ct_bundle_offers_without_code(
         self, failed_discounts: List
     ) -> Optional[Dict]:
