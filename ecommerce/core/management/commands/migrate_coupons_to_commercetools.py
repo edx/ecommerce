@@ -741,7 +741,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
     sort_order = get_next_sort_order_for_coupons(client)
 
-    if not existing_discounts_in_ct:
+    if existing_discounts_in_ct is None:
         raise CommandError(
             "Failed to get existing discounts from Commercetools. Exiting command."
         )

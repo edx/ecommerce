@@ -402,7 +402,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
 
     existing_program_discounts_in_ct = client.get_ct_program_discounts()
 
-    if not existing_program_discounts_in_ct:
+    if existing_program_discounts_in_ct is None:
         raise CommandError("Failed to get existing program discounts in Commercetools. Exiting command.")
 
     def _migrate_discount_code(discount_code, cart_discount_id):
@@ -466,7 +466,7 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
                 cart_discount_id=cart_discount_in_ct["id"],
             )
 
-            if not discount_codes_in_ct:
+            if discount_codes_in_ct is None:
                 log_message = f"Failed to get discount codes for cart discount: {cart_discount['name']}."
                 logger.error(log_message)
                 summary_info["cart_discounts"]["failed"].append(

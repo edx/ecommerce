@@ -191,7 +191,18 @@ class CommercetoolsAPIClient:
             return None
 
         return {
-            cart_discount.get("key"): cart_discount
+            cart_discount.get("key"): {
+                    "id": cart_discount.get("id"),
+                    "key": cart_discount.get("key"),
+                    "name": cart_discount.get("name", {}).get("en-US"),
+                    "description": cart_discount.get("description", {}).get("en-US"),
+                    "cartPredicate": cart_discount.get("cartPredicate"),
+                    "value": cart_discount.get("value"),
+                    "customFields": cart_discount.get("custom", {}).get(
+                        "fields", {}
+                    ),
+                    "version": cart_discount.get("version"),
+                }
             for cart_discount in get_ct_program_discounts.get("results", [])
         }
 
@@ -225,7 +236,15 @@ class CommercetoolsAPIClient:
             return None
 
         return {
-            discount_code.get("key"): discount_code
+            discount_code.get("key"): {
+                "key": discount_code.get("key"),
+                "name": discount_code.get("name", {}).get("en-US"),
+                "code": discount_code.get("code"),
+                "validFrom": discount_code.get("validFrom"),
+                "validUntil": discount_code.get("validUntil"),
+                "maxApplications": discount_code.get("maxApplications"),
+                "version": discount_code.get("version"),
+            }
             for discount_code in discount_codes.get("results", [])
         }
 
