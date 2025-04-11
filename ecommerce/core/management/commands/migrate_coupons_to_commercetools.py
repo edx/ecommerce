@@ -315,7 +315,7 @@ def _get_course_coupons(partner_id):
             Q(slug__in=[
               "edxwelcome",
               "welcome-code-new2edx-30-724",
-              "2025-springfall-promo-refresh",
+              "2025-springfall-promo-refresh"
             ]) | Q(coupon_vouchers__vouchers__offers__in=excluded_offers)
         )
         .prefetch_related(
