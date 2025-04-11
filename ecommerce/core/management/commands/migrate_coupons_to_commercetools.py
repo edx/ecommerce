@@ -312,8 +312,11 @@ def _get_course_coupons(partner_id):
             coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
         )
         .exclude(
-            Q(slug__in=["edxwelcome", "welcome-code-new2edx-30-724"]) |
-            Q(coupon_vouchers__vouchers__offers__in=excluded_offers)
+            Q(slug__in=[
+              "edxwelcome",
+              "welcome-code-new2edx-30-724",
+              "2025-springfall-promo-refresh",
+            ]) | Q(coupon_vouchers__vouchers__offers__in=excluded_offers)
         )
         .prefetch_related(
             Prefetch(
