@@ -1,7 +1,7 @@
 import logging
 import re
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 import waffle
@@ -498,7 +498,7 @@ def convert_querystring_to_predicate(query):
     return predicate.strip()
 
 
-def get_category_for_coupon(coupon, product_category_model, summary_info) -> Optional[str]:
+def get_category_for_coupon(coupon, product_category_model, summary_info) -> Tuple:
     """
     Get the category for the coupon.
     """
