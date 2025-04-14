@@ -1,10 +1,11 @@
 import logging
 from collections import namedtuple
+from time import sleep
 from typing import Dict, List, Optional
 
 import requests
 from django.conf import settings
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 from ecommerce.core.constants import BUNDLE_CART_DISCOUNT_KEY_FORMAT, CT_ABSOLUTE_DISCOUNT_TYPE
 
@@ -65,28 +66,96 @@ class CommercetoolsAPIClient:
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
         }
-        try:
-            response = requests.request(method, url, headers=headers, params=params, json=json)
-            response.raise_for_status()
-            return response.json()
-        except HTTPError as err:
-            if response is not None:
-                try:
-                    response_message = response.json().get('message', 'No message provided.')
-                except (ValueError, AttributeError) as error:
-                    response_message = str(error)
+        max_retries = 2 if method == "GET" else 0
+        base_backoff = 1
 
-                logger.error(
-                    "API request for endpoint: %s failed with error: %s and message: %s",
-                    endpoint, err, response_message
+        for attempt in range(max_retries + 1):
+            next_attempt = attempt + 1
+            next_backoff = base_backoff * next_attempt
+
+            try:
+                response = requests.request(
+                    method, url, headers=headers, params=params, json=json
                 )
-            else:
-                logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
+                response.raise_for_status()
+                return response.json()
+            except HTTPError as err:
+                if response is not None:
+                    try:
+                        response_message = response.json().get(
+                            "message", "No message provided."
+                        )
+                    except (ValueError, AttributeError) as error:
+                        response_message = str(error)
 
-            return None
-        except Exception as err:  # pylint: disable=broad-except
-            logger.error("API request for endpoint: %s failed with error: %s", endpoint, err)
-            return None
+                    if response.status_code in (500, 501, 502, 503, 504):
+                        if attempt == max_retries:
+                            logger.error(
+                                "API request for endpoint: %s failed after "
+                                "exceeding retries with error: %s and message: %s",
+                                endpoint,
+                                err,
+                                response_message,
+                            )
+                            return None
+
+                        logger.error(
+                            "API request for endpoint: %s failed with error: %s "
+                            "and message: %s. Retrying attempt #%s in %s seconds",
+                            endpoint,
+                            err,
+                            response_message,
+                            next_attempt,
+                            next_backoff,
+                        )
+                        sleep(next_backoff)
+                        continue
+
+                    logger.error(
+                        "API request for endpoint: %s failed with error: %s "
+                        "and message: %s",
+                        endpoint,
+                        err,
+                        response_message,
+                    )
+                else:
+                    logger.error(
+                        "API request for endpoint: %s failed with error: %s",
+                        endpoint,
+                        err,
+                    )
+
+                return None
+            except RequestException as err:
+                if attempt == max_retries:
+                    logger.error(
+                        "API request for endpoint: %s failed after "
+                        "exceeding retries with error: %s",
+                        endpoint,
+                        err,
+                    )
+                    return None
+
+                logger.warning(
+                    "API request for endpoint: %s with error: %s. "
+                    "Retrying attempt #%s in %s seconds",
+                    endpoint,
+                    err,
+                    next_attempt,
+                    next_backoff,
+                )
+
+                sleep(next_backoff)
+            except Exception as err:  # pylint: disable=broad-except
+                logger.error(
+                    "API request for endpoint: %s failed with error: %s",
+                    endpoint,
+                    err,
+                )
+
+                return None
+
+        return None
 
     def get_ct_discounts_with_code(
         self, page_size=500
@@ -101,6 +170,10 @@ class CommercetoolsAPIClient:
             query_params='requiresDiscountCode=true'
         )
 
+        if existing_cart_discounts_in_ct is None:
+            logger.error("Failed to get existing cart discounts with code from Commercetools.")
+            return None
+
         paired_discounts = {
             key: PairedDiscount(
                 cart_discount=value,
@@ -108,10 +181,6 @@ class CommercetoolsAPIClient:
             )
             for key, value in existing_cart_discounts_in_ct.items()
         }
-
-        if existing_cart_discounts_in_ct is None:
-            logger.error("Failed to get existing cart discounts with code from Commercetools.")
-            return None
 
         lastId = None
         should_continue = True
