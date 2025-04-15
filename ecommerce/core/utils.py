@@ -1,7 +1,7 @@
 import logging
 import re
 from decimal import Decimal
-from typing import Optional
+from typing import Tuple
 from urllib.parse import parse_qs, urlparse
 
 import waffle
@@ -498,7 +498,7 @@ def convert_querystring_to_predicate(query):
     return predicate.strip()
 
 
-def get_category_for_coupon(coupon, product_category_model, summary_info) -> Optional[str]:
+def get_category_for_coupon(coupon, product_category_model, summary_info) -> Tuple:
     """
     Get the category for the coupon.
     """
@@ -549,9 +549,12 @@ def get_next_sort_order_for_coupons(client) -> Decimal:
     Returns:
         Decimal: The highest sort order.
     """
-    response = client.get_highest_sort_order_for_cart_discount(
-        where='requiresDiscountCode=true and custom(fields(discountType in ("course-discount", "program-discount")))'
+    where_query = (
+        'requiresDiscountCode=true and custom(fields(discountType in '
+        '("course-discount", "program-discount", "enrollment-code")))'
     )
+
+    response = client.get_highest_sort_order_for_cart_discount(where=where_query)
 
     if not response:
         raise CommandError("Failed to get highest sort order. Exiting command.")

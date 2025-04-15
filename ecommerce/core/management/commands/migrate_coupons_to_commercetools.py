@@ -37,6 +37,43 @@ ConditionalOffer = get_model("offer", "ConditionalOffer")
 SiteConfiguration = get_model("core", "SiteConfiguration")
 
 
+def _get_seat_type_and_course_predicate_from_range(
+    *,
+    offer_range,
+    coupon_name: str,
+    summary_info: Dict,
+) -> Tuple:
+    if offer_range.catalog:
+        product = offer_range.catalog.stock_records.first().product
+        seat_types = product.attr.certificate_type
+        query_predicate = f'variant.key = "{product.course_id}"'
+    else:
+        seat_types = offer_range.course_seat_types
+        catalog_query = offer_range.catalog_query
+        if not catalog_query or catalog_query.strip() in ("*", "key:(*)"):
+            query_predicate = ""
+        else:
+            query_predicate = convert_querystring_to_predicate(catalog_query)
+
+            if not query_predicate:
+                log_message = (
+                    "Unable to convert catalog query to predicate. Check if the "
+                    "KEY_TO_PREDICATE_DICT needs to be updated with the new key. "
+                    "Skipping migration of coupon."
+                )
+                logger.error(log_message)
+
+                summary_info["cart_discounts"]["failed"].append(
+                    {
+                        "name": f"Coupon: {coupon_name} with Catalog Query: {catalog_query}",
+                        "reason": log_message,
+                    }
+                )
+                return None, None
+
+    return seat_types, query_predicate
+
+
 def _get_cent_amount_from_value(value: Dict) -> Optional[int]:
     """
     Get cent amount from value.
@@ -155,7 +192,7 @@ def _map_voucher_criteria_to_cart_predicate(
 
 
 def _map_coupons_to_ct_cart_discounts_and_discount_codes(
-    coupons, summary_info
+    coupons, summary_info: Dict
 ) -> List:
     """
     Map coupons to Commercetools cart discounts and discount codes.
@@ -170,62 +207,61 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         except AttributeError:
             ...
 
-        # Exclude consumed vouchers
         vouchers = coupon.attr.coupon_vouchers.vouchers
         voucher = vouchers.first()
         offer = voucher.best_offer
-        offer_range = offer.condition.range
+        offer_benefit = offer.benefit
 
-        catalog_query = offer_range.catalog_query
-        if not catalog_query or catalog_query.strip() in ("*", "key:(*)"):
-            query_predicate = ""
-        else:
-            query_predicate = convert_querystring_to_predicate(catalog_query)
-
-            if not query_predicate:
-                log_message = 'Unable to convert catalog query to predicate. '
-                log_message += 'Check if the KEY_TO_PREDICATE_DICT needs to be updated with the new key. '
-                log_message += 'Skipping migration of coupon.'
-                logger.error(log_message)
-
-                summary_info["cart_discounts"]["failed"].append({
-                    "name": f'Coupon: {coupon.title} with Catalog Query: {catalog_query}',
-                    "reason": log_message,
-                })
-                continue
-
-        name = (
-            f"[Migrated - Multiuse Course Discount] - {coupon.title}"
-            if voucher.usage == Voucher.MULTI_USE
-            else f"[Migrated - Course Discount] - {coupon.title}"
+        seat_types, query_predicate = _get_seat_type_and_course_predicate_from_range(
+            offer_range=offer.condition.range,
+            coupon_name=coupon.title,
+            summary_info=summary_info,
         )
 
-        ct_category, channel = get_category_for_coupon(coupon, ProductCategory, summary_info)
+        if seat_types is None and query_predicate is None:
+            continue
+
+        if offer_benefit.type == Benefit.PERCENTAGE and offer_benefit.value == 100:
+            discount_type = "enrollment-code"
+            name = "Enrollment Code"
+            program_name = "Program Enrollment Code"
+        else:
+            discount_type = "course-discount"
+            name = "Course Discount"
+            program_name = "Program Discount"
+
+        if voucher.usage == Voucher.MULTI_USE:
+            name = f"Multiuse {name}"
+
+        ct_category, channel = get_category_for_coupon(
+            coupon, ProductCategory, summary_info
+        )
+
         cart_discount = {
-            "name": name,
+            "name": f"[Migrated - {name}] - {coupon.title}",
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
                 "category": ct_category,
                 "channel": channel,
-                "discountType": "course-discount",
+                "discountType": discount_type,
             },
             "cartPredicate": _map_voucher_criteria_to_cart_predicate(
-                seat_types=offer_range.course_seat_types,
+                seat_types=seat_types,
                 email_domains=offer.email_domains,
                 query_predicate=query_predicate,
             ),
-            "value": _map_benefit_to_ct_value(offer.benefit),
+            "value": _map_benefit_to_ct_value(offer_benefit),
         }
 
         cart_discount_for_program = None
         if voucher.usage == Voucher.MULTI_USE:
             cart_discount_for_program = {
-                "name": f"[Migrated - Multiuse Program Discount] - {coupon.title}",
+                "name": f"[Migrated - {program_name}] - {coupon.title}",
                 "key": f"program-{coupon.slug}",
                 "cartPredicate": _map_voucher_criteria_to_cart_predicate(
-                    seat_types=offer_range.course_seat_types,
+                    seat_types=seat_types,
                     email_domains=offer.email_domains,
                     query_predicate=query_predicate,
                     for_program=True,
@@ -267,6 +303,68 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
     return results
 
 
+def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
+    offers,
+) -> List:
+    """
+    Map enrollment codes to Commercetools cart discounts and discount codes.
+    """
+    results = []
+
+    for offer in offers:
+        vouchers = offer.vouchers.all()
+        product = offer.benefit.range.included_products.first()
+        seat_type = product.attr.certificate_type
+        course_id = product.course_id
+
+        cart_discount = {
+            "name": f"[Migrated - Enrollment Code] - Enrollment code for {product.title}",
+            "key": f"enrollment-code-for-offer-{offer.id}",
+            "description": f"Enrollment code for {course_id}",
+            "customFields": {
+                "discountType": "enrollment-code",
+            },
+            "cartPredicate": _map_voucher_criteria_to_cart_predicate(
+                seat_types=seat_type,
+                email_domains=offer.email_domains,  # always None
+                query_predicate=f'variant.key = "{course_id}"',
+            ),
+            "value": _map_benefit_to_ct_value(offer.benefit),
+        }
+
+        discount_codes = [
+            {
+                "name": voucher.name,
+                "key": voucher.code,
+                "code": voucher.code,
+                "validFrom": voucher.start_datetime.isoformat(),
+                "validUntil": voucher.end_datetime.isoformat(),
+                **_map_voucher_to_ct_code_applications(
+                    voucher, offer.max_global_applications  # always None
+                ),
+            }
+            for voucher in vouchers
+            if not (voucher.usage == "Single use" and voucher.num_orders == 1)
+        ]
+
+        excluded_discount_codes = [
+            voucher.code
+            for voucher in vouchers
+            if voucher.usage == "Single use" and voucher.num_orders == 1
+        ]
+
+        results.append(
+            (
+                cart_discount,
+                discount_codes,
+                excluded_discount_codes,
+                None,
+            )
+        )
+
+    return results
+
+
 def _get_client_for_coupon(coupon) -> Optional[str]:
     """
     Get the client for the coupon.
@@ -302,8 +400,10 @@ def _get_course_coupons(partner_id):
     """
     excluded_offers = ConditionalOffer.objects.filter(
         ~Q(partner_id=partner_id) |
-        Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00) |
-        Q(condition__range__catalog_query__isnull=True)
+        Q(
+            condition__range__catalog_query__isnull=True,
+            condition__range__catalog__isnull=True,
+        )
     )
 
     coupons = (
@@ -330,6 +430,30 @@ def _get_course_coupons(partner_id):
     )
 
     return coupons
+
+
+def _get_enrollment_code_offers():
+    """
+    Get enrollment code offers from the database
+    """
+    offers = (
+        ConditionalOffer.objects.filter(
+            vouchers__end_datetime__gte=timezone.now(),
+            benefit__type=Benefit.PERCENTAGE,
+            benefit__value=100.00,
+            benefit__range__included_products__isnull=False,
+        )
+        .prefetch_related(
+            "vouchers",
+            "condition",
+            "benefit",
+            "benefit__range",
+            "benefit__range__included_products",
+        )
+        .distinct()
+    )
+
+    return offers
 
 
 def _make_update_actions_by_comparing_cart_discounts(
@@ -513,7 +637,7 @@ def _create_cart_discount(
     client: CommercetoolsAPIClient,
     cart_discount: Dict,
     sort_order: float,
-    summary_info,
+    summary_info: Dict,
     for_program: bool = False,
 ) -> Tuple:
     target = (
@@ -746,9 +870,13 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
     site_configuration = SiteConfiguration.objects.first()
     coupons = _get_course_coupons(site_configuration.partner_id)
-    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
-        coupons, summary_info
-    )
+    offers = _get_enrollment_code_offers()
+    mapped_discounts = [
+        *_map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info),
+        *_map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
+            offers
+        ),
+    ]
 
     existing_discounts_in_ct = client.get_ct_discounts_with_code()
     sort_order = get_next_sort_order_for_coupons(client)
