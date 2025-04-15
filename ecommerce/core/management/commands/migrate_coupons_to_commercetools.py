@@ -224,21 +224,21 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         if offer_benefit.type == Benefit.PERCENTAGE and offer_benefit.value == 100:
             discount_type = "enrollment-code"
             name = "Enrollment Code"
+            program_name = "Program Enrollment Code"
         else:
             discount_type = "course-discount"
             name = "Course Discount"
+            program_name = "Program Discount"
 
         if voucher.usage == Voucher.MULTI_USE:
             name = f"Multiuse {name}"
-
-        name = f"[Migrated - {name}] - {coupon.title}"
 
         ct_category, channel = get_category_for_coupon(
             coupon, ProductCategory, summary_info
         )
 
         cart_discount = {
-            "name": name,
+            "name": f"[Migrated - {name}] - {coupon.title}",
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
@@ -258,7 +258,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
         cart_discount_for_program = None
         if voucher.usage == Voucher.MULTI_USE:
             cart_discount_for_program = {
-                "name": f"[Migrated - Multiuse Program Discount] - {coupon.title}",
+                "name": f"[Migrated - {program_name}] - {coupon.title}",
                 "key": f"program-{coupon.slug}",
                 "cartPredicate": _map_voucher_criteria_to_cart_predicate(
                     seat_types=seat_types,
@@ -313,13 +313,12 @@ def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
 
     for offer in offers:
         vouchers = offer.vouchers.all()
-
         product = offer.benefit.range.included_products.first()
         seat_type = product.attr.certificate_type
         course_id = product.course_id
 
         cart_discount = {
-            "name": f"[Migrated - Enrollment Code] - Enrollment code for {seat_type} seat in {product.title}",
+            "name": f"[Migrated - Enrollment Code] - Enrollment code for {product.title}",
             "key": f"enrollment-code-for-offer-{offer.id}",
             "description": f"Enrollment code for {course_id}",
             "customFields": {
@@ -344,13 +343,13 @@ def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
                     voucher, offer.max_global_applications  # always None
                 ),
             }
-            for voucher in vouchers.all()
+            for voucher in vouchers
             if not (voucher.usage == "Single use" and voucher.num_orders == 1)
         ]
 
         excluded_discount_codes = [
             voucher.code
-            for voucher in vouchers.all()
+            for voucher in vouchers
             if voucher.usage == "Single use" and voucher.num_orders == 1
         ]
 
@@ -362,6 +361,7 @@ def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
                 None,
             )
         )
+
     return results
 
 
@@ -442,7 +442,8 @@ def _get_enrollment_code_offers():
             benefit__type=Benefit.PERCENTAGE,
             benefit__value=100.00,
             benefit__range__included_products__isnull=False,
-        ).prefetch_related(
+        )
+        .prefetch_related(
             "vouchers",
             "condition",
             "benefit",

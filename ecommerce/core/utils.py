@@ -1,7 +1,7 @@
 import logging
 import re
 from decimal import Decimal
-from typing import Optional, Tuple
+from typing import Tuple
 from urllib.parse import parse_qs, urlparse
 
 import waffle
@@ -549,11 +549,12 @@ def get_next_sort_order_for_coupons(client) -> Decimal:
     Returns:
         Decimal: The highest sort order.
     """
-    where_query = 'requiresDiscountCode=true'
-    where_query += ' and custom(fields(discountType in ("course-discount", "program-discount", "enrollment-code")))'
-    response = client.get_highest_sort_order_for_cart_discount(
-        where=where_query
+    where_query = (
+        'requiresDiscountCode=true and custom(fields(discountType in '
+        '("course-discount", "program-discount", "enrollment-code")))'
     )
+
+    response = client.get_highest_sort_order_for_cart_discount(where=where_query)
 
     if not response:
         raise CommandError("Failed to get highest sort order. Exiting command.")
