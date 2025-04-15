@@ -312,14 +312,14 @@ def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
     results = []
 
     for offer in offers:
-        vouchers = offers.vouchers
+        vouchers = offer.vouchers.all()
 
-        product = offer.benefit.range_products.first()
+        product = offer.benefit.range.included_products.first()
         seat_type = product.attr.certificate_type
         course_id = product.course_id
 
         cart_discount = {
-            "name": f"[Migrated - Enrollment Code] - Enrollment code for {seat_type} seat in {product.name}",
+            "name": f"[Migrated - Enrollment Code] - Enrollment code for {seat_type} seat in {product.title}",
             "key": f"enrollment-code-for-offer-{offer.id}",
             "description": f"Enrollment code for {course_id}",
             "customFields": {
@@ -441,13 +441,13 @@ def _get_enrollment_code_offers():
             vouchers__end_datetime__gte=timezone.now(),
             benefit__type=Benefit.PERCENTAGE,
             benefit__value=100.00,
-            benefit__range__rangeproduct__isnull=False,
-        )
-        .prefetch_related(
+            benefit__range__included_products__isnull=False,
+        ).prefetch_related(
             "vouchers",
             "condition",
             "benefit",
-            Prefetch("benefit__range__products"),
+            "benefit__range",
+            "benefit__range__included_products",
         )
         .distinct()
     )
