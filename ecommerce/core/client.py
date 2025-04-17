@@ -66,8 +66,8 @@ class CommercetoolsAPIClient:
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
         }
-        max_retries = 2 if method == "GET" else 0
-        base_backoff = 1
+        max_retries = 3 if method == "GET" else 0
+        base_backoff = 2
 
         for attempt in range(max_retries + 1):
             next_attempt = attempt + 1
