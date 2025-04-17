@@ -102,16 +102,27 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
         offer = voucher.best_offer
         program_uuid = offer.condition.program_uuid
 
+        if (
+            offer.benefit.proxy_class == ProxyClassDiscountType.PERCENTAGE.value
+            and offer.benefit.value == 100
+        ):
+            discount_type = "program-enrollment-code"
+            name = "Program Enrollment Code"
+        else:
+            discount_type = "program-discount"
+            name = "Program Discount"
+
         ct_category, channel = get_category_for_coupon(coupon, ProductCategory, summary_info)
+
         cart_discount = {
-            "name": f'[Migrated - Program Discount] - {coupon.title}',
+            "name": f'[Migrated - {name}] - {coupon.title}',
             "key": coupon.slug,
             "description": _get_note_for_coupon(coupon) or "",
             "customFields": {
                 "client": _get_client_for_coupon(coupon),
                 "category": ct_category,
                 "channel": channel,
-                "discountType": "program-discount",
+                "discountType": discount_type,
             },
             "cartPredicate": f'forAllLineItems(custom.bundleId = "{program_uuid}") = true',
             "target": {
@@ -186,7 +197,6 @@ def _get_program_coupons(partner_id):
         condition__program_uuid__isnull=False,
         partner_id=partner_id
     ).exclude(
-        Q(benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value, benefit__value=100.00) |
         Q(benefit__value=0.00)
     )
 
