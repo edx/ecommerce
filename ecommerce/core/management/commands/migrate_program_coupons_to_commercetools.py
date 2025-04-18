@@ -103,8 +103,8 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
         program_uuid = offer.condition.program_uuid
 
         if (
-            offer.benefit.proxy_class == ProxyClassDiscountType.PERCENTAGE.value
-            and offer.benefit.value == 100
+            offer.benefit.proxy_class == ProxyClassDiscountType.PERCENTAGE.value and
+            offer.benefit.value == 100
         ):
             discount_type = "program-enrollment-code"
             name = "Program Enrollment Code"

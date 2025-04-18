@@ -51,7 +51,7 @@ def _get_seat_type_and_course_predicate_from_range(
         seat_types = offer_range.course_seat_types
         catalog_query = offer_range.catalog_query
         if not catalog_query or catalog_query.strip().replace(" ", "") in (
-           "*", "key:(*)", "org:(*)"
+            "*", "key:(*)", "org:(*)"
         ):
             query_predicate = ""
         else:
