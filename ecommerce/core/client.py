@@ -563,11 +563,10 @@ class CommercetoolsAPIClient:
                 "type": discount_type,
                 **discount_value_data,
             },
-            # Equivalent to "At least one existing line item satisfies the condition(s) is True in CT."
-            "cartPredicate": "lineItemExists(custom.bundleId is defined) = true",
+            "cartPredicate": f"forAllLineItems({predicate}) = true",
             "target": {
                 "type": "lineItems",
-                "predicate": predicate,
+                "predicate": "1 = 1",
             },
             "sortOrder": f"{sort_order:.15f}".rstrip("0").rstrip("."),
             "isActive": True,
@@ -614,11 +613,11 @@ class CommercetoolsAPIClient:
             "POST", f"{resource_type}/key={resource_key}", json=payload
         )
 
-    def update_cart_discount_target_predicate(
+    def update_cart_discount_cart_predicate(
         self, cart_discount_id: str, predicate: str, version: int
     ) -> Optional[Dict]:
         """
-        Update the target predicate for a cart discount.
+        Update the cart predicate for a cart discount.
 
         Args:
             cart_discount_id (str): ID of the cart discount.
@@ -632,11 +631,8 @@ class CommercetoolsAPIClient:
             "version": version,
             "actions": [
                 {
-                    "action": "changeTarget",
-                    "target": {
-                        "type": "lineItems",
-                        "predicate": predicate
-                    }
+                    "action": "changeCartPredicate",
+                    "cartPredicate": f"forAllLineItems({predicate}) = true",
                 }
             ]
         }
