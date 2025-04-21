@@ -411,7 +411,9 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
 
     existing_program_discounts_in_ct = client.get_ct_cart_discounts(
-        query_params='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+        query_params='requiresDiscountCode=true and custom(fields(discountType in ('
+        '"program-discount", "program-enrollment-code"'
+        ')))'
     )
 
     if existing_program_discounts_in_ct is None:
