@@ -48,6 +48,7 @@ class CommercetoolsAPIClient:
         endpoint: str,
         params: Optional[Dict] = None,
         json: Optional[Dict] = None,
+        return_on_404 = False,
     ) -> Optional[Dict]:
         """
         Make an HTTP request to the Commercetools API.
@@ -57,6 +58,7 @@ class CommercetoolsAPIClient:
             endpoint (str): API endpoint (e.g., "/cart-discounts").
             params (Optional[Dict]): Query parameters.
             json (Optional[Dict]): JSON payload for POST/PUT requests.
+            return_on_404 (bool): Whether to return a 404 response as a dictionary.
 
         Returns:
             Union[Dict, List]: JSON response from the API or None if the request fails.
@@ -87,6 +89,14 @@ class CommercetoolsAPIClient:
                         )
                     except (ValueError, AttributeError) as error:
                         response_message = str(error)
+
+                    if response.status_code == 404 and return_on_404:
+                        logger.error(
+                            "API request for endpoint: %s failed with 404 error: %s",
+                            endpoint,
+                            response_message,
+                        )
+                        return {"status": 404}
 
                     if response.status_code in (500, 501, 502, 503, 504):
                         if attempt == max_retries:
@@ -314,6 +324,45 @@ class CommercetoolsAPIClient:
             for cart_discount in results
         }
 
+    def get_cart_discount_by_key(self, key):
+        """
+        Fetch cart discount by its key.
+
+        Args:
+            key (str): Key of the cart discount.
+
+        Returns:
+            Dict: Cart discount data or None if not found.
+        """
+        response = self._make_request(
+            "GET",
+            f"cart-discounts/key={key}",
+            return_on_404=True,
+        )
+        if not response:
+            logger.error(
+                "Failed to get cart discount with key '%s' from Commercetools.", key
+            )
+            return
+
+        if response.get("status") == 404:
+           return response
+
+        cart_discount = response
+
+        return {
+            "id": cart_discount.get("id"),
+            "key": cart_discount.get("key"),
+            "name": cart_discount.get("name", {}).get("en-US"),
+            "description": cart_discount.get("description", {}).get("en-US"),
+            "cartPredicate": cart_discount.get("cartPredicate"),
+            "value": cart_discount.get("value"),
+            "customFields": cart_discount.get("custom", {}).get(
+                "fields", {}
+            ),
+            "version": cart_discount.get("version"),
+        }
+
     def get_discount_codes_for_cart_discount(
         self,
         *,
@@ -352,6 +401,7 @@ class CommercetoolsAPIClient:
                 "validUntil": discount_code.get("validUntil"),
                 "maxApplications": discount_code.get("maxApplications"),
                 "version": discount_code.get("version"),
+                "cartDiscountIds": [cartDiscount["id"] for cartDiscount in discount_code.get("cartDiscounts", [])],
             }
             for discount_code in discount_codes.get("results", [])
         }
