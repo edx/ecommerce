@@ -550,8 +550,12 @@ def get_next_sort_order_for_coupons(client) -> Decimal:
         Decimal: The highest sort order.
     """
     where_query = (
-        'requiresDiscountCode=true and custom(fields(discountType in '
-        '("course-discount", "program-discount", "enrollment-code")))'
+        "requiresDiscountCode=true and custom(fields(discountType in ("
+        '"course-discount", '
+        '"program-discount", '
+        '"enrollment-code", '
+        '"program-enrollment-code"'
+        ")))"
     )
 
     response = client.get_highest_sort_order_for_cart_discount(where=where_query)
