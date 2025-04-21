@@ -1,5 +1,6 @@
 # pylint: disable=W1203
 
+from decimal import Decimal
 import logging
 import re
 from collections import deque
@@ -272,6 +273,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
                 "customFields": cart_discount["customFields"],
                 "value": cart_discount["value"],
             }
+            should_exclude_for_program = offer_benefit.max_affected_items == 0
 
         discount_codes = [
             {
@@ -300,6 +302,7 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(
                 discount_codes,
                 excluded_discount_codes,
                 cart_discount_for_program,
+                should_exclude_for_program,
             )
         )
     return results
@@ -361,6 +364,7 @@ def _map_enrollment_codes_offers_to_ct_cart_discounts_and_discount_codes(
                 discount_codes,
                 excluded_discount_codes,
                 None,
+                False,
             )
         )
 
@@ -638,7 +642,7 @@ def _create_cart_discount(
     *,
     client: CommercetoolsAPIClient,
     cart_discount: Dict,
-    sort_order: float,
+    sort_order: Decimal,
     summary_info: Dict,
     for_program: bool = False,
 ) -> Tuple:
@@ -760,6 +764,7 @@ def _update_existing_discount(
     excluded_discount_codes: List[str],
     existing_discount_in_ct: PairedDiscount,
     existing_discount_in_ct_for_program: Optional[PairedDiscount],
+    should_exclude_for_program: bool,
     summary_info: Dict,
 ) -> None:
     cart_discount_in_ct, discount_codes_in_ct = existing_discount_in_ct
@@ -773,10 +778,11 @@ def _update_existing_discount(
     )
 
     if cart_discount_for_program and existing_discount_in_ct_for_program:
-        cart_discount_in_ct_for_program = (
-            existing_discount_in_ct_for_program.cart_discount
+        cart_discount_in_ct_for_program, discount_codes_for_program = (
+            existing_discount_in_ct_for_program
         )
-        cart_discount_ids.append(cart_discount_in_ct_for_program["id"])
+        if not should_exclude_for_program:
+            cart_discount_ids.append(cart_discount_in_ct_for_program["id"])
 
         _update_existing_cart_discount(
             client=client,
@@ -794,6 +800,14 @@ def _update_existing_discount(
                     discount_in_ct=discount_code_in_ct,
                 )
             )
+            if should_exclude_for_program and discount_codes_for_program:
+                update_actions_for_discount_code.append({
+                    "action": "changeCartDiscounts",
+                    "cartDiscounts": [{
+                        "typeId": "cart-discount",
+                        "id": cart_discount_in_ct["id"],
+                    }],
+                })
 
             if update_actions_for_discount_code:
                 discount_code_response = client.update_resource_by_key(
@@ -893,6 +907,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
         discount_codes,
         excluded_discount_codes,
         cart_discount_for_program,
+        should_exclude_for_program,
     ) in mapped_discounts:
         if cart_discount["key"] in existing_discounts_in_ct:
             _update_existing_discount(
@@ -909,6 +924,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
                     if cart_discount_for_program
                     else None
                 ),
+                should_exclude_for_program=should_exclude_for_program,
                 summary_info=summary_info,
             )
         else:
@@ -927,7 +943,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
             if cart_discount_id:
                 cart_discount_ids.append(cart_discount_id)
 
-            if cart_discount_for_program:
+            if cart_discount_for_program and not should_exclude_for_program:
                 cart_discount_id, sort_order = _create_cart_discount(
                     client=client,
                     cart_discount=cart_discount_for_program,
