@@ -391,17 +391,36 @@ def _get_note_for_coupon(coupon) -> Optional[str]:
     return note
 
 
-def _get_course_coupons(partner_id):
+def _get_course_coupons(partner_id: str, to_migrate: List[str]):
     """
     Get course coupons from the database.
     """
-    excluded_offers = ConditionalOffer.objects.filter(
-        ~Q(partner_id=partner_id) |
-        Q(
-            condition__range__catalog_query__isnull=True,
-            condition__range__catalog__isnull=True,
+    if "enrollment" in to_migrate and "non-enrollment" in to_migrate:
+        excluded_offers = ConditionalOffer.objects.filter(
+            ~Q(partner_id=partner_id) |
+            Q(
+                condition__range__catalog_query__isnull=True,
+                condition__range__catalog__isnull=True,
+            )
         )
-    )
+    elif "non-enrollment" in to_migrate:
+        excluded_offers = ConditionalOffer.objects.filter(
+            ~Q(partner_id=partner_id) |
+            Q(
+                condition__range__catalog_query__isnull=True,
+                condition__range__catalog__isnull=True,
+            ) |
+            Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
+        )
+    elif "enrollment" in to_migrate:
+        excluded_offers = ConditionalOffer.objects.filter(
+            ~Q(partner_id=partner_id) |
+            Q(
+                condition__range__catalog_query__isnull=True,
+                condition__range__catalog__isnull=True,
+            ) |
+            ~Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
+        )
 
     coupons = (
         Product.objects.filter(
@@ -1047,7 +1066,7 @@ def _migrate_single_coupon_or_offer(
     return sort_order
 
 
-def _migrate_coupons(client: CommercetoolsAPIClient):
+def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> None:
     """
     Migrate coupons to Commercetools.
 
@@ -1070,9 +1089,9 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     }
 
     site_configuration = SiteConfiguration.objects.first()
-    coupons = _get_course_coupons(site_configuration.partner_id)
-
     sort_order = get_next_sort_order_for_coupons(client)
+
+    coupons = _get_course_coupons(site_configuration.partner_id, to_migrate)
 
     for coupon in coupons:
         data = _map_coupon_to_ct_cart_discounts_and_discount_codes(
@@ -1089,15 +1108,18 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
     del coupons
     gc.collect()
 
-    offers = _get_enrollment_code_offers()
-    for offer in offers:
-        data = _map_enrollment_offer_to_ct_cart_discounts_and_discount_codes(offer)
-        sort_order = _migrate_single_coupon_or_offer(
-            client=client,
-            data=data,
-            sort_order=sort_order,
-            summary_info=summary_info,
-        )
+    if "enrollment" in to_migrate:
+        offers = _get_enrollment_code_offers()
+        for offer in offers:
+            data = _map_enrollment_offer_to_ct_cart_discounts_and_discount_codes(
+                offer
+            )
+            sort_order = _migrate_single_coupon_or_offer(
+                client=client,
+                data=data,
+                sort_order=sort_order,
+                summary_info=summary_info,
+            )
 
     _generate_summary(summary_info)
 
@@ -1106,6 +1128,11 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
 class Command(BaseCommand):
     """Command to migrate course coupons to Commercetools."""
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--only", type=str, help="Specify which type of coupons to migrate"
+        )
 
     def handle(self, *args, **options):
         """Handle the command."""
@@ -1116,4 +1143,12 @@ class Command(BaseCommand):
                 f"Failed to initialize Commercetools client. Error: {error}"
             ) from error
 
-        _migrate_coupons(client)
+        migrate_only = options.get("only")
+        if migrate_only == "non-enrollment":
+            to_migrate = ["non-enrollment"]
+        elif migrate_only == "enrollment":
+            to_migrate = ["enrollment"]
+        else:
+            to_migrate = ["non-enrollment", "enrollment"]
+
+        _migrate_coupons(client, to_migrate=to_migrate)
