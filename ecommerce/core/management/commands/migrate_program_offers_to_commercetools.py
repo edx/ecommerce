@@ -81,7 +81,7 @@ def _create_cart_discount(
     discount_type: str,
     discount_value_in_cents: int,
     discount_value: float,
-    sort_order: float,
+    sort_order: Decimal,
     predicate: str
 ):
     """

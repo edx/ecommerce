@@ -1,7 +1,8 @@
 import logging
 from collections import namedtuple
+from decimal import Decimal
 from time import sleep
-from typing import Dict, Iterable, List, Optional, Set
+from typing import Dict, Iterable, List, Optional
 
 import requests
 from django.conf import settings
@@ -547,7 +548,7 @@ class CommercetoolsAPIClient:
         description: Optional[str],
         value: Dict,
         cartPredicate: str,
-        sortOrder: float,
+        sortOrder: Decimal,
         customFields: Dict,
         target: Dict,
     ) -> Optional[Dict]:
@@ -628,7 +629,7 @@ class CommercetoolsAPIClient:
         description: str,
         discount_type: str,
         discount_value_in_cents: int,
-        sort_order: float,
+        sort_order: Decimal,
         predicate: str,
     ) -> Optional[Dict]:
         """

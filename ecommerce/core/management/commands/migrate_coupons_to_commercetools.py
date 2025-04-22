@@ -991,10 +991,10 @@ def handle_discount_codes_linked_incorrectly(
 def _migrate_single_coupon_or_offer(
     *,
     client: CommercetoolsAPIClient,
-    coupon_slug: str,
     data: Tuple,
     sort_order: Decimal,
     summary_info: Dict,
+    coupon_slug: Optional[str] = None,
 ) -> Decimal:
     (
         cart_discount,
@@ -1054,7 +1054,7 @@ def _migrate_single_coupon_or_offer(
         if not cart_discount_ids:
             return sort_order
 
-        if coupon_slug != cart_discount["key"]:
+        if coupon_slug and coupon_slug != cart_discount["key"]:
             should_create_discount_codes = handle_discount_codes_linked_incorrectly(
                 client=client,
                 cart_discount_ids=cart_discount_ids,
@@ -1129,7 +1129,7 @@ def _migrate_single_coupon_or_offer(
     return sort_order
 
 
-def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> None:
+def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: Set[str]) -> None:
     """
     Migrate coupons to Commercetools.
 
