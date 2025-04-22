@@ -48,7 +48,7 @@ class CommercetoolsAPIClient:
         endpoint: str,
         params: Optional[Dict] = None,
         json: Optional[Dict] = None,
-        return_on_404 = False,
+        return_on_404=False,
     ) -> Optional[Dict]:
         """
         Make an HTTP request to the Commercetools API.
@@ -316,15 +316,13 @@ class CommercetoolsAPIClient:
                 "description": cart_discount.get("description", {}).get("en-US"),
                 "cartPredicate": cart_discount.get("cartPredicate"),
                 "value": cart_discount.get("value"),
-                "customFields": cart_discount.get("custom", {}).get(
-                    "fields", {}
-                ),
+                "customFields": cart_discount.get("custom", {}).get("fields", {}),
                 "version": cart_discount.get("version"),
             }
             for cart_discount in results
         }
 
-    def get_cart_discount_by_key(self, key):
+    def get_cart_discount_by_key(self, key) -> Optional[Dict]:
         """
         Fetch cart discount by its key.
 
@@ -343,10 +341,10 @@ class CommercetoolsAPIClient:
             logger.error(
                 "Failed to get cart discount with key '%s' from Commercetools.", key
             )
-            return
+            return None
 
         if response.get("status") == 404:
-           return response
+            return response
 
         cart_discount = response
 
@@ -357,9 +355,7 @@ class CommercetoolsAPIClient:
             "description": cart_discount.get("description", {}).get("en-US"),
             "cartPredicate": cart_discount.get("cartPredicate"),
             "value": cart_discount.get("value"),
-            "customFields": cart_discount.get("custom", {}).get(
-                "fields", {}
-            ),
+            "customFields": cart_discount.get("custom", {}).get("fields", {}),
             "version": cart_discount.get("version"),
         }
 
@@ -401,7 +397,10 @@ class CommercetoolsAPIClient:
                 "validUntil": discount_code.get("validUntil"),
                 "maxApplications": discount_code.get("maxApplications"),
                 "version": discount_code.get("version"),
-                "cartDiscountIds": [cartDiscount["id"] for cartDiscount in discount_code.get("cartDiscounts", [])],
+                "cartDiscountIds": [
+                    cartDiscount["id"]
+                    for cartDiscount in discount_code.get("cartDiscounts", [])
+                ],
             }
             for discount_code in discount_codes.get("results", [])
         }

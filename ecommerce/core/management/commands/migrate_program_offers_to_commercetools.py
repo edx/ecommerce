@@ -187,10 +187,14 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
     if is_ten_percent_discount:
         predicate = "custom.bundleId is defined and "
         predicate += "("
-        predicate += " and ".join([f"custom.bundleId != \"{program_uuid}\"" for program_uuid in program_uuids])
+        predicate += " and ".join(
+            f'custom.bundleId != "{program_uuid}"' for program_uuid in program_uuids
+        )
         predicate += ")"
     else:
-        predicate = " or ".join([f"custom.bundleId = \"{program_uuid}\"" for program_uuid in program_uuids])
+        predicate = " or ".join(
+            f'custom.bundleId = "{program_uuid}"' for program_uuid in program_uuids
+        )
 
     return predicate
 

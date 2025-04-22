@@ -195,10 +195,8 @@ def _get_program_coupons(partner_id):
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.VOUCHER,
         condition__program_uuid__isnull=False,
-        partner_id=partner_id
-    ).exclude(
-        Q(benefit__value=0.00)
-    )
+        partner_id=partner_id,
+    ).exclude(benefit__value=0.00)
 
     coupons = (
         Product.objects.filter(

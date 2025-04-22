@@ -1,10 +1,10 @@
 # pylint: disable=W1203
 
-from decimal import Decimal
+import gc
 import logging
 import re
-import gc
 from collections import deque
+from decimal import Decimal
 from time import sleep
 from typing import Deque, Dict, List, Optional, Tuple
 
@@ -15,7 +15,7 @@ from django.utils import timezone
 from oscar.core.loading import get_model
 from requests.exceptions import HTTPError
 
-from ecommerce.core.client import CommercetoolsAPIClient, PairedDiscount
+from ecommerce.core.client import CommercetoolsAPIClient
 from ecommerce.core.constants import COUPONS_DEFAULT_SORT_ORDER, CT_ABSOLUTE_DISCOUNT_TYPE, CT_PERCENTAGE_DISCOUNT_TYPE
 from ecommerce.core.utils import (
     convert_querystring_to_predicate,
@@ -53,7 +53,9 @@ def _get_seat_type_and_course_predicate_from_range(
         seat_types = offer_range.course_seat_types
         catalog_query = offer_range.catalog_query
         if not catalog_query or catalog_query.strip().replace(" ", "") in (
-            "*", "key:(*)", "org:(*)"
+            "*",
+            "key:(*)",
+            "org:(*)",
         ):
             query_predicate = ""
         else:
@@ -257,6 +259,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
     }
 
     cart_discount_for_program = None
+    is_applicable_for_program = False
     if voucher.usage == Voucher.MULTI_USE:
         cart_discount_for_program = {
             "name": f"[Migrated - {program_name}] - {coupon.title}",
@@ -574,16 +577,15 @@ def _generate_summary(summary_info: Dict) -> None:
             summary_info["cart_discounts"]["created"]
         ),
         ("updated", "Cart Discount"): "\n".join(
-            f"{discount_name} - Update actions: {update_actions}"
-            for discount_name, update_actions in summary_info["cart_discounts"][
-                "updated"
-            ]
+            f"{name} - Update actions: {update_actions}"
+            for name, update_actions in summary_info["cart_discounts"]["updated"]
         ),
         ("created", "Discount Code"): "\n".join(
             summary_info["discount_codes"]["created"]
         ),
         ("updated", "Discount Code"): "\n".join(
-            summary_info["discount_codes"]["updated"]
+            f"{name} - Update actions: {update_actions}"
+            for name, update_actions in summary_info["discount_codes"]["updated"]
         ),
         ("deleted", "Discount Code"): "\n".join(
             summary_info["discount_codes"]["deleted"]
@@ -795,14 +797,16 @@ def _update_existing_discount(
             )
 
             # Attach or detach program cart discount from discount code
-            if set(cart_discount_ids) != set(discount_code_in_ct.cartDiscountIds):
-                update_actions_for_discount_code.append({
-                    "action": "changeCartDiscounts",
-                    "cartDiscounts": [{
-                        "typeId": "cart-discount",
-                        "id": cart_discount_id
-                    } for cart_discount_id in cart_discount_ids],
-                })
+            if set(cart_discount_ids) != set(discount_code_in_ct["cartDiscountIds"]):
+                update_actions_for_discount_code.append(
+                    {
+                        "action": "changeCartDiscounts",
+                        "cartDiscounts": [
+                            {"typeId": "cart-discount", "id": cart_discount_id}
+                            for cart_discount_id in cart_discount_ids
+                        ],
+                    }
+                )
 
             if update_actions_for_discount_code:
                 discount_code_response = client.update_resource_by_key(
@@ -827,8 +831,16 @@ def _update_existing_discount(
                     )
                     continue
 
+                summary_update_actions = ", ".join(
+                    update_action["action"]
+                    for update_action in update_actions_for_discount_code
+                )
+
                 summary_info["discount_codes"]["updated"].append(
-                    f"{discount_code['code']} - {discount_code['name']}"
+                    (
+                        f"{discount_code['code']} - {discount_code['name']}",
+                        summary_update_actions,
+                    )
                 )
         else:
             _create_discount_code(
@@ -859,7 +871,7 @@ def _update_existing_discount(
                 )
                 continue
             summary_info["discount_codes"]["deleted"].append(
-                f"{discount_code['code']} - {discount_code['name']}"
+                f"{discount_code_in_ct['code']} - {discount_code_in_ct['name']}"
             )
 
     return sort_order
@@ -870,7 +882,7 @@ def _migrate_single_coupon_or_offer(
     client: CommercetoolsAPIClient,
     data: Tuple,
     sort_order: Decimal,
-    summary_info: Dict
+    summary_info: Dict,
 ) -> Decimal:
     (
         cart_discount,
@@ -889,7 +901,7 @@ def _migrate_single_coupon_or_offer(
             }
         )
         return sort_order
-    if cart_discount_in_ct.get('status') == 404:
+    if cart_discount_in_ct.get("status") == 404:
         if not discount_codes:
             # No need to create cart discount if there are no discount codes.
             return sort_order
@@ -930,26 +942,15 @@ def _migrate_single_coupon_or_offer(
                 summary_info=summary_info,
             )
     else:
-        cart_discount_in_ct_for_program = client.get_cart_discount_by_key(key=cart_discount_for_program["key"])
-        if cart_discount_in_ct_for_program is None:
-            logger.error(f"Failed to get cart discount of {cart_discount_for_program['name']}.")
-            summary_info["cart_discounts"]["failed"].append(
-                {
-                    "name": cart_discount_for_program["name"],
-                    "reason": "Error while getting cart discount.",
-                }
-            )
-            return sort_order
-        if cart_discount_in_ct_for_program.get('status') == 404:
-            cart_discount_in_ct_for_program = None
-
         discount_codes_in_ct = client.get_discount_codes_for_cart_discount(
             cart_discount_name=cart_discount["name"],
             cart_discount_id=cart_discount_in_ct["id"],
         )
 
         if discount_codes_in_ct is None:
-            logger.error(f"Failed to get discount codes for cart discount: {cart_discount['name']}.")
+            logger.error(
+                f"Failed to get discount codes for cart discount: {cart_discount['name']}."
+            )
             summary_info["cart_discounts"]["failed"].append(
                 {
                     "name": cart_discount["name"],
@@ -957,6 +958,27 @@ def _migrate_single_coupon_or_offer(
                 }
             )
             return sort_order
+
+        if cart_discount_for_program:
+            cart_discount_in_ct_for_program = client.get_cart_discount_by_key(
+                key=cart_discount_for_program["key"]
+            )
+            if cart_discount_in_ct_for_program is None:
+                logger.error(
+                    f"Failed to get cart discount of {cart_discount_for_program['name']}."
+                )
+                summary_info["cart_discounts"]["failed"].append(
+                    {
+                        "name": cart_discount_for_program["name"],
+                        "reason": "Error while getting cart discount.",
+                    }
+                )
+                return sort_order
+
+            if cart_discount_in_ct_for_program.get("status") == 404:
+                cart_discount_in_ct_for_program = None
+        else:
+            cart_discount_in_ct_for_program = None
 
         sort_order = _update_existing_discount(
             client=client,
@@ -973,6 +995,7 @@ def _migrate_single_coupon_or_offer(
         )
 
     return sort_order
+
 
 def _migrate_coupons(client: CommercetoolsAPIClient):
     """
@@ -1000,16 +1023,16 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
 
     sort_order = get_next_sort_order_for_coupons(client)
 
-
-
     for coupon in coupons:
-        data = _map_coupon_to_ct_cart_discounts_and_discount_codes(coupon, summary_info)
+        data = _map_coupon_to_ct_cart_discounts_and_discount_codes(
+            coupon, summary_info
+        )
         if data:
             sort_order = _migrate_single_coupon_or_offer(
                 client=client,
                 data=data,
                 sort_order=sort_order,
-                summary_info=summary_info
+                summary_info=summary_info,
             )
 
     del coupons
@@ -1022,7 +1045,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
             client=client,
             data=data,
             sort_order=sort_order,
-            summary_info=summary_info
+            summary_info=summary_info,
         )
 
     _generate_summary(summary_info)
