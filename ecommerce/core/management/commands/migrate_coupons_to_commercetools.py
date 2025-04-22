@@ -198,7 +198,7 @@ def _map_voucher_criteria_to_cart_predicate(
 
 
 def _map_coupon_to_ct_cart_discounts_and_discount_codes(
-    coupon, summary_info: Dict
+    key: str, coupon, summary_info: Dict
 ) -> Optional[Tuple]:
     """
     Map coupon to Commercetools cart discounts and discount codes.
@@ -242,7 +242,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
 
     cart_discount = {
         "name": f"[Migrated - {name}] - {coupon.title}",
-        "key": coupon.slug,
+        "key": key,
         "description": _get_note_for_coupon(coupon) or "",
         "customFields": {
             "client": _get_client_for_coupon(coupon),
@@ -263,7 +263,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
     if voucher.usage == Voucher.MULTI_USE:
         cart_discount_for_program = {
             "name": f"[Migrated - {program_name}] - {coupon.title}",
-            "key": f"program-{coupon.slug}",
+            "key": f"program-{key}",
             "cartPredicate": _map_voucher_criteria_to_cart_predicate(
                 seat_types=seat_types,
                 email_domains=offer.email_domains,
@@ -442,6 +442,7 @@ def _get_course_coupons(partner_id: str, to_migrate: List[str]):
                 "coupon_vouchers__vouchers__offers",
             ),
         )
+        .order_by("id")
         .distinct()
     )
 
@@ -466,6 +467,7 @@ def _get_enrollment_code_offers():
             "benefit__range",
             "benefit__range__included_products",
         )
+        .order_by("id")
         .distinct()
     )
 
@@ -1092,10 +1094,16 @@ def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> N
     sort_order = get_next_sort_order_for_coupons(client)
 
     coupons = _get_course_coupons(site_configuration.partner_id, to_migrate)
+    coupon_keys = set()
 
     for coupon in coupons:
+        if coupon.slug in coupon_keys:
+            key = f"{coupon.slug}-for-coupon-{coupon.id}"
+        else:
+            key = coupon.slug
+            coupon_keys.add(key)
         data = _map_coupon_to_ct_cart_discounts_and_discount_codes(
-            coupon, summary_info
+            key, coupon, summary_info
         )
         if data:
             sort_order = _migrate_single_coupon_or_offer(
@@ -1105,7 +1113,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> N
                 summary_info=summary_info,
             )
 
-    del coupons
+    del coupons, coupon_keys
     gc.collect()
 
     if "enrollment" in to_migrate:
