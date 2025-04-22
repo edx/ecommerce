@@ -6,7 +6,7 @@ import re
 from collections import deque
 from decimal import Decimal
 from time import sleep
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
 
 from dateutil import parser as dateutil_parser
 from django.core.management.base import BaseCommand, CommandError
@@ -391,36 +391,26 @@ def _get_note_for_coupon(coupon) -> Optional[str]:
     return note
 
 
-def _get_course_coupons(partner_id: str, to_migrate: List[str]):
+def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
     """
     Get course coupons from the database.
     """
-    if "enrollment" in to_migrate and "non-enrollment" in to_migrate:
-        excluded_offers = ConditionalOffer.objects.filter(
-            ~Q(partner_id=partner_id) |
-            Q(
-                condition__range__catalog_query__isnull=True,
-                condition__range__catalog__isnull=True,
-            )
+    filter_condition = ~Q(partner_id=partner_id)
+    filter_condition |= Q(
+        condition__range__catalog_query__isnull=True,
+        condition__range__catalog__isnull=True,
+    )
+
+    if {"enrollment"} == to_migrate:
+        filter_condition |= ~Q(
+            benefit__type=Benefit.PERCENTAGE, benefit__value=100.00
         )
-    elif "non-enrollment" in to_migrate:
-        excluded_offers = ConditionalOffer.objects.filter(
-            ~Q(partner_id=partner_id) |
-            Q(
-                condition__range__catalog_query__isnull=True,
-                condition__range__catalog__isnull=True,
-            ) |
-            Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
+    elif {"non-enrollment"} == to_migrate:
+        filter_condition |= Q(
+            benefit__type=Benefit.PERCENTAGE, benefit__value=100.00
         )
-    elif "enrollment" in to_migrate:
-        excluded_offers = ConditionalOffer.objects.filter(
-            ~Q(partner_id=partner_id) |
-            Q(
-                condition__range__catalog_query__isnull=True,
-                condition__range__catalog__isnull=True,
-            ) |
-            ~Q(benefit__type=Benefit.PERCENTAGE, benefit__value=100.00)
-        )
+
+    excluded_offers = ConditionalOffer.objects.filter(filter_condition)
 
     coupons = (
         Product.objects.filter(
@@ -594,26 +584,15 @@ def _generate_summary(summary_info: Dict) -> None:
     """
 
     success_summary = {
-        ("created", "Cart Discount"): "\n".join(
-            summary_info["cart_discounts"]["created"]
-        ),
-        ("updated", "Cart Discount"): "\n".join(
-            f"{name} - Update actions: {update_actions}"
-            for name, update_actions in summary_info["cart_discounts"]["updated"]
-        ),
-        ("created", "Discount Code"): "\n".join(
-            summary_info["discount_codes"]["created"]
-        ),
-        ("updated", "Discount Code"): "\n".join(
-            f"{name} - Update actions: {update_actions}"
-            for name, update_actions in summary_info["discount_codes"]["updated"]
-        ),
-        ("deleted", "Discount Code"): "\n".join(
-            summary_info["discount_codes"]["deleted"]
-        ),
+        ("created", "Cart Discount"): summary_info["cart_discounts"]["created"],
+        ("updated", "Cart Discount"): summary_info["cart_discounts"]["updated"],
+        ("created", "Discount Code"): summary_info["discount_codes"]["created"],
+        ("updated", "Discount Code"): summary_info["discount_codes"]["updated"],
+        ("deleted", "Discount Code"): summary_info["discount_codes"]["deleted"],
     }
 
     for key, value in success_summary.items():
+        value = "\n".join(value)
         action, discount_type = key
 
         if value:
@@ -686,7 +665,7 @@ def _create_cart_discount(
 def _create_discount_code(
     *,
     client: CommercetoolsAPIClient,
-    cart_discount_ids: List[str],
+    cart_discount_ids: Iterable[str],
     discount_code: Dict,
     summary_info: Dict,
 ) -> None:
@@ -760,7 +739,7 @@ def _update_existing_cart_discount(
         )
 
         summary_info["cart_discounts"]["updated"].append(
-            (cart_discount["name"], summary_update_actions)
+            f"{cart_discount['name']} - Update actions: {summary_update_actions}"
         )
 
 
@@ -778,7 +757,7 @@ def _update_existing_discount(
     sort_order: Decimal,
     summary_info: Dict,
 ) -> Decimal:
-    cart_discount_ids = [cart_discount_in_ct["id"]]
+    cart_discount_ids = {cart_discount_in_ct["id"]}
 
     _update_existing_cart_discount(
         client=client,
@@ -795,7 +774,7 @@ def _update_existing_discount(
             summary_info=summary_info,
         )
         if is_applicable_for_program:
-            cart_discount_ids.append(cart_discount_in_ct_for_program["id"])
+            cart_discount_ids.add(cart_discount_in_ct_for_program["id"])
     elif is_applicable_for_program:
         cart_discount_id, sort_order = _create_cart_discount(
             client=client,
@@ -805,7 +784,7 @@ def _update_existing_discount(
             for_program=True,
         )
         if cart_discount_id:
-            cart_discount_ids.append(cart_discount_id)
+            cart_discount_ids.add(cart_discount_id)
 
     for discount_code in discount_codes:
         discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
@@ -818,7 +797,7 @@ def _update_existing_discount(
             )
 
             # Attach or detach program cart discount from discount code
-            if set(cart_discount_ids) != set(discount_code_in_ct["cartDiscountIds"]):
+            if cart_discount_ids != discount_code_in_ct["cartDiscountIds"]:
                 update_actions_for_discount_code.append(
                     {
                         "action": "changeCartDiscounts",
@@ -858,10 +837,8 @@ def _update_existing_discount(
                 )
 
                 summary_info["discount_codes"]["updated"].append(
-                    (
-                        f"{discount_code['code']} - {discount_code['name']}",
-                        summary_update_actions,
-                    )
+                    f"{discount_code['code']} - {discount_code['name']} - "
+                    f"Update actions: {summary_update_actions}"
                 )
         else:
             _create_discount_code(
@@ -937,6 +914,7 @@ def _has_valid_orgs_in_cart_predicate(
                         }
                     )
                     return False
+
     return True
 
 
@@ -977,7 +955,7 @@ def _migrate_single_coupon_or_offer(
             # No need to create cart discount if there are no discount codes.
             return sort_order
 
-        cart_discount_ids = []
+        cart_discount_ids = set()
 
         cart_discount_id, sort_order = _create_cart_discount(
             client=client,
@@ -986,7 +964,7 @@ def _migrate_single_coupon_or_offer(
             summary_info=summary_info,
         )
         if cart_discount_id:
-            cart_discount_ids.append(cart_discount_id)
+            cart_discount_ids.add(cart_discount_id)
 
             # only create cart discount for program if
             # - course cart discount is created without error
@@ -1000,7 +978,7 @@ def _migrate_single_coupon_or_offer(
                     for_program=True,
                 )
                 if cart_discount_id:
-                    cart_discount_ids.append(cart_discount_id)
+                    cart_discount_ids.add(cart_discount_id)
 
         if not cart_discount_ids:
             return sort_order
@@ -1102,6 +1080,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> N
         else:
             key = coupon.slug
             coupon_keys.add(key)
+
         data = _map_coupon_to_ct_cart_discounts_and_discount_codes(
             key, coupon, summary_info
         )
@@ -1153,10 +1132,10 @@ class Command(BaseCommand):
 
         migrate_only = options.get("only")
         if migrate_only == "non-enrollment":
-            to_migrate = ["non-enrollment"]
+            to_migrate = {"non-enrollment"}
         elif migrate_only == "enrollment":
-            to_migrate = ["enrollment"]
+            to_migrate = {"enrollment"}
         else:
-            to_migrate = ["non-enrollment", "enrollment"]
+            to_migrate = {"non-enrollment", "enrollment"}
 
         _migrate_coupons(client, to_migrate=to_migrate)

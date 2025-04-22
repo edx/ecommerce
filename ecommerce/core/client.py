@@ -1,7 +1,7 @@
 import logging
 from collections import namedtuple
 from time import sleep
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional, Set
 
 import requests
 from django.conf import settings
@@ -427,10 +427,10 @@ class CommercetoolsAPIClient:
                 "validUntil": discount_code.get("validUntil"),
                 "maxApplications": discount_code.get("maxApplications"),
                 "version": discount_code.get("version"),
-                "cartDiscountIds": [
+                "cartDiscountIds": {
                     cartDiscount["id"]
                     for cartDiscount in discount_code.get("cartDiscounts", [])
-                ],
+                },
             }
             for discount_code in results
         }
@@ -584,7 +584,7 @@ class CommercetoolsAPIClient:
     def create_discount_code(
         self,
         *,
-        cartDiscountIds: List[str],
+        cartDiscountIds: Iterable[str],
         key: str,
         name: str,
         code: str,

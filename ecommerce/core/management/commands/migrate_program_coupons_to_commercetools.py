@@ -196,22 +196,17 @@ def _get_program_coupons(partner_id, to_migrate):
         offer_type=ConditionalOffer.VOUCHER,
         condition__program_uuid__isnull=False,
         partner_id=partner_id,
-    )
-    if "enrollment" in to_migrate and "non-enrollment" in to_migrate:
-        included_offers = included_offers.exclude(benefit__value=0.00)
-    elif "enrollment" in to_migrate:
-        included_offers = included_offers.exclude(
-            ~Q(
-                benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
-                benefit__value=100.00,
-            ) | Q(benefit__value=0.00)
+    ).exclude(benefit__value=0.00)
+
+    if {"enrollment"} == to_migrate:
+        included_offers = included_offers.filter(
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+            benefit__value=100.00,
         )
-    elif "non-enrollment" in to_migrate:
+    elif {"non-enrollment"} == to_migrate:
         included_offers = included_offers.exclude(
-            Q(
-                benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
-                benefit__value=100.00,
-            ) | Q(benefit__value=0.00)
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+            benefit__value=100.00,
         )
 
     coupons = (
@@ -602,7 +597,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--only", type=str, help="Specify which type of coupons to migrate"
+            "--only", type=str, help="Specify which type of program coupons to migrate"
         )
 
     def handle(self, *args, **options):
@@ -616,10 +611,10 @@ class Command(BaseCommand):
 
         migrate_only = options.get("only")
         if migrate_only == "non-enrollment":
-            to_migrate = ["non-enrollment"]
+            to_migrate = {"non-enrollment"}
         elif migrate_only == "enrollment":
-            to_migrate = ["enrollment"]
+            to_migrate = {"enrollment"}
         else:
-            to_migrate = ["non-enrollment", "enrollment"]
+            to_migrate = {"non-enrollment", "enrollment"}
 
         _migrate_program_coupons(client, to_migrate=to_migrate)
