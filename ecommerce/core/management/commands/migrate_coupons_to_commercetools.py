@@ -918,9 +918,80 @@ def _has_valid_orgs_in_cart_predicate(
     return True
 
 
+def handle_discount_codes_linked_incorrectly(
+    *,
+    client: CommercetoolsAPIClient,
+    cart_discount_ids: Iterable[str],
+    coupon_slug: str,
+    discount_codes: List[Dict],
+    summary_info: Dict,
+) -> bool:
+    wrong_cart_discount_in_ct = client.get_cart_discount_by_key(key=coupon_slug)
+    if (
+        not wrong_cart_discount_in_ct or
+        wrong_cart_discount_in_ct.get("status") == 404
+    ):
+        return True
+
+    wrong_discount_codes_in_ct = client.get_discount_codes_for_cart_discount(
+        cart_discount_name=wrong_cart_discount_in_ct["name"],
+        cart_discount_id=wrong_cart_discount_in_ct["id"],
+    )
+    if not wrong_discount_codes_in_ct:
+        return True
+
+    for discount_code in discount_codes:
+        discount_code_in_ct = wrong_discount_codes_in_ct.get(discount_code["key"])
+        if discount_code_in_ct:
+            update_action = {
+                "action": "changeCartDiscounts",
+                "cartDiscounts": [
+                    {"typeId": "cart-discount", "id": cart_discount_id}
+                    for cart_discount_id in cart_discount_ids
+                ],
+            }
+
+            discount_code_response = client.update_resource_by_key(
+                resource_type="discount-codes",
+                resource_key=discount_code_in_ct["key"],
+                version=discount_code_in_ct["version"],
+                actions=[update_action],
+            )
+
+            if not discount_code_response:
+                logger.error(
+                    "Failed to update discount code with name: "
+                    f"{discount_code['name']} and "
+                    f"code: {discount_code['code']}."
+                )
+                summary_info["discount_codes"]["failed"].append(
+                    {
+                        "name": discount_code["name"],
+                        "code": discount_code["code"],
+                        "reason": "Error while updating discount code.",
+                    }
+                )
+                continue
+
+            summary_info["discount_codes"]["updated"].append(
+                f"{discount_code['code']} - {discount_code['name']} - "
+                f"Update actions: changeCartDiscounts"
+            )
+        else:
+            _create_discount_code(
+                client=client,
+                cart_discount_ids=cart_discount_ids,
+                discount_code=discount_code,
+                summary_info=summary_info,
+            )
+
+    return False
+
+
 def _migrate_single_coupon_or_offer(
     *,
     client: CommercetoolsAPIClient,
+    coupon_slug: str,
     data: Tuple,
     sort_order: Decimal,
     summary_info: Dict,
@@ -983,13 +1054,25 @@ def _migrate_single_coupon_or_offer(
         if not cart_discount_ids:
             return sort_order
 
-        for discount_code in discount_codes:
-            _create_discount_code(
+        if coupon_slug != cart_discount["key"]:
+            should_create_discount_codes = handle_discount_codes_linked_incorrectly(
                 client=client,
                 cart_discount_ids=cart_discount_ids,
-                discount_code=discount_code,
+                coupon_slug=coupon_slug,
+                discount_codes=discount_codes,
                 summary_info=summary_info,
             )
+        else:
+            should_create_discount_codes = True
+
+        if should_create_discount_codes:
+            for discount_code in discount_codes:
+                _create_discount_code(
+                    client=client,
+                    cart_discount_ids=cart_discount_ids,
+                    discount_code=discount_code,
+                    summary_info=summary_info,
+                )
     else:
         discount_codes_in_ct = client.get_discount_codes_for_cart_discount(
             cart_discount_name=cart_discount["name"],
@@ -1087,6 +1170,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient, to_migrate: List[str]) -> N
         if data:
             sort_order = _migrate_single_coupon_or_offer(
                 client=client,
+                coupon_slug=coupon.slug,
                 data=data,
                 sort_order=sort_order,
                 summary_info=summary_info,
