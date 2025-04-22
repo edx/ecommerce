@@ -362,8 +362,9 @@ class CommercetoolsAPIClient:
     def get_discount_codes_for_cart_discount(
         self,
         *,
-        cart_discount_name: str,
         cart_discount_id: str,
+        cart_discount_name: str,
+        page_size=500,
     ) -> Optional[Dict]:
         """
         Fetch discount codes for a specific cart discount ID.
@@ -372,21 +373,50 @@ class CommercetoolsAPIClient:
             cart_discount_id (str): ID of the cart discount.
 
         Returns:
-            List[Dict]: List of discount codes associated with the cart discount.
+            Dict: Discount codes data or None if request fails.
         """
-        query_params = f'cartDiscounts(id="{cart_discount_id}")'
+        where_cart_discount_id = f'cartDiscounts(id="{cart_discount_id}")'
+        base_params = {
+            "limit": page_size,
+            "sort": "id asc",
+            "withTotal": False,
+        }
 
-        discount_codes = self._make_request(
-            "GET",
-            "discount-codes",
-            params={"where": query_params},
-        )
-        if not discount_codes:
-            logger.error(
-                "Failed to get discount codes for cart discount '%s' from Commercetools.",
-                cart_discount_name,
-            )
-            return None
+        lastId = None
+        should_continue = True
+        results = []
+
+        while should_continue:
+            if lastId is None:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "where": where_cart_discount_id,
+                        **base_params,
+                    },
+                )
+            else:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "where": f'{where_cart_discount_id} and id > "{lastId}"',
+                        **base_params,
+                    },
+                )
+            if not response:
+                logger.error(
+                    "Failed to get discount codes for cart discount '%s' from Commercetools.",
+                    cart_discount_name,
+                )
+                return None
+
+            batch_results = response["results"]
+            results.extend(batch_results)
+            should_continue = len(batch_results) == page_size
+            if batch_results:
+                lastId = batch_results[-1]["id"]
 
         return {
             discount_code.get("key"): {
@@ -402,7 +432,7 @@ class CommercetoolsAPIClient:
                     for cartDiscount in discount_code.get("cartDiscounts", [])
                 ],
             }
-            for discount_code in discount_codes.get("results", [])
+            for discount_code in results
         }
 
     def get_ct_bundle_offers_without_code(
