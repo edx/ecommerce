@@ -483,6 +483,32 @@ class CommercetoolsAPIClient:
             },
         )
 
+    def has_product_for_org(self, org):
+        """
+        Check if the organization has a product.
+
+        Args:
+            org (str): Organization ID.
+
+        Returns:
+            bool: True if the organization has a product, False otherwise.
+        """
+        where = f'(variants(attributes(name="brand-text" and value="{org}")))'
+        response = self._make_request(
+            "GET",
+            "product-projections",
+            params={"where": where, "limit": 1},
+        )
+
+        if not response:
+            logger.error(
+                "Failed to get products for organization '%s' from Commercetools.",
+                org,
+            )
+            return None
+
+        return response["total"] > 0
+
     def create_cart_discount(
         self,
         *,

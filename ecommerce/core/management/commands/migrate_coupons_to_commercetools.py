@@ -63,7 +63,7 @@ def _get_seat_type_and_course_predicate_from_range(
 
             if not query_predicate:
                 log_message = (
-                    "Unable to convert catalog query to predicate. Check if the "
+                    "Catalog Query unable to be converted. Check if the "
                     "KEY_TO_PREDICATE_DICT needs to be updated with the new key. "
                     "Skipping migration of coupon."
                 )
@@ -877,6 +877,48 @@ def _update_existing_discount(
     return sort_order
 
 
+def _has_valid_orgs_in_cart_predicate(
+    *,
+    name: str,
+    cart_predicate: str,
+    client: CommercetoolsAPIClient,
+    summary_info: Dict,
+) -> bool:
+    match_orgs = re.search(
+        r"attributes\.`brand-text`\s+(not\s+)?in\s+\(([^)]+)\)",
+        cart_predicate,
+    )
+    if match_orgs:
+        orgs = re.findall(r'"(.*?)"', match_orgs.groups()[-1])
+        for org in orgs:
+            if org not in summary_info["orgs"]:
+                is_valid_org = client.has_product_for_org(org)
+                if is_valid_org is None:
+                    log_message = f"Failed to check if org {org} exists."
+                    logger.error(log_message)
+                    summary_info["cart_discounts"]["failed"].append(
+                        {
+                            "name": name,
+                            "reason": log_message,
+                        }
+                    )
+                    continue
+
+                summary_info["orgs"].add(org)
+
+                if not is_valid_org:
+                    log_message = f"Org {org} does not exist in Commercetools."
+                    logger.error(log_message)
+                    summary_info["cart_discounts"]["failed"].append(
+                        {
+                            "name": name,
+                            "reason": log_message,
+                        }
+                    )
+                    return False
+    return True
+
+
 def _migrate_single_coupon_or_offer(
     *,
     client: CommercetoolsAPIClient,
@@ -891,6 +933,14 @@ def _migrate_single_coupon_or_offer(
         cart_discount_for_program,
         is_applicable_for_program,
     ) = data
+    if not _has_valid_orgs_in_cart_predicate(
+        name=cart_discount["name"],
+        cart_predicate=cart_discount["cartPredicate"],
+        client=client,
+        summary_info=summary_info,
+    ):
+        return sort_order
+
     cart_discount_in_ct = client.get_cart_discount_by_key(key=cart_discount["key"])
     if cart_discount_in_ct is None:
         logger.error(f"Failed to get cart discount of {cart_discount['name']}.")
@@ -1016,6 +1066,7 @@ def _migrate_coupons(client: CommercetoolsAPIClient):
             "failed": [],
             "deleted": [],
         },
+        "orgs": set(),
     }
 
     site_configuration = SiteConfiguration.objects.first()
