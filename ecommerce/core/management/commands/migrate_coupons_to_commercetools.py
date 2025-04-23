@@ -416,6 +416,7 @@ def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
         Product.objects.filter(
             product_class__slug="coupon",
             coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
+            id__in=[58794, 119120, 124175, 129343, 134756, 136937]
         )
         .exclude(
             Q(slug__in=[
