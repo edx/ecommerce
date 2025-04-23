@@ -81,7 +81,7 @@ def _create_cart_discount(
     discount_type: str,
     discount_value_in_cents: int,
     discount_value: float,
-    sort_order: float,
+    sort_order: Decimal,
     predicate: str
 ):
     """
@@ -187,12 +187,14 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
     if is_ten_percent_discount:
         predicate = "custom.bundleId is defined and "
         predicate += "("
-        predicate += " and ".join([f"custom.bundleId != \"{program_uuid}\"" for program_uuid in program_uuids])
+        predicate += " and ".join(
+            f'custom.bundleId != "{program_uuid}"' for program_uuid in program_uuids
+        )
         predicate += ")"
     else:
-        predicate = "("
-        predicate += " or ".join([f"custom.bundleId = \"{program_uuid}\"" for program_uuid in program_uuids])
-        predicate += ")"
+        predicate = " or ".join(
+            f'custom.bundleId = "{program_uuid}"' for program_uuid in program_uuids
+        )
 
     return predicate
 
@@ -512,7 +514,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             if uuids_removed:
                 update_log += f" and removing uuids:{', '.join(uuids_removed)}"
             logger.info(update_log)
-            response = client.update_cart_discount_target_predicate(existing_discount['id'], updated_predicate, version)
+            response = client.update_cart_discount_cart_predicate(existing_discount['id'], updated_predicate, version)
 
             if not response:
                 logger.error(

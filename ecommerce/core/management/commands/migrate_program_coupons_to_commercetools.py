@@ -187,7 +187,7 @@ def _get_note_for_coupon(coupon) -> Optional[str]:
     return note
 
 
-def _get_program_coupons(partner_id):
+def _get_program_coupons(partner_id, to_migrate):
     """
     Get program coupons from the database.
     """
@@ -195,10 +195,19 @@ def _get_program_coupons(partner_id):
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.VOUCHER,
         condition__program_uuid__isnull=False,
-        partner_id=partner_id
-    ).exclude(
-        Q(benefit__value=0.00)
-    )
+        partner_id=partner_id,
+    ).exclude(benefit__value=0.00)
+
+    if {"enrollment"} == to_migrate:
+        included_offers = included_offers.filter(
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+            benefit__value=100.00,
+        )
+    elif {"non-enrollment"} == to_migrate:
+        included_offers = included_offers.exclude(
+            benefit__proxy_class=ProxyClassDiscountType.PERCENTAGE.value,
+            benefit__value=100.00,
+        )
 
     coupons = (
         Product.objects.filter(
@@ -382,7 +391,7 @@ def _generate_summary(summary_info):
         raise CommandError("Command run completed with errors.")
 
 
-def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable=too-many-statements
+def _migrate_program_coupons(client: CommercetoolsAPIClient, to_migrate):  # pylint: disable=too-many-statements
     """
     Migrate program coupons to Commercetools.
 
@@ -407,11 +416,15 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
     site_configuration = SiteConfiguration.objects.first()
     partner_id = site_configuration.partner_id
 
-    coupons = _get_program_coupons(partner_id)
-    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info)
+    coupons = _get_program_coupons(partner_id, to_migrate)
+    mapped_discounts = _map_coupons_to_ct_cart_discounts_and_discount_codes(
+        coupons, summary_info
+    )
 
     existing_program_discounts_in_ct = client.get_ct_cart_discounts(
-        query_params='requiresDiscountCode=true and custom(fields(discountType="program-discount"))'
+        query_params='requiresDiscountCode=true and custom(fields(discountType in ('
+        '"program-discount", "program-enrollment-code"'
+        ')))'
     )
 
     if existing_program_discounts_in_ct is None:
@@ -582,6 +595,11 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient):  # pylint: disable
 class Command(BaseCommand):
     """Command to migrate program coupons to Commercetools."""
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--only", type=str, help="Specify which type of program coupons to migrate"
+        )
+
     def handle(self, *args, **options):
         """Handle the command."""
         try:
@@ -591,4 +609,12 @@ class Command(BaseCommand):
                 f"Failed to initialize Commercetools client. Error: {error}"
             ) from error
 
-        _migrate_program_coupons(client)
+        migrate_only = options.get("only")
+        if migrate_only == "non-enrollment":
+            to_migrate = {"non-enrollment"}
+        elif migrate_only == "enrollment":
+            to_migrate = {"enrollment"}
+        else:
+            to_migrate = {"non-enrollment", "enrollment"}
+
+        _migrate_program_coupons(client, to_migrate=to_migrate)

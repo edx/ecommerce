@@ -1,7 +1,8 @@
 import logging
 from collections import namedtuple
+from decimal import Decimal
 from time import sleep
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 import requests
 from django.conf import settings
@@ -48,6 +49,7 @@ class CommercetoolsAPIClient:
         endpoint: str,
         params: Optional[Dict] = None,
         json: Optional[Dict] = None,
+        return_on_404=False,
     ) -> Optional[Dict]:
         """
         Make an HTTP request to the Commercetools API.
@@ -57,6 +59,7 @@ class CommercetoolsAPIClient:
             endpoint (str): API endpoint (e.g., "/cart-discounts").
             params (Optional[Dict]): Query parameters.
             json (Optional[Dict]): JSON payload for POST/PUT requests.
+            return_on_404 (bool): Whether to return a 404 response as a dictionary.
 
         Returns:
             Union[Dict, List]: JSON response from the API or None if the request fails.
@@ -87,6 +90,14 @@ class CommercetoolsAPIClient:
                         )
                     except (ValueError, AttributeError) as error:
                         response_message = str(error)
+
+                    if response.status_code == 404 and return_on_404:
+                        logger.error(
+                            "API request for endpoint: %s failed with 404 error: %s",
+                            endpoint,
+                            response_message,
+                        )
+                        return {"status": 404}
 
                     if response.status_code in (500, 501, 502, 503, 504):
                         if attempt == max_retries:
@@ -306,19 +317,55 @@ class CommercetoolsAPIClient:
                 "description": cart_discount.get("description", {}).get("en-US"),
                 "cartPredicate": cart_discount.get("cartPredicate"),
                 "value": cart_discount.get("value"),
-                "customFields": cart_discount.get("custom", {}).get(
-                    "fields", {}
-                ),
+                "customFields": cart_discount.get("custom", {}).get("fields", {}),
                 "version": cart_discount.get("version"),
             }
             for cart_discount in results
         }
 
+    def get_cart_discount_by_key(self, key) -> Optional[Dict]:
+        """
+        Fetch cart discount by its key.
+
+        Args:
+            key (str): Key of the cart discount.
+
+        Returns:
+            Dict: Cart discount data or None if not found.
+        """
+        response = self._make_request(
+            "GET",
+            f"cart-discounts/key={key}",
+            return_on_404=True,
+        )
+        if not response:
+            logger.error(
+                "Failed to get cart discount with key '%s' from Commercetools.", key
+            )
+            return None
+
+        if response.get("status") == 404:
+            return response
+
+        cart_discount = response
+
+        return {
+            "id": cart_discount.get("id"),
+            "key": cart_discount.get("key"),
+            "name": cart_discount.get("name", {}).get("en-US"),
+            "description": cart_discount.get("description", {}).get("en-US"),
+            "cartPredicate": cart_discount.get("cartPredicate"),
+            "value": cart_discount.get("value"),
+            "customFields": cart_discount.get("custom", {}).get("fields", {}),
+            "version": cart_discount.get("version"),
+        }
+
     def get_discount_codes_for_cart_discount(
         self,
         *,
-        cart_discount_name: str,
         cart_discount_id: str,
+        cart_discount_name: str,
+        page_size=500,
     ) -> Optional[Dict]:
         """
         Fetch discount codes for a specific cart discount ID.
@@ -327,21 +374,50 @@ class CommercetoolsAPIClient:
             cart_discount_id (str): ID of the cart discount.
 
         Returns:
-            List[Dict]: List of discount codes associated with the cart discount.
+            Dict: Discount codes data or None if request fails.
         """
-        query_params = f'cartDiscounts(id="{cart_discount_id}")'
+        where_cart_discount_id = f'cartDiscounts(id="{cart_discount_id}")'
+        base_params = {
+            "limit": page_size,
+            "sort": "id asc",
+            "withTotal": False,
+        }
 
-        discount_codes = self._make_request(
-            "GET",
-            "discount-codes",
-            params={"where": query_params},
-        )
-        if not discount_codes:
-            logger.error(
-                "Failed to get discount codes for cart discount '%s' from Commercetools.",
-                cart_discount_name,
-            )
-            return None
+        lastId = None
+        should_continue = True
+        results = []
+
+        while should_continue:
+            if lastId is None:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "where": where_cart_discount_id,
+                        **base_params,
+                    },
+                )
+            else:
+                response = self._make_request(
+                    "GET",
+                    "discount-codes",
+                    params={
+                        "where": f'{where_cart_discount_id} and id > "{lastId}"',
+                        **base_params,
+                    },
+                )
+            if not response:
+                logger.error(
+                    "Failed to get discount codes for cart discount '%s' from Commercetools.",
+                    cart_discount_name,
+                )
+                return None
+
+            batch_results = response["results"]
+            results.extend(batch_results)
+            should_continue = len(batch_results) == page_size
+            if batch_results:
+                lastId = batch_results[-1]["id"]
 
         return {
             discount_code.get("key"): {
@@ -352,8 +428,12 @@ class CommercetoolsAPIClient:
                 "validUntil": discount_code.get("validUntil"),
                 "maxApplications": discount_code.get("maxApplications"),
                 "version": discount_code.get("version"),
+                "cartDiscountIds": {
+                    cartDiscount["id"]
+                    for cartDiscount in discount_code.get("cartDiscounts", [])
+                },
             }
-            for discount_code in discount_codes.get("results", [])
+            for discount_code in results
         }
 
     def get_ct_bundle_offers_without_code(
@@ -434,6 +514,32 @@ class CommercetoolsAPIClient:
             },
         )
 
+    def has_product_for_org(self, org):
+        """
+        Check if the organization has a product.
+
+        Args:
+            org (str): Organization ID.
+
+        Returns:
+            bool: True if the organization has a product, False otherwise.
+        """
+        where = f'(variants(attributes(name="brand-text" and value="{org}")))'
+        response = self._make_request(
+            "GET",
+            "product-projections",
+            params={"where": where, "limit": 1},
+        )
+
+        if not response:
+            logger.error(
+                "Failed to get products for organization '%s' from Commercetools.",
+                org,
+            )
+            return None
+
+        return response["total"] > 0
+
     def create_cart_discount(
         self,
         *,
@@ -442,7 +548,7 @@ class CommercetoolsAPIClient:
         description: Optional[str],
         value: Dict,
         cartPredicate: str,
-        sortOrder: float,
+        sortOrder: Decimal,
         customFields: Dict,
         target: Dict,
     ) -> Optional[Dict]:
@@ -479,7 +585,7 @@ class CommercetoolsAPIClient:
     def create_discount_code(
         self,
         *,
-        cartDiscountIds: List[str],
+        cartDiscountIds: Iterable[str],
         key: str,
         name: str,
         code: str,
@@ -523,7 +629,7 @@ class CommercetoolsAPIClient:
         description: str,
         discount_type: str,
         discount_value_in_cents: int,
-        sort_order: float,
+        sort_order: Decimal,
         predicate: str,
     ) -> Optional[Dict]:
         """
@@ -563,11 +669,10 @@ class CommercetoolsAPIClient:
                 "type": discount_type,
                 **discount_value_data,
             },
-            # Equivalent to "At least one existing line item satisfies the condition(s) is True in CT."
-            "cartPredicate": "lineItemExists(custom.bundleId is defined) = true",
+            "cartPredicate": f"forAllLineItems({predicate}) = true",
             "target": {
                 "type": "lineItems",
-                "predicate": predicate,
+                "predicate": "1 = 1",
             },
             "sortOrder": f"{sort_order:.15f}".rstrip("0").rstrip("."),
             "isActive": True,
@@ -614,11 +719,11 @@ class CommercetoolsAPIClient:
             "POST", f"{resource_type}/key={resource_key}", json=payload
         )
 
-    def update_cart_discount_target_predicate(
+    def update_cart_discount_cart_predicate(
         self, cart_discount_id: str, predicate: str, version: int
     ) -> Optional[Dict]:
         """
-        Update the target predicate for a cart discount.
+        Update the cart predicate for a cart discount.
 
         Args:
             cart_discount_id (str): ID of the cart discount.
@@ -632,11 +737,8 @@ class CommercetoolsAPIClient:
             "version": version,
             "actions": [
                 {
-                    "action": "changeTarget",
-                    "target": {
-                        "type": "lineItems",
-                        "predicate": predicate
-                    }
+                    "action": "changeCartPredicate",
+                    "cartPredicate": f"forAllLineItems({predicate}) = true",
                 }
             ]
         }

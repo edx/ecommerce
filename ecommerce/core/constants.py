@@ -406,8 +406,7 @@ KEY_TO_PREDICATE_DICT = {
     ' and product.key != "MITx+15.415.1x" and product.key != "MITx+15.415.2x" and product.key != "MITx+15.435x"'
     ' and product.key != "MITx+15.455x" and product.key != "MITx+15.516x")',
     'key: "UBCx+AI.02x"': 'product.key = "UBCx+AI.02x"',
-    '"NUS+QQRB001x"': 'product.key = "NUS+QQRB001x"',
-    'key: "AnahuacX"': 'attributes.`brand-text` = "AnahuacX"',
+    'key: "AnahuacX"': 'attributes.`brand-text` in ("AnahuacX")',
     'key: "AdelaideX+Project101x"': 'product.key = "AdelaideX+Project101x"',
     'key:"AlaskaX+GIS1x"': 'product.key = "AlaskaX+GIS1x"',
     'key: "AlaskaX+AI01x"': 'product.key = "AlaskaX+AI01x"',
@@ -450,6 +449,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "MITx+6.00.1x"': 'product.key = "MITx+6.00.1x"',
     'key: "MITx+6.00.2x"': 'product.key = "MITx+6.00.2x"',
     'key: "MITx+FIN.CFx"': 'product.key = "MITx+FIN.CFx"',
+    'key: "NUS+QQRB001x"': 'product.key = "NUS+QQRB001x"',
     'key: "RITx+THINK501x"': 'product.key = "RITx+THINK501x"',
     'key: "RWTHx+RITx"': 'product.key = "RWTHx+RITx"',
     'key: "SDGAcademyX+AMZN001"': 'product.key = "SDGAcademyX+AMZN001"',
