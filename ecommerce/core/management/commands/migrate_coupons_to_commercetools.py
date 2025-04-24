@@ -275,7 +275,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
             "customFields": cart_discount["customFields"],
             "value": cart_discount["value"],
         }
-        is_applicable_for_program = offer_benefit.max_affected_items == 1
+        is_applicable_for_program = offer_benefit.max_affected_items == 0
 
     discount_codes = [
         {
