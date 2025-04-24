@@ -214,7 +214,7 @@ def _get_program_coupons(partner_id, to_migrate):
             product_class__slug="coupon",
             coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
             coupon_vouchers__vouchers__offers__in=included_offers
-        )
+        ).exclude(id__in=[79367])
         .prefetch_related(
             Prefetch(
                 "coupon_vouchers__vouchers",

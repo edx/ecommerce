@@ -331,6 +331,8 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key != "CurtinX+IOT2x" and product.key != "CurtinX+IOT4x" and product.key != "CurtinX+IOT3x"'
     ' and product.key != "CurtinX+IOT6x" and product.key != "CurtinX+IOT5x" and product.key != "CurtinX+IOT1x"'
     ' and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x")',
+    'key:(-"GTx+CSE6040x" AND -"GTx+ISYE6501x" AND -"GTx+MGT6203x")':
+    '(product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "GTx+MGT6203x")',
     'key:(-MGT6203x AND -CSE6040x AND -ISYE6501x)':
     '(product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x")',
     'key:(-CORPFIN1x AND -CORPFIN2x AND -CORPFIN3x '
@@ -448,6 +450,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "LouvainX+Louv36x"': 'product.key = "LouvainX+Louv36x"',
     'key: "MITx+6.00.1x"': 'product.key = "MITx+6.00.1x"',
     'key: "MITx+6.00.2x"': 'product.key = "MITx+6.00.2x"',
+    'key: "MITx+6.431x"': 'product.key = "MITx+6.431x"',
     'key: "MITx+FIN.CFx"': 'product.key = "MITx+FIN.CFx"',
     'key: "NUS+QQRB001x"': 'product.key = "NUS+QQRB001x"',
     'key: "RITx+THINK501x"': 'product.key = "RITx+THINK501x"',
