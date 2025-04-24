@@ -235,6 +235,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
 
     if voucher.usage == Voucher.MULTI_USE:
         name = f"Multiuse {name}"
+        program_name = f"Multiuse {program_name}"
 
     ct_category, channel = get_category_for_coupon(
         coupon, ProductCategory, summary_info
@@ -274,7 +275,7 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
             "customFields": cart_discount["customFields"],
             "value": cart_discount["value"],
         }
-        is_applicable_for_program = offer_benefit.max_affected_items == 0
+        is_applicable_for_program = offer_benefit.max_affected_items == 1
 
     discount_codes = [
         {
@@ -418,6 +419,7 @@ def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
             coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
         )
         .exclude(
+            Q(id__in=[58794, 119120, 124175, 129343, 134756, 136937]) |
             Q(slug__in=[
                 "edxwelcome",
                 "welcome-code-new2edx-30-724",
