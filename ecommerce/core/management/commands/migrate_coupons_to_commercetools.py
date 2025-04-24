@@ -419,7 +419,6 @@ def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
             coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
         )
         .exclude(
-            Q(id__in=[58794, 119120, 124175, 129343, 134756, 136937]) |
             Q(slug__in=[
                 "edxwelcome",
                 "welcome-code-new2edx-30-724",

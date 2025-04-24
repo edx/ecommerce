@@ -426,7 +426,10 @@ KEY_TO_PREDICATE_DICT = {
     'key: "ColumbiaX+PCH1x"': 'product.key = "ColumbiaX+PCH1x"',
     'key: "CurtinX+NSSI1x"': 'product.key = "CurtinX+NSSI1x"',
     'key: "DelftX+AIfE3x"': 'product.key = "DelftX+AIfE3x"',
+    'key:"DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
+    'key: "DelftX+AIfE6x"': 'product.key = "DelftX+AIfE6x"',
     'key: "DelftX+AIIP2x+"': 'product.key = "DelftX+AIIP2x"',
+    'key: "DelftX+EnerTran1x"': 'product.key = "DelftX+EnerTran1x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
     'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
     'key: "EPFLx+CycleVie1x"': 'product.key = "EPFLx+CycleVie1x"',
@@ -490,6 +493,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UQx+Write101x"': 'product.key = "UQx+Write101x"',
     'key: "USMx+GSC100"': 'product.key = "USMx+GSC100"',
     'key: "W3Cx+JS.0x"': 'product.key = "W3Cx+JS.0x"',
+    'key: "WasedaX+JBM111x"': 'product.key = "WasedaX+JBM111x"',
     'key: "WasedaX+PSD111x"': 'product.key = "WasedaX+PSD111x"',
     'key: "WasedaX+SIP111x"': 'product.key = "WasedaX+SIP111x"',
     'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
@@ -498,6 +502,9 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
+    'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
+    'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
+    'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
 }
 
 
