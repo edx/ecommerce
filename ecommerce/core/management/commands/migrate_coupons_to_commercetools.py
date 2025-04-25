@@ -282,8 +282,8 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
             ),
         }
         for voucher in vouchers.all()
-        if not (voucher.usage == "Single use" and voucher.num_orders == 1)
-        and voucher.end_datetime >= timezone.now()
+        if not (voucher.usage == "Single use" and voucher.num_orders == 1) and
+        voucher.end_datetime >= timezone.now()
     ]
 
     excluded_discount_codes = [
@@ -298,8 +298,8 @@ def _map_coupon_to_ct_cart_discounts_and_discount_codes(
             ),
         }
         for voucher in vouchers.all()
-        if voucher.end_datetime < timezone.now()
-        or (voucher.usage == "Single use" and voucher.num_orders == 1)
+        if voucher.end_datetime < timezone.now() or
+        (voucher.usage == "Single use" and voucher.num_orders == 1)
     ]
 
     return (
@@ -349,8 +349,8 @@ def _map_enrollment_offer_to_ct_cart_discounts_and_discount_codes(
             ),
         }
         for voucher in vouchers
-        if not (voucher.usage == "Single use" and voucher.num_orders == 1)
-        and voucher.end_datetime >= timezone.now()
+        if not (voucher.usage == "Single use" and voucher.num_orders == 1) and
+        voucher.end_datetime >= timezone.now()
     ]
 
     excluded_discount_codes = [
@@ -365,8 +365,8 @@ def _map_enrollment_offer_to_ct_cart_discounts_and_discount_codes(
             ),
         }
         for voucher in vouchers
-        if voucher.end_datetime < timezone.now()
-        or (voucher.usage == "Single use" and voucher.num_orders == 1)
+        if voucher.end_datetime < timezone.now() or
+        (voucher.usage == "Single use" and voucher.num_orders == 1)
     ]
 
     return (

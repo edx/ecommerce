@@ -75,6 +75,7 @@ def _map_voucher_to_ct_code_applications(
 
     return code_applications
 
+
 def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
     """
     Map coupons to Commercetools cart discounts and discount codes.
@@ -139,8 +140,8 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
                 ),
             }
             for voucher in vouchers.all()
-            if not (voucher.usage == "Single use" and voucher.num_orders == 1)
-            and voucher.end_datetime >= timezone.now()
+            if not (voucher.usage == "Single use" and voucher.num_orders == 1) and
+            voucher.end_datetime >= timezone.now()
         ]
 
         excluded_discount_codes = [
@@ -155,8 +156,8 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
                 ),
             }
             for voucher in vouchers.all()
-            if voucher.end_datetime < timezone.now()
-            or (voucher.usage == "Single use" and voucher.num_orders == 1)
+            if voucher.end_datetime < timezone.now() or
+            (voucher.usage == "Single use" and voucher.num_orders == 1)
         ]
 
         results.append((cart_discount, discount_codes, excluded_discount_codes))
@@ -396,6 +397,7 @@ def _generate_summary(summary_info):
 
         raise CommandError("Command run completed with errors.")
 
+
 def _update_existing_discount_code(
     *,
     client: CommercetoolsAPIClient,
@@ -443,6 +445,7 @@ def _update_existing_discount_code(
             f"{discount_code['code']} - {discount_code['name']} - "
             f"Update actions: {summary_update_actions}"
         )
+
 
 def _migrate_program_coupons(client: CommercetoolsAPIClient, to_migrate):  # pylint: disable=too-many-statements
     """
