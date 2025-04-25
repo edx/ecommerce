@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Dict, Optional
 
 from dateutil import parser as dateutil_parser
 from django.core.management.base import BaseCommand, CommandError
@@ -140,12 +140,23 @@ def _map_coupons_to_ct_cart_discounts_and_discount_codes(coupons, summary_info):
             }
             for voucher in vouchers.all()
             if not (voucher.usage == "Single use" and voucher.num_orders == 1)
+            and voucher.end_datetime >= timezone.now()
         ]
 
         excluded_discount_codes = [
-            voucher.code
+            {
+                "name": voucher.name,
+                "key": voucher.code,
+                "code": voucher.code,
+                "validFrom": voucher.start_datetime.isoformat(),
+                "validUntil": voucher.end_datetime.isoformat(),
+                **_map_voucher_to_ct_code_applications(
+                    voucher, offer.max_global_applications
+                ),
+            }
             for voucher in vouchers.all()
-            if voucher.usage == "Single use" and voucher.num_orders == 1
+            if voucher.end_datetime < timezone.now()
+            or (voucher.usage == "Single use" and voucher.num_orders == 1)
         ]
 
         results.append((cart_discount, discount_codes, excluded_discount_codes))
@@ -190,8 +201,7 @@ def _get_program_coupons(partner_id, to_migrate):
         Q(end_datetime__isnull=True) | Q(end_datetime__gte=timezone.now()),
         offer_type=ConditionalOffer.VOUCHER,
         condition__program_uuid__isnull=False,
-        condition__range__catalog_query__isnull=True,
-        condition__range__catalog__isnull=True,
+        benefit__range__isnull=True,
         partner_id=partner_id,
     ).exclude(benefit__value=0.00)
 
@@ -354,8 +364,7 @@ def _generate_summary(summary_info):
             for discount_code in summary_info["discount_codes"]["created"]
         ) or 'No discount codes created.',
         "updated_discount_codes": "\n".join(
-            f"{discount_code['code']} - {discount_code['name']}"
-            for discount_code in summary_info["discount_codes"]["updated"]
+            summary_info["discount_codes"]["updated"]
         ) or 'No discount codes updated.',
     }
 
@@ -387,6 +396,53 @@ def _generate_summary(summary_info):
 
         raise CommandError("Command run completed with errors.")
 
+def _update_existing_discount_code(
+    *,
+    client: CommercetoolsAPIClient,
+    discount_code: Dict,
+    discount_code_in_ct: Dict,
+    summary_info: Dict,
+) -> None:
+    update_actions_for_discount_code = (
+        _make_update_actions_by_comparing_discount_codes(
+            discount_in_ecommerce=discount_code,
+            discount_in_ct=discount_code_in_ct,
+        )
+    )
+
+    if update_actions_for_discount_code:
+        discount_code_response = client.update_resource_by_key(
+            resource_type="discount-codes",
+            resource_key=discount_code_in_ct["key"],
+            version=discount_code_in_ct["version"],
+            actions=update_actions_for_discount_code,
+        )
+
+        if not discount_code_response:
+            log_message = (
+                "Failed to update discount code with name: "
+                f"{discount_code['name']} and "
+                f"code: {discount_code['code']}."
+            )
+            logger.error(log_message)
+            summary_info["discount_codes"]["failed"].append(
+                {
+                    "name": discount_code["name"],
+                    "code": discount_code["code"],
+                    "reason": "Error while updating discount code.",
+                }
+            )
+            return
+
+        summary_update_actions = ", ".join(
+            update_action["action"]
+            for update_action in update_actions_for_discount_code
+        )
+
+        summary_info["discount_codes"]["updated"].append(
+            f"{discount_code['code']} - {discount_code['name']} - "
+            f"Update actions: {summary_update_actions}"
+        )
 
 def _migrate_program_coupons(client: CommercetoolsAPIClient, to_migrate):  # pylint: disable=too-many-statements
     """
@@ -502,61 +558,24 @@ def _migrate_program_coupons(client: CommercetoolsAPIClient, to_migrate):  # pyl
             for discount_code in discount_codes:
                 discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
                 if discount_code_in_ct:
-                    update_actions_for_discount_code = (
-                        _make_update_actions_by_comparing_discount_codes(
-                            discount_in_ecommerce=discount_code,
-                            discount_in_ct=discount_code_in_ct,
-                        )
+                    _update_existing_discount_code(
+                        client=client,
+                        discount_code=discount_code,
+                        discount_code_in_ct=discount_code_in_ct,
+                        summary_info=summary_info,
                     )
-
-                    if update_actions_for_discount_code:
-                        discount_code_response = client.update_resource_by_key(
-                            resource_type="discount-codes",
-                            resource_key=discount_code_in_ct["key"],
-                            version=discount_code_in_ct["version"],
-                            actions=update_actions_for_discount_code,
-                        )
-
-                        if not discount_code_response:
-                            log_message = f"Failed to update discount code with name: {discount_code['name']}"
-                            log_message += f" and code: {discount_code['code']}."
-                            logger.error(log_message)
-                            summary_info["discount_codes"]["failed"].append(
-                                {
-                                    "name": discount_code["name"],
-                                    "code": discount_code["code"],
-                                    "reason": "Error while updating discount code.",
-                                }
-                            )
-                            continue
-                        summary_info["discount_codes"]["updated"].append(
-                            discount_code
-                        )
                 else:
                     _migrate_discount_code(discount_code, cart_discount_in_ct["id"])
 
-            for discount_code_key in excluded_discount_codes:
-                discount_code_in_ct = discount_codes_in_ct.get(discount_code_key)
-
+            for discount_code in excluded_discount_codes:
+                discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
                 if discount_code_in_ct:
-                    discount_code_response = client.delete_discount_code_by_key(
-                        discount_code_key, discount_code_in_ct["version"]
+                    _update_existing_discount_code(
+                        client=client,
+                        discount_code=discount_code,
+                        discount_code_in_ct=discount_code_in_ct,
+                        summary_info=summary_info,
                     )
-
-                    if not discount_code_response:
-                        log_message = f"Failed to delete discount code with code: {discount_code_key}."
-                        logger.error(log_message)
-                        summary_info["discount_codes"]["failed"].append(
-                            {
-                                "name": discount_code_in_ct["name"],
-                                "code": discount_code_in_ct["code"],
-                                "reason": "Error while deleting discount code.",
-                            }
-                        )
-                        continue
-
-                    log_message = f"Discount code deleted successfully with code: {discount_code_key}."
-                    logger.info(log_message)
         else:
             if not discount_codes:
                 # No need to create cart discount if there are no discount codes.

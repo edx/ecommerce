@@ -414,7 +414,7 @@ def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
     filter_condition = Q(
         condition__range__catalog_query__isnull=True,
         condition__range__catalog__isnull=True,
-    ) | Q(condition__program_uuid__isnull=True) | ~Q(partner_id=partner_id)
+    ) | Q(condition__program_uuid__isnull=False) | ~Q(partner_id=partner_id)
 
     if {"enrollment"} == to_migrate:
         filter_condition |= ~Q(
@@ -827,7 +827,7 @@ def _update_existing_discount(
     cart_discount_in_ct_for_program: Optional[Dict],
     discount_codes: List[Dict],
     discount_codes_in_ct: Dict,
-    excluded_discount_codes: List[str],
+    excluded_discount_codes: List[Dict],
     is_applicable_for_program: bool,
     sort_order: Decimal,
     summary_info: Dict,
@@ -879,8 +879,8 @@ def _update_existing_discount(
                 summary_info=summary_info,
             )
 
-    for discount_code_key in excluded_discount_codes:
-        discount_code_in_ct = discount_codes_in_ct.get(discount_code_key)
+    for discount_code in excluded_discount_codes:
+        discount_code_in_ct = discount_codes_in_ct.get(discount_code["key"])
         if discount_code_in_ct:
             _update_existing_discount_code(
                 client=client,
