@@ -506,6 +506,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
+    'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
 }
 
 
