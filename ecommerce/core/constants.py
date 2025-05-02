@@ -430,6 +430,8 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+AIfE6x"': 'product.key = "DelftX+AIfE6x"',
     'key: "DelftX+AIIP2x+"': 'product.key = "DelftX+AIIP2x"',
     'key: "DelftX+EnerTran1x"': 'product.key = "DelftX+EnerTran1x"',
+    'key: "DelftX+GEO101x"': 'product.key = "DelftX+GEO101x"',
+    'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
     'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
     'key: "EPFLx+CycleVie1x"': 'product.key = "EPFLx+CycleVie1x"',
@@ -493,6 +495,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UQx+Teams101x"': 'product.key = "UQx+Teams101x"',
     'key: "UQx+Write101x"': 'product.key = "UQx+Write101x"',
     'key: "USMx+GSC100"': 'product.key = "USMx+GSC100"',
+    'key: "USMx+IS4551"': 'product.key = "USMx+IS4551"',
     'key: "W3Cx+JS.0x"': 'product.key = "W3Cx+JS.0x"',
     'key: "WasedaX+JBM111x"': 'product.key = "WasedaX+JBM111x"',
     'key: "WasedaX+PSD111x"': 'product.key = "WasedaX+PSD111x"',
@@ -500,13 +503,15 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
     'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
     '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
+    'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
+    '(variant.key = "course-v1:DelftX+EnerTran2x+1T2025" or variant.key = "course-v1:DelftX+RAIL101x+1T2025"'
+    ' or variant.key = "course-v1:DelftX+AIfE3x+3T2024")',
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
-    'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
 }
 
 
