@@ -410,6 +410,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UBCx+AI.02x"': 'product.key = "UBCx+AI.02x"',
     'key: "AnahuacX"': 'attributes.`brand-text` in ("AnahuacX")',
     'key: "AdelaideX+Project101x"': 'product.key = "AdelaideX+Project101x"',
+    'key:"AdelaideX+RiskX"': 'product.key = "AdelaideX+RiskX"',
     'key:"AlaskaX+GIS1x"': 'product.key = "AlaskaX+GIS1x"',
     'key: "AlaskaX+AI01x"': 'product.key = "AlaskaX+AI01x"',
     'key: "AlaskaX+DODGS-400"': 'product.key = "AlaskaX+DODGS-400"',
@@ -509,6 +510,9 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
+    'key: ("MITx+15.415.1x+3T2024" OR "15.415.2x+2T2024" OR "15.516x+3T2024" OR "15.455x+1T2025")':
+    '(variant.key = "course-v1:MITx+15.415.1x+3T2024" or variant.key = "course-v1:MITx+15.415.2x+2T2024"'
+    ' or variant.key = "course-v1:MITx+15.516x+3T2024" or variant.key = "course-v1:MITx+15.455x+1T2025")',
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
