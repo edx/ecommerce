@@ -173,16 +173,16 @@ def _delete_extra_ct_bundle_offers(
             )
 
 
-def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_percent_discount: bool):
+def _create_cart_predicate_from_program_uuids(program_uuids: list, is_ten_percent_discount: bool):
     """
-    Create a target predicate for a cart discount based on program UUIDs.
+    Create a cart predicate for a cart discount based on program UUIDs.
 
     Args:
         program_uuids (list): List of program UUIDs.
         is_ten_percent_discount (bool): Flag indicating if the discount is a 10% discount.
 
     Returns:
-        str: Target predicate for the cart discount.
+        str: Cart predicate for the cart discount.
     """
     if is_ten_percent_discount:
         predicate = "custom.bundleId is defined and "
@@ -196,7 +196,7 @@ def _create_target_predicate_from_program_uuids(program_uuids: list, is_ten_perc
             f'custom.bundleId = "{program_uuid}"' for program_uuid in program_uuids
         )
 
-    return predicate
+    return f'forAllLineItems({predicate}) = true'
 
 
 def _extract_uuids_from_predicate(predicate: str):
@@ -209,11 +209,18 @@ def _extract_uuids_from_predicate(predicate: str):
     Returns:
         list: List of program UUIDs.
     """
-    return re.findall(r'custom\.bundleId\s*(?:!=|=)\s*"([^"]+)"', predicate)
+    # Remove the forAllLineItems(...) = true wrapper and extract just the UUIDs
+    inner_predicate = re.search(r'forAllLineItems\((.*?)\)\s*=\s*true', predicate)
+    if not inner_predicate:
+        return []
+
+    # Extract all UUIDs from the predicate regardless of operator
+    uuids = re.findall(r'custom\.bundleId\s*(?:=|!=)\s*"([^"]+)"', inner_predicate.group(1))
+    return uuids
 
 
 def _combine_uuids_to_predicate(
-    target_predicate: str,
+    cart_predicate: str,
     is_ten_percent_discount: bool,
     legacy_program_uuids: list,
     non_ten_percentage_offer_uuids: set,
@@ -233,7 +240,7 @@ def _combine_uuids_to_predicate(
                the third item is the list of uuids being added,
                and the forth item is the list of uuids being removed.
     """
-    extracted_uuids_from_predicate = _extract_uuids_from_predicate(target_predicate)
+    extracted_uuids_from_predicate = _extract_uuids_from_predicate(cart_predicate)
 
     uuids_in_ct = set(extracted_uuids_from_predicate)
     legacy_uuids = set(legacy_program_uuids)
@@ -250,7 +257,7 @@ def _combine_uuids_to_predicate(
         if updated_uuids == uuids_in_ct:
             return False, None, [], []
 
-        updated_predicate = _create_target_predicate_from_program_uuids(
+        updated_predicate = _create_cart_predicate_from_program_uuids(
             list(updated_uuids),
             is_ten_percent_discount
         )
@@ -260,7 +267,7 @@ def _combine_uuids_to_predicate(
         if uuids_in_ct == legacy_uuids:
             return False, None, [], []
 
-        updated_predicate = _create_target_predicate_from_program_uuids(
+        updated_predicate = _create_cart_predicate_from_program_uuids(
             list(legacy_uuids),
             is_ten_percent_discount
         )
@@ -460,7 +467,7 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
                 discount_value_in_cents=discount_value_in_cents,
                 discount_value=discount_value,
                 sort_order=sort_order,
-                predicate=_create_target_predicate_from_program_uuids(
+                predicate=_create_cart_predicate_from_program_uuids(
                     discount_data["program_uuids"], is_ten_percent_discount
                 )
             )
@@ -492,10 +499,10 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             )
 
             version = existing_discount['version']
-            target_predicate = existing_discount['target_predicate']
+            cart_predicate = existing_discount['cart_predicate']
 
             needs_update, updated_predicate, uuids_added, uuids_removed = _combine_uuids_to_predicate(
-                target_predicate,
+                cart_predicate,
                 is_ten_percent_discount,
                 discount_data["program_uuids"],
                 non_ten_percentage_offer_uuids
@@ -514,7 +521,23 @@ def _migrate_program_offers(client):  # pylint: disable=too-many-statements
             if uuids_removed:
                 update_log += f" and removing uuids:{', '.join(uuids_removed)}"
             logger.info(update_log)
-            response = client.update_cart_discount_cart_predicate(existing_discount['id'], updated_predicate, version)
+
+            actions = [
+                {
+                    "action": "changeCartPredicate",
+                    "cartPredicate": updated_predicate
+                }
+            ]
+            if existing_discount["target_predicate"] != "1 = 1":
+                actions.append({
+                    "action": "changeTarget",
+                    "target": {
+                        "type": "lineItems",
+                        "predicate": "1 = 1"
+                    }
+                })
+
+            response = client.update_cart_discount_cart_predicate(existing_discount['id'], actions, version)
 
             if not response:
                 logger.error(

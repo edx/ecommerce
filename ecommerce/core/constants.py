@@ -421,6 +421,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "AlaskaX+SPRT3x"': 'product.key = "AlaskaX+SPRT3x"',
     'key: "AlaskaX+UAS1x"': 'product.key = "AlaskaX+UAS1x"',
     'key: "BayreuthX+ubt205mun"': 'product.key = "BayreuthX+ubt205mun"',
+    'key: "BayreuthX+ubt208cpo"': 'product.key = "BayreuthX+ubt208cpo"',
     'key: "BerkeleyX+GG102x"': 'product.key = "BerkeleyX+GG102x"',
     'key: "BerkeleyX+GG201x"': 'product.key = "BerkeleyX+GG201x"',
     'key: "CGI_U+CGIU.1x"': 'product.key = "CGI_U+CGIU.1x"',

@@ -489,6 +489,7 @@ class CommercetoolsAPIClient:
                 "type": discount_type,
                 "display_value": display_discount_value,
                 "version": cart_discount['version'],
+                "cart_predicate": cart_discount['cartPredicate'],
                 "target_predicate": cart_discount['target']['predicate']
             }
 
@@ -630,7 +631,7 @@ class CommercetoolsAPIClient:
         discount_type: str,
         discount_value_in_cents: int,
         sort_order: Decimal,
-        predicate: str,
+        cart_predicate: str,
     ) -> Optional[Dict]:
         """
         Create a new cart discount.
@@ -669,7 +670,7 @@ class CommercetoolsAPIClient:
                 "type": discount_type,
                 **discount_value_data,
             },
-            "cartPredicate": f"forAllLineItems({predicate}) = true",
+            "cartPredicate": cart_predicate,
             "target": {
                 "type": "lineItems",
                 "predicate": "1 = 1",
@@ -720,14 +721,14 @@ class CommercetoolsAPIClient:
         )
 
     def update_cart_discount_cart_predicate(
-        self, cart_discount_id: str, predicate: str, version: int
+        self, cart_discount_id: str, actions: list, version: int
     ) -> Optional[Dict]:
         """
         Update the cart predicate for a cart discount.
 
         Args:
             cart_discount_id (str): ID of the cart discount.
-            predicate (str): Updated predicate for the cart discount.
+            actions (list): List of actions to perform.
             version (int): Version of the cart discount.
 
         Returns:
@@ -735,12 +736,7 @@ class CommercetoolsAPIClient:
         """
         payload = {
             "version": version,
-            "actions": [
-                {
-                    "action": "changeCartPredicate",
-                    "cartPredicate": f"forAllLineItems({predicate}) = true",
-                }
-            ]
+            "actions": actions
         }
         return self._make_request("POST", f"cart-discounts/{cart_discount_id}", json=payload)
 
