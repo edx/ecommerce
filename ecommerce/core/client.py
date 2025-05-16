@@ -92,11 +92,6 @@ class CommercetoolsAPIClient:
                         response_message = str(error)
 
                     if response.status_code == 404 and return_on_404:
-                        logger.error(
-                            "API request for endpoint: %s failed with 404 error: %s",
-                            endpoint,
-                            response_message,
-                        )
                         return {"status": 404}
 
                     if response.status_code in (500, 501, 502, 503, 504):
