@@ -484,16 +484,11 @@ def convert_querystring_to_predicate(query):
         str: Commercetools predicate converted from catalog querystring.
     """
     cleaned_query = _query_cleaning_process(query)
-    logger.info('Catalog Query to convert: %s', cleaned_query)
-
     processed_query = _process_query_string(cleaned_query)
     if not processed_query:
         return None
 
     predicate = _remove_leading_trailing_and_or(processed_query)
-
-    if predicate:
-        logger.info('Catalog Query converted into: %s', predicate)
 
     return predicate.strip()
 

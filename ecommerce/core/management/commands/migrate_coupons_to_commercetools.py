@@ -4,6 +4,7 @@ import gc
 import logging
 import re
 from collections import deque
+from datetime import datetime
 from decimal import Decimal
 from time import sleep
 from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
@@ -430,7 +431,7 @@ def _get_course_coupons(partner_id: str, to_migrate: Set[str]):
     coupons = (
         Product.objects.filter(
             product_class__slug="coupon",
-            coupon_vouchers__vouchers__end_datetime__gte=timezone.now(),
+            coupon_vouchers__vouchers__end_datetime__gte=datetime(2025, 4, 1, tzinfo=timezone.utc)
         )
         .exclude(
             Q(slug__in=[
