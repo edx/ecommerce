@@ -517,6 +517,8 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
+    'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
+    '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
 }
 
 
