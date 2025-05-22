@@ -521,7 +521,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
     '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
     'key: (-"MITx+DS.CFx" AND -"MITx+6.431x" AND -"MITx+6.86x" AND -"MITx+18.6501x"'
-    'AND -"MITx+6.419x" AND -"MITx+IDS.S24x" AND -"MITx+14.310Fx")':
+    ' AND -"MITx+6.419x" AND -"MITx+IDS.S24x" AND -"MITx+14.310Fx")':
     '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
     ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
     ' and product.key != "MITx+14.310Fx")',
