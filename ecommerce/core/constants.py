@@ -435,6 +435,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+GEO101x"': 'product.key = "DelftX+GEO101x"',
     'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
+    'key: "DelftX+PCUD02x"': 'product.key = "DelftX+PCUD02x"',
     'key: "DelftX+SaSC01x"': 'product.key = "DelftX+SaSC01x"',
     'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
     'key: "EPFLx+CycleVie1x"': 'product.key = "EPFLx+CycleVie1x"',
