@@ -430,6 +430,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+AIfE3x"': 'product.key = "DelftX+AIfE3x"',
     'key:"DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
     'key: "DelftX+AIfE6x"': 'product.key = "DelftX+AIfE6x"',
+    'key: "DelftX+AIfE7x"': 'product.key = "DelftX+AIfE7x"',
     'key: "DelftX+AIIP2x+"': 'product.key = "DelftX+AIIP2x"',
     'key: "DelftX+EnerTran1x"': 'product.key = "DelftX+EnerTran1x"',
     'key: "DelftX+GEO101x"': 'product.key = "DelftX+GEO101x"',
@@ -505,11 +506,15 @@ KEY_TO_PREDICATE_DICT = {
     'key: "WasedaX+PSD111x"': 'product.key = "WasedaX+PSD111x"',
     'key: "WasedaX+SIP111x"': 'product.key = "WasedaX+SIP111x"',
     'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
+    'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
+    'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")': '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
     'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
     '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
     'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
     '(variant.key = "course-v1:DelftX+EnerTran2x+1T2025" or variant.key = "course-v1:DelftX+RAIL101x+1T2025"'
     ' or variant.key = "course-v1:DelftX+AIfE3x+3T2024")',
+    'key: ("DelftWageningenX+TTE01x" OR "DelftX+BMI.2x")':
+    '(variant.key = "course-v1:DelftWageningenX+TTE01x" or product.key = "DelftX+BMI.2x")',
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
@@ -519,6 +524,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
+    'key: "DelftX+DDA691x+1T2025"': 'variant.key = "course-v1:DelftX+DDA691x+1T2025"',
     'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
     '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
     'key: (-"MITx+DS.CFx" AND -"MITx+6.431x" AND -"MITx+6.86x" AND -"MITx+18.6501x"'
