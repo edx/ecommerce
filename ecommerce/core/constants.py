@@ -162,7 +162,6 @@ KEY_TO_PREDICATE_DICT = {
     ' or product.key = "HP+HPGG04.en")',
     'key: ("GalileoX+EticaIA_01" OR "GalileoX+MM_01" OR "GalileoX+GalileoXAI002")':
     '(product.key = "GalileoX+EticaIA_01" or product.key = "GalileoX+MM_01" or product.key = "GalileoX+GalileoXAI002")',
-    'key: "DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
     'key: "Statistics.comX+MLOps1-GCP"': 'product.key = "Statistics.comX+MLOps1-GCP"',
     'key:(StudioX OR VideoX OR StudioAdv1 OR BlendedX OR edX101 OR '
     'BuildWedX OR RunningWedX OR DesignWedX OR BuildWedXNEW OR RunWedXNEW)':
@@ -428,6 +427,8 @@ KEY_TO_PREDICATE_DICT = {
     'key: "ColumbiaX+PCH1x"': 'product.key = "ColumbiaX+PCH1x"',
     'key: "CurtinX+NSSI1x"': 'product.key = "CurtinX+NSSI1x"',
     'key: "DelftX+AIfE3x"': 'product.key = "DelftX+AIfE3x"',
+    'key: "DelftX+AIfE4x"': 'product.key = "DelftX+AIfE4x"',
+    'key: "DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
     'key:"DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
     'key: "DelftX+AIfE6x"': 'product.key = "DelftX+AIfE6x"',
     'key: "DelftX+AIfE7x"': 'product.key = "DelftX+AIfE7x"',
