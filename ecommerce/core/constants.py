@@ -515,7 +515,7 @@ KEY_TO_PREDICATE_DICT = {
     '(variant.key = "course-v1:DelftX+EnerTran2x+1T2025" or variant.key = "course-v1:DelftX+RAIL101x+1T2025"'
     ' or variant.key = "course-v1:DelftX+AIfE3x+3T2024")',
     'key: ("DelftWageningenX+TTE01x" OR "DelftX+BMI.2x")':
-    '(variant.key = "course-v1:DelftWageningenX+TTE01x" or product.key = "DelftX+BMI.2x")',
+    '(product.key = "DelftWageningenX+TTE01x" or product.key = "DelftX+BMI.2x")',
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
@@ -533,6 +533,8 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
     ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
     ' and product.key != "MITx+14.310Fx")',
+    'key: "DelftX+AE1110x"': 'product.key = "DelftX+AE1110x"',
+    'key: "DelftX+MathMod1x"': 'product.key = "DelftX+MathMod1x"',
 }
 
 
