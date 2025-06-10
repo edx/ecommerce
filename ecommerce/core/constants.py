@@ -533,7 +533,7 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
     ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
     ' and product.key != "MITx+14.310Fx")',
-    'key: "DelftX+AE1110x"': 'product.key = "DelftX+AE1110x"',
+    'key:"DelftX+AE1110x"': 'product.key = "DelftX+AE1110x"',
     'key: "DelftX+MathMod1x"': 'product.key = "DelftX+MathMod1x"',
 }
 
