@@ -426,6 +426,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "CGI_U+CGIU.1x"': 'product.key = "CGI_U+CGIU.1x"',
     'key: "ColumbiaX+PCH1x"': 'product.key = "ColumbiaX+PCH1x"',
     'key: "CurtinX+NSSI1x"': 'product.key = "CurtinX+NSSI1x"',
+    'key:"DelftX+AE1110x"': 'product.key = "DelftX+AE1110x"',
     'key: "DelftX+AIfE3x"': 'product.key = "DelftX+AIfE3x"',
     'key: "DelftX+AIfE4x"': 'product.key = "DelftX+AIfE4x"',
     'key: "DelftX+AIfE5x"': 'product.key = "DelftX+AIfE5x"',
@@ -435,6 +436,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+AIIP2x+"': 'product.key = "DelftX+AIIP2x"',
     'key: "DelftX+EnerTran1x"': 'product.key = "DelftX+EnerTran1x"',
     'key: "DelftX+GEO101x"': 'product.key = "DelftX+GEO101x"',
+    'key: "DelftX+MathMod1x"': 'product.key = "DelftX+MathMod1x"',
     'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
     'key: "DelftX+PCUD02x"': 'product.key = "DelftX+PCUD02x"',
@@ -509,6 +511,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
     'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
     'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")': '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
+    'key: ("DelftX+AIfE6x" OR "DelftX+IB01x")': '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+IB01x")',
     'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
     '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
     'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
@@ -533,8 +536,6 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
     ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
     ' and product.key != "MITx+14.310Fx")',
-    'key:"DelftX+AE1110x"': 'product.key = "DelftX+AE1110x"',
-    'key: "DelftX+MathMod1x"': 'product.key = "DelftX+MathMod1x"',
 }
 
 
