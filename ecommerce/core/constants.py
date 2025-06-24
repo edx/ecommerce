@@ -510,8 +510,13 @@ KEY_TO_PREDICATE_DICT = {
     'key: "WasedaX+SIP111x"': 'product.key = "WasedaX+SIP111x"',
     'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
     'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
-    'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")': '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
     'key: ("DelftX+AIfE6x" OR "DelftX+IB01x")': '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+IB01x")',
+    'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")': '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
+    'key: ("DelftX+MMFEPx" OR "DelftX+MMFESx")': '(product.key = "DelftX+MMFEPx" or product.key = "DelftX+MMFESx")',
+    'key: ("DelftX+QTM2x" OR "DelftX+QTM3x")': '(product.key = "DelftX+QTM2x" or product.key = "DelftX+QTM3x")',
+    'key: ("DelftWageningenX+AMS.URB.1x+3T2024" OR "DelftX+SaSC01x" OR "DelftX+AIfE5x" OR "DelftX+AIfE6x")':
+    '(variant.key = "course-v1:DelftWageningenX+AMS.URB.1x+3T2024" or product.key = "DelftX+SaSC01x"'
+    ' or product.key = "DelftX+AIfE5x" or product.key = "DelftX+AIfE6x")',
     'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
     '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
     'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
