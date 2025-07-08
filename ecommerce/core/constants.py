@@ -475,6 +475,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "Statistics.comX+MLOps1-Azure"': 'product.key = "Statistics.comX+MLOps1-Azure"',
     'key: "Statistics.comX+MLOps2-AWS"': 'product.key = "Statistics.comX+MLOps2-AWS"',
     'key: "Statistics.comX+MLOps2-Azure"': 'product.key = "Statistics.comX+MLOps2-Azure"',
+    'key: "StellenboschX+AMDP.2"': 'product.key = "StellenboschX+AMDP.2"',
     'key: "TAUx+Islam101x"': 'product.key = "TAUx+Islam101x"',
     'key: "TecdeMonterreyX+HC_AB.2x"': 'product.key = "TecdeMonterreyX+HC_AB.2x"',
     'key: "TecdeMonterreyX+HC_MFN.1x"': 'product.key = "TecdeMonterreyX+HC_MFN.1x"',
