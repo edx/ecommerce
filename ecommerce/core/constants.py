@@ -196,7 +196,6 @@ KEY_TO_PREDICATE_DICT = {
     ' or product.key = "TecdeMonterreyX+MMLF01I.x" or product.key = "TecdeMonterreyX+MMSE01I.x"'
     ' or product.key = "TecdeMonterreyX+MMSS01I.x" or product.key = "TecdeMonterreyX+MMLO01I.x")',
     'key: "TUGrazX+EMC1"': 'product.key = "TUGrazX+EMC1"',
-    'key: "DelftX+OS101x"': 'product.key = "DelftX+OS101x"',
     'key: ("UTAustinX+FINTECH-OVERVIEW" OR "UTAustinX+FINTECH-BT" OR'
     ' "UTAustinX+FINTECH-ML" OR "UTAustinX+FINTECH-IOT")':
     '(product.key = "UTAustinX+FINTECH-OVERVIEW" or product.key = "UTAustinX+FINTECH-BT"'
@@ -209,7 +208,6 @@ KEY_TO_PREDICATE_DICT = {
     'key:("ColumbiaX+CU.OC.AI001" OR "ColumbiaX+CU.OC.AI002")':
     '(product.key = "ColumbiaX+CU.OC.AI001" or product.key = "ColumbiaX+CU.OC.AI002")',
     'key: "MITx+15.516x+3T2024"': 'variant.key = "course-v1:MITx+15.516x+3T2024"',
-    'key: "DelftX+OS101x+"': 'product.key = "DelftX+OS101x"',
     'key: ("AlaskaX+DODGS-400" OR "AlaskaX+DODGS-401" OR "AlaskaX+DODGS-402")':
     '(product.key = "AlaskaX+DODGS-400" or product.key = "AlaskaX+DODGS-401" or product.key = "AlaskaX+DODGS-402")',
     'key: "Teams101x"': 'product.key = "UQx+Teams101x"',
@@ -265,7 +263,6 @@ KEY_TO_PREDICATE_DICT = {
     ' or product.key = "DelftX+PV4x")',
     'key: ("DelftX+AIfE5x+3T2024" OR "DelftX+AIfE6x+3T2024")':
     '(variant.key = "course-v1:DelftX+AIfE6x+3T2024" or variant.key = "course-v1:DelftX+AIfE5x+3T2024")',
-    'key: "DelftX+MDRP1x"': 'product.key = "DelftX+MDRP1x"',
     'key: "DECx+CDAA1.3x"': 'product.key = "DECx+CDAA1.3x"',
     'key:(*)': '',
     'key:(StudioX BlendedX edX101 VideoX StudioAdv1)':
@@ -283,6 +280,10 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("15.415.1x/3T2024" OR "15.415.2x/2T2024" OR "15.516x/3T2024" OR "15.455x/1T2025")':
     '(variant.key = "course-v1:MITx+15.455x+1T2025" or variant.key = "course-v1:MITx+15.415.2x+2T2024"'
     ' or variant.key = "course-v1:MITx+15.516x+3T2024" or variant.key = "course-v1:MITx+15.415.1x+3T2024")',
+    'key: ("15.415.1x/3T2024" OR "15.415.2x/2T2024" OR "15.516x/3T2024" OR "15.455x/1T2025" OR "15.435x/2T2025")':
+    '(variant.key = "course-v1:MITx+15.455x+1T2025" or variant.key = "course-v1:MITx+15.415.2x+2T2024"'
+    ' or variant.key = "course-v1:MITx+15.516x+3T2024" or variant.key = "course-v1:MITx+15.415.1x+3T2024"'
+    ' or variant.key = "course-v1:MITx+15.435x+2T2025")',
     'key: "DelftX+QTM2x+2T2024"': 'variant.key = "course-v1:DelftX+QTM2x+2T2024"',
     'key: ("AlaskaX+UAS1x" OR "AlaskaX+UAS2x")':
     '(product.key = "AlaskaX+UAS1x" or product.key = "AlaskaX+UAS2x")',
@@ -406,8 +407,9 @@ KEY_TO_PREDICATE_DICT = {
     ' and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x" and product.key != "MITx+3.46.2x"'
     ' and product.key != "MITx+15.415.1x" and product.key != "MITx+15.415.2x" and product.key != "MITx+15.435x"'
     ' and product.key != "MITx+15.455x" and product.key != "MITx+15.516x")',
-    'key: "UBCx+AI.02x"': 'product.key = "UBCx+AI.02x"',
     'key: "AnahuacX"': 'attributes.`brand-text` in ("AnahuacX")',
+    # Product Keys
+    'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
     'key: "AdelaideX+Project101x"': 'product.key = "AdelaideX+Project101x"',
     'key:"AdelaideX+RiskX"': 'product.key = "AdelaideX+RiskX"',
     'key:"AlaskaX+GIS1x"': 'product.key = "AlaskaX+GIS1x"',
@@ -436,12 +438,18 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+AIIP2x+"': 'product.key = "DelftX+AIIP2x"',
     'key: "DelftX+EnerTran1x"': 'product.key = "DelftX+EnerTran1x"',
     'key: "DelftX+GEO101x"': 'product.key = "DelftX+GEO101x"',
+    'key: "DelftX+IIES01x"': 'product.key = "DelftX+IIES01x"',
     'key: "DelftX+MathMod1x"': 'product.key = "DelftX+MathMod1x"',
+    'key: "DelftX+MDRP1x"': 'product.key = "DelftX+MDRP1x"',
     'key: "DelftX+MED01x"': 'product.key = "DelftX+MED01x"',
+    'key: "DelftX+MMFESx"': 'product.key = "DelftX+MMFESx"',
+    'key: "DelftX+OS101x"': 'product.key = "DelftX+OS101x"',
+    'key: "DelftX+OS101x+"': 'product.key = "DelftX+OS101x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
     'key: "DelftX+PCUD02x"': 'product.key = "DelftX+PCUD02x"',
     'key: "DelftX+SaSC01x"': 'product.key = "DelftX+SaSC01x"',
     'key: "DelftX+SEJ1x"': 'product.key = "DelftX+SEJ1x"',
+    'key: "DelftX+UnixTx"': 'product.key = "DelftX+UnixTx"',
     'key: "edX+BC-OC-ai"': 'product.key = "edX+BC-OC-ai"',
     'key: "EPFLx+CycleVie1x"': 'product.key = "EPFLx+CycleVie1x"',
     'key: "HKPolyUx+OPT101x"': 'product.key = "HKPolyUx+OPT101x"',
@@ -475,6 +483,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "Statistics.comX+MLOps1-Azure"': 'product.key = "Statistics.comX+MLOps1-Azure"',
     'key: "Statistics.comX+MLOps2-AWS"': 'product.key = "Statistics.comX+MLOps2-AWS"',
     'key: "Statistics.comX+MLOps2-Azure"': 'product.key = "Statistics.comX+MLOps2-Azure"',
+    'key: "StellenboschX+AMDP.1"': 'product.key = "StellenboschX+AMDP.1"',
     'key: "StellenboschX+AMDP.2"': 'product.key = "StellenboschX+AMDP.2"',
     'key: "TAUx+Islam101x"': 'product.key = "TAUx+Islam101x"',
     'key: "TecdeMonterreyX+HC_AB.2x"': 'product.key = "TecdeMonterreyX+HC_AB.2x"',
@@ -485,6 +494,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "TUMx+LOOPx"': 'product.key = "TUMx+LOOPx"',
     'key:"TUMx+MYOAx"': 'product.key = "TUMx+MYOAx"',
     'key: "TUMx+MYOAx"': 'product.key = "TUMx+MYOAx"',
+    'key: "UBCx+AI.02x"': 'product.key = "UBCx+AI.02x"',
     'key: "UBCx+Biobank2x"': 'product.key = "UBCx+Biobank2x"',
     'key: "UC3Mx+IM.4X"': 'product.key = "UC3Mx+IM.4X"',
     'key: "UQx+ACE101x"': 'product.key = "UQx+ACE101x"',
@@ -510,44 +520,59 @@ KEY_TO_PREDICATE_DICT = {
     'key: "WasedaX+JBM111x"': 'product.key = "WasedaX+JBM111x"',
     'key: "WasedaX+PSD111x"': 'product.key = "WasedaX+PSD111x"',
     'key: "WasedaX+SIP111x"': 'product.key = "WasedaX+SIP111x"',
-    'key: ("AdelaideX+EthicalAIProfX")': 'product.key = "AdelaideX+EthicalAIProfX"',
-    'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
+    # Multiple Product Keys
+    'key: ("GEO03.1ucX" OR "GEO04.2ucX")':
+    '(product.key = "UCx+GEO03.1ucX" or product.key = "UCx+GEO04.2ucX")',
+    'key: ("DelftX+AIfE6x" OR "DelftX+IB01x")':
+    '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+IB01x")',
+    'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")':
+    '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
+    'key: ("DelftX+MMFEPx" OR "DelftX+MMFESx")':
+    '(product.key = "DelftX+MMFEPx" or product.key = "DelftX+MMFESx")',
+    'key: ("DelftX+QTM2x" OR "DelftX+QTM3x")':
+    '(product.key = "DelftX+QTM2x" or product.key = "DelftX+QTM3x")',
+    'key: ("DelftWageningenX+TTE01x" OR "DelftX+BMI.2x")':
+    '(product.key = "DelftWageningenX+TTE01x" or product.key = "DelftX+BMI.2x")',
+    'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
+    '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
+    'key: (-"MITx+DS.CFx" AND -"MITx+6.431x" AND -"MITx+6.86x" AND -"MITx+18.6501x"'
+    ' AND -"MITx+6.419x" AND -"MITx+IDS.S24x" AND -"MITx+14.310Fx")':
+    '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
+    ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
+    ' and product.key != "MITx+14.310Fx")',
+    # Variant Keys
     'key: "ACE101x+1T2023"': 'variant.key = "course-v1:UQx+ACE101x+1T2023"',
+    'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
+    'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
+    'key: "DelftX+DDA691x+1T2025"': 'variant.key = "course-v1:DelftX+DDA691x+1T2025"',
+    'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
+    'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
+    'key: "DelftX+QTM1x+2T2024"': 'variant.key = "course-v1:DelftX+QTM1x+2T2024"',
     'key: "UQx+ACE201x+1T2023"': 'variant.key = "course-v1:UQx+ACE201x+1T2023"',
     'key: "UQx+Employ101x+1T2023"': 'variant.key = "course-v1:UQx+Employ101x+1T2023"',
     'key: "UQx+Teams101x+1T2023"': 'variant.key = "course-v1:UQx+Teams101x+1T2023"',
     'key: "UQx+Write101x+1T2023"': 'variant.key = "course-v1:UQx+Write101x+1T2023"',
-    'key: ("DelftX+AIfE6x" OR "DelftX+IB01x")': '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+IB01x")',
-    'key: ("DelftX+AIfE7x" OR "DelftX+UnixTx")': '(product.key = "DelftX+AIfE7x" or product.key = "DelftX+UnixTx")',
-    'key: ("DelftX+MMFEPx" OR "DelftX+MMFESx")': '(product.key = "DelftX+MMFEPx" or product.key = "DelftX+MMFESx")',
-    'key: ("DelftX+QTM2x" OR "DelftX+QTM3x")': '(product.key = "DelftX+QTM2x" or product.key = "DelftX+QTM3x")',
-    'key: ("DelftWageningenX+AMS.URB.1x+3T2024" OR "DelftX+SaSC01x" OR "DelftX+AIfE5x" OR "DelftX+AIfE6x")':
-    '(variant.key = "course-v1:DelftWageningenX+AMS.URB.1x+3T2024" or product.key = "DelftX+SaSC01x"'
-    ' or product.key = "DelftX+AIfE5x" or product.key = "DelftX+AIfE6x")',
-    'key: ("DelftX+AIfE6x" OR "DelftX+BMI.2x" OR "DelftX+MED01x")':
-    '(product.key = "DelftX+AIfE6x" or product.key = "DelftX+BMI.2x" or product.key = "DelftX+MED01x")',
+    # Multiple Variant Keys
+    'key: ("DelftX+AIIP1x+3T2025" OR "DelftX+AIIP2x+3T2025")':
+    '(variant.key = "course-v1:DelftX+AIIP1x+3T2025" or variant.key = "course-v1:DelftX+AIIP2x+3T2025")',
+    'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
+    '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
     'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
     '(variant.key = "course-v1:DelftX+EnerTran2x+1T2025" or variant.key = "course-v1:DelftX+RAIL101x+1T2025"'
     ' or variant.key = "course-v1:DelftX+AIfE3x+3T2024")',
-    'key: ("DelftWageningenX+TTE01x" OR "DelftX+BMI.2x")':
-    '(product.key = "DelftWageningenX+TTE01x" or product.key = "DelftX+BMI.2x")',
+    'key: ("DelftX+OS101x+1T2025" OR "DelftX+TUDF-FE01x+3T2024" OR "DelftX+SEJ1x+1T2025")':
+    '(variant.key = "course-v1:DelftX+OS101x+1T2025" or variant.key = "course-v1:DelftX+TUDF-FE01x+3T2024"'
+    ' or variant.key = "course-v1:DelftX+SEJ1x+1T2025")',
     'key: ("UChicagoX+QCS11000+1T2025a" OR "UChicagoX+QCS12000+1T2025a" OR "UChicagoX+QCS13000+1T2025a")':
     '(variant.key = "course-v1:UChicagoX+QCS11000+1T2025a" or variant.key = "course-v1:UChicagoX+QCS12000+1T2025a"'
     ' or variant.key = "course-v1:UChicagoX+QCS13000+1T2025a")',
     'key: ("MITx+15.415.1x+3T2024" OR "15.415.2x+2T2024" OR "15.516x+3T2024" OR "15.455x+1T2025")':
     '(variant.key = "course-v1:MITx+15.415.1x+3T2024" or variant.key = "course-v1:MITx+15.415.2x+2T2024"'
     ' or variant.key = "course-v1:MITx+15.516x+3T2024" or variant.key = "course-v1:MITx+15.455x+1T2025")',
-    'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
-    'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
-    'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
-    'key: "DelftX+DDA691x+1T2025"': 'variant.key = "course-v1:DelftX+DDA691x+1T2025"',
-    'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
-    '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
-    'key: (-"MITx+DS.CFx" AND -"MITx+6.431x" AND -"MITx+6.86x" AND -"MITx+18.6501x"'
-    ' AND -"MITx+6.419x" AND -"MITx+IDS.S24x" AND -"MITx+14.310Fx")':
-    '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
-    ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
-    ' and product.key != "MITx+14.310Fx")',
+    # Product and Variant Keys
+    'key: ("DelftWageningenX+AMS.URB.1x+3T2024" OR "DelftX+SaSC01x" OR "DelftX+AIfE5x" OR "DelftX+AIfE6x")':
+    '(variant.key = "course-v1:DelftWageningenX+AMS.URB.1x+3T2024" or product.key = "DelftX+SaSC01x"'
+    ' or product.key = "DelftX+AIfE5x" or product.key = "DelftX+AIfE6x")',
 }
 
 
