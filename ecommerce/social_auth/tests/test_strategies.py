@@ -7,12 +7,11 @@ import re
 import uuid
 from calendar import timegm
 
+import jwt
 import responses
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 from django.urls import reverse
-from jwkest.jwk import SYMKey
-from jwkest.jws import JWS
 from social_django.models import DjangoStorage
 
 from ecommerce.social_auth.strategies import CurrentSiteDjangoStrategy
@@ -58,12 +57,12 @@ class CurrentSiteDjangoStrategyTests(TestCase):
 
     def create_jwt(self, user):
         """
-        Creates a signed (JWS) ID token.
+        Creates a signed JWT ID token.
 
         Returns:
-            str: JWS
+            str: JWT
         """
-        key = SYMKey(key=self.site.siteconfiguration.oauth_settings['SOCIAL_AUTH_EDX_OAUTH2_SECRET'])
+        secret = self.site.siteconfiguration.oauth_settings['SOCIAL_AUTH_EDX_OAUTH2_SECRET']
         now = datetime.datetime.utcnow()
         expiration_datetime = now + datetime.timedelta(seconds=3600)
         issue_datetime = now
@@ -76,7 +75,7 @@ class CurrentSiteDjangoStrategyTests(TestCase):
             'aud': self.site.siteconfiguration.oauth_settings['SOCIAL_AUTH_EDX_OAUTH2_KEY'],
             'exp': timegm(expiration_datetime.utctimetuple()),
         }
-        access_token = JWS(payload, jwk=key, alg='HS512').sign_compact()
+        access_token = jwt.encode(payload, secret, algorithm='HS512')
         return access_token
 
     def mock_access_token_jwt_response(self, user, status=200):

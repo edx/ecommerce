@@ -53,8 +53,6 @@ edx-rest-api-client==5.5.2
     #   -r requirements/e2e.in
 exceptiongroup==1.1.1
     # via pytest
-future==0.18.3
-    # via pyjwkest
 idna==2.7
     # via
     #   -c requirements/base.txt
@@ -93,9 +91,6 @@ pycparser==2.21
 pycryptodomex==3.18.0
     # via
     #   -c requirements/base.txt
-    #   pyjwkest
-pyjwkest==1.4.2
-    # via -r requirements/e2e.in
 pyjwt[crypto]==2.7.0
     # via
     #   -c requirements/base.txt
@@ -142,7 +137,6 @@ requests==2.31.0
     # via
     #   -c requirements/base.txt
     #   edx-rest-api-client
-    #   pyjwkest
     #   pytest-base-url
     #   pytest-selenium
     #   slumber
@@ -154,7 +148,6 @@ selenium==3.141.0
 six==1.16.0
     # via
     #   -c requirements/base.txt
-    #   pyjwkest
     #   tenacity
 slumber==0.7.1
     # via
