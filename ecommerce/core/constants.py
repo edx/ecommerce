@@ -353,6 +353,7 @@ KEY_TO_PREDICATE_DICT = {
     ' and product.key != "ColumbiaX+CSMM.101x" and product.key != "ColumbiaX+CSMM.102x"'
     ' and product.key != "MichiganX+CSMM.103x" and product.key != "MichiganX+CSMM.104x"'
     ' and product.key != "GTx+MGT6203x" and product.key != "GTx+CSE6040x" and product.key != "GTx+ISYE6501x")',
+    'number:20\\.373x*': 'product.key = "MITx+20.373x"',
     'number:"Louv25.1x"': 'product.key = "LouvainX+Louv25.1"',
     'number:(LEAD1x)': 'product.key = "HarvardX+LEAD1x"',
     'number:Louv21x': 'product.key = "LouvainX+Louv21x"',
@@ -421,6 +422,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "AlaskaX+SPRT1x"': 'product.key = "AlaskaX+SPRT1x"',
     'key: "AlaskaX+SPRT3x"': 'product.key = "AlaskaX+SPRT3x"',
     'key: "AlaskaX+UAS1x"': 'product.key = "AlaskaX+UAS1x"',
+    'key: "ArmEducationX+EDARMXIT.6x"': 'product.key = "ArmEducationX+EDARMXIT.6x"',
     'key: "BayreuthX+ubt205mun"': 'product.key = "BayreuthX+ubt205mun"',
     'key: "BayreuthX+ubt208cpo"': 'product.key = "BayreuthX+ubt208cpo"',
     'key: "BerkeleyX+GG102x"': 'product.key = "BerkeleyX+GG102x"',
@@ -540,19 +542,45 @@ KEY_TO_PREDICATE_DICT = {
     '(product.key != "MITx+DS.CFx" and product.key != "MITx+6.431x" and product.key != "MITx+6.86x"'
     ' and product.key != "MITx+18.6501x" and product.key != "MITx+6.419x" and product.key != "MITx+IDS.S24x"'
     ' and product.key != "MITx+14.310Fx")',
+    'key: ("GalileoX+C_Estadistica01" OR "GalileoX+PCPSTA01x" OR "GalileoX+Fadmos_02"'
+    ' OR "GalileoX+PCPSTA02x" OR "GalileoX+EMP.INTx8" OR "Galileo_UPValenciaX+GalileoX_UPV_IA001"'
+    ' OR "Davidson_Galileo+AIMark_01" OR "GalileoX+EticaIA_01" OR "GalileoX+IoT003"'
+    ' OR "GalileoX+Energia006" OR "GalileoX+GalileoXAI002")':
+    '(product.key = "GalileoX+C_Estadistica01" or product.key = "GalileoX+PCPSTA01x"'
+    ' or product.key = "GalileoX+Fadmos_02" or product.key = "GalileoX+PCPSTA02x"'
+    ' or product.key = "GalileoX+EMP.INTx8" or product.key = "Galileo_UPValenciaX+GalileoX_UPV_IA001"'
+    ' or product.key = "Davidson_Galileo+AIMark_01" or product.key = "GalileoX+EticaIA_01"'
+    ' or product.key = "GalileoX+IoT003" or product.key = "GalileoX+Energia006"'
+    ' or product.key = "GalileoX+GalileoXAI002")',
+    'key: ("HP+HPGG01.en" OR "HP+HPGG01.es" OR "HP+HPGG02.en" OR "HP+HPGG03.en"'
+    ' OR "HP+HPGG01.ar" OR "HP+HPGG02.ar" OR "HP+HPGG02.es" OR "HP+HPGG03.ar"'
+    ' OR "HP+HPGG03.es" OR "HP+HPGG04.en" OR "HP+HPGG04.ar" OR "HP+HPGG04.es"'
+    ' OR "HP+HPGG05.en")':
+    '(product.key = "HP+HPGG01.en" or product.key = "HP+HPGG01.es"'
+    ' or product.key = "HP+HPGG02.en" or product.key = "HP+HPGG03.en"'
+    ' or product.key = "HP+HPGG01.ar" or product.key = "HP+HPGG02.ar"'
+    ' or product.key = "HP+HPGG02.es" or product.key = "HP+HPGG03.ar"'
+    ' or product.key = "HP+HPGG03.es" or product.key = "HP+HPGG04.en"'
+    ' or product.key = "HP+HPGG04.ar" or product.key = "HP+HPGG04.es"'
+    ' or product.key = "HP+HPGG05.en")',
     # Variant Keys
     'key: "ACE101x+1T2023"': 'variant.key = "course-v1:UQx+ACE101x+1T2023"',
     'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
+    'key: "DelftX+AEASM1x+2T2025"': 'variant.key = "course-v1:DelftX+AEASM1x+2T2025"',
     'key: "DelftX+DDA691x+1T2025"': 'variant.key = "course-v1:DelftX+DDA691x+1T2025"',
+    'key: "DelftX+ECObuild4x+1T2025"': 'variant.key = "course-v1:DelftX+ECObuild4x+1T2025"',
     'key: "DelftX+MEP201x+1T2025"': 'variant.key = "course-v1:DelftX+MEP201x+1T2025"',
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
+    'key: "DelftX+QCQN1x+2T2025"': 'variant.key = "course-v1:DelftX+QCQN1x+2T2025"',
     'key: "DelftX+QTM1x+2T2024"': 'variant.key = "course-v1:DelftX+QTM1x+2T2024"',
     'key: "UQx+ACE201x+1T2023"': 'variant.key = "course-v1:UQx+ACE201x+1T2023"',
     'key: "UQx+Employ101x+1T2023"': 'variant.key = "course-v1:UQx+Employ101x+1T2023"',
     'key: "UQx+Teams101x+1T2023"': 'variant.key = "course-v1:UQx+Teams101x+1T2023"',
     'key: "UQx+Write101x+1T2023"': 'variant.key = "course-v1:UQx+Write101x+1T2023"',
     # Multiple Variant Keys
+    'key: ("DelftX+AIfE6x+3T2025" OR "DelftX+AIfE5x+3T2025")':
+    '(variant.key = "course-v1:DelftX+AIfE6x+3T2025" or variant.key = "course-v1:DelftX+AIfE5x+3T2025")',
     'key: ("DelftX+AIIP1x+3T2025" OR "DelftX+AIIP2x+3T2025")':
     '(variant.key = "course-v1:DelftX+AIIP1x+3T2025" or variant.key = "course-v1:DelftX+AIIP2x+3T2025")',
     'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
