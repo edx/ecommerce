@@ -564,6 +564,7 @@ KEY_TO_PREDICATE_DICT = {
     ' or product.key = "HP+HPGG04.ar" or product.key = "HP+HPGG04.es"'
     ' or product.key = "HP+HPGG05.en")',
     # Variant Keys
+    'key: "course-v1:CurtinX+CYPB1x+3T2025"': 'variant.key = "course-v1:CurtinX+CYPB1x+3T2025"',
     'key: "ACE101x+1T2023"': 'variant.key = "course-v1:UQx+ACE101x+1T2023"',
     'key: "ColumbiaX+MGC+2T2024"': 'variant.key = "course-v1:ColumbiaX+MGC+2T2024"',
     'key: "DelftWageningenX+TTE01x+1T2025"': 'variant.key = "course-v1:DelftWageningenX+TTE01x+1T2025"',
@@ -574,6 +575,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+MoDS1x+3T2024"': 'variant.key = "course-v1:DelftX+MoDS1x+3T2024"',
     'key: "DelftX+QCQN1x+2T2025"': 'variant.key = "course-v1:DelftX+QCQN1x+2T2025"',
     'key: "DelftX+QTM1x+2T2024"': 'variant.key = "course-v1:DelftX+QTM1x+2T2024"',
+    'key: "HKUx+Genderx+2T2024"': 'variant.key = "course-v1:HKUx+Genderx+2T2024"',
     'key: "UQx+ACE201x+1T2023"': 'variant.key = "course-v1:UQx+ACE201x+1T2023"',
     'key: "UQx+Employ101x+1T2023"': 'variant.key = "course-v1:UQx+Employ101x+1T2023"',
     'key: "UQx+Teams101x+1T2023"': 'variant.key = "course-v1:UQx+Teams101x+1T2023"',
