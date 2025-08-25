@@ -389,7 +389,6 @@ funcsigs==1.0.2
 future==0.18.3
     # via
     #   -r requirements/test.txt
-    #   pyjwkest
 getsmarter-api-clients==0.6.0
     # via -r requirements/test.txt
 gitdb==4.0.10
@@ -679,7 +678,6 @@ pycryptodomex==3.18.0
     # via
     #   -r requirements/test.txt
     #   cybersource-rest-client-python
-    #   pyjwkest
 pydata-sphinx-theme==0.13.3
     # via
     #   -r requirements/docs.txt
@@ -692,8 +690,6 @@ pygments==2.15.1
     #   diff-cover
     #   pydata-sphinx-theme
     #   sphinx
-pyjwkest==1.4.2
-    # via -r requirements/test.txt
 pyjwt[crypto]==2.7.0
     # via
     #   -r requirements/test.txt
@@ -848,7 +844,6 @@ requests==2.31.0
     #   inapppy
     #   naked
     #   paypalrestsdk
-    #   pyjwkest
     #   pytest-base-url
     #   pytest-selenium
     #   requests-file
@@ -928,7 +923,6 @@ six==1.16.0
     #   oauth2client
     #   paypalrestsdk
     #   purl
-    #   pyjwkest
     #   python-dateutil
     #   python-memcached
     #   requests-file

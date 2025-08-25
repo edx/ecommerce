@@ -382,7 +382,6 @@ funcsigs==1.0.2
 future==0.18.3
     # via
     #   -r requirements/e2e.txt
-    #   pyjwkest
 getsmarter-api-clients==0.6.0
     # via -r requirements/base.txt
 google-api-core==2.11.1
@@ -658,13 +657,10 @@ pycryptodomex==3.18.0
     #   -r requirements/base.txt
     #   -r requirements/e2e.txt
     #   cybersource-rest-client-python
-    #   pyjwkest
 pygments==2.15.1
     # via
     #   -r requirements/base.txt
     #   diff-cover
-pyjwkest==1.4.2
-    # via -r requirements/e2e.txt
 pyjwt[crypto]==2.7.0
     # via
     #   -r requirements/base.txt
@@ -823,7 +819,6 @@ requests==2.31.0
     #   inapppy
     #   naked
     #   paypalrestsdk
-    #   pyjwkest
     #   pytest-base-url
     #   pytest-selenium
     #   requests-file
@@ -905,7 +900,6 @@ six==1.16.0
     #   oauth2client
     #   paypalrestsdk
     #   purl
-    #   pyjwkest
     #   python-dateutil
     #   python-memcached
     #   requests-file

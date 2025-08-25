@@ -3,7 +3,6 @@
 
 # Packages required to run e2e tests
 edx-rest-api-client
-pyjwkest
 pytest
 pytest-randomly
 pytest-selenium
