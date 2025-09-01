@@ -585,6 +585,8 @@ KEY_TO_PREDICATE_DICT = {
     '(variant.key = "course-v1:DelftX+AIfE6x+3T2025" or variant.key = "course-v1:DelftX+AIfE5x+3T2025")',
     'key: ("DelftX+AIIP1x+3T2025" OR "DelftX+AIIP2x+3T2025")':
     '(variant.key = "course-v1:DelftX+AIIP1x+3T2025" or variant.key = "course-v1:DelftX+AIIP2x+3T2025")',
+    'key: ("DelftX+IB01x+2T2025" OR "DelftX+IB02x+2T2025")':
+    '(variant.key = "course-v1:DelftX+IB01x+2T2025" or variant.key = "course-v1:DelftX+IB02x+2T2025")',
     'key: ("Microsoft+UAIFET+1T2025" OR "Microsoft+GSWAIA+1T2025")':
     '(variant.key = "course-v1:Microsoft+UAIFET+1T2025" or variant.key = "course-v1:Microsoft+GSWAIA+1T2025")',
     'key: ("DelftX+EnerTran2x+1T2025" OR "DelftX+RAIL101x+1T2025" OR "DelftX+AIfE3x+3T2024")':
