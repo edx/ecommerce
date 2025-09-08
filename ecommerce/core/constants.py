@@ -448,6 +448,7 @@ KEY_TO_PREDICATE_DICT = {
     'key: "DelftX+OS101x"': 'product.key = "DelftX+OS101x"',
     'key: "DelftX+OS101x+"': 'product.key = "DelftX+OS101x"',
     'key: "DelftX+OT.1x"': 'product.key = "DelftX+OT.1x"',
+    'key: "DelftX+PCUD01x"': 'product.key = "DelftX+PCUD01x"',
     'key: "DelftX+PCUD02x"': 'product.key = "DelftX+PCUD02x"',
     'key: "DelftX+SaSC01x"': 'product.key = "DelftX+SaSC01x"',
     'key: "DelftX+SEJ1x"': 'product.key = "DelftX+SEJ1x"',
@@ -581,6 +582,8 @@ KEY_TO_PREDICATE_DICT = {
     'key: "UQx+Teams101x+1T2023"': 'variant.key = "course-v1:UQx+Teams101x+1T2023"',
     'key: "UQx+Write101x+1T2023"': 'variant.key = "course-v1:UQx+Write101x+1T2023"',
     # Multiple Variant Keys
+    'key: ("DelftX+AIfE5x+3T2025" OR "DelftX+AIfE6x+3T2025")':
+    '(variant.key = "course-v1:DelftX+AIfE6x+3T2025" or variant.key = "course-v1:DelftX+AIfE5x+3T2025")',
     'key: ("DelftX+AIfE6x+3T2025" OR "DelftX+AIfE5x+3T2025")':
     '(variant.key = "course-v1:DelftX+AIfE6x+3T2025" or variant.key = "course-v1:DelftX+AIfE5x+3T2025")',
     'key: ("DelftX+AIIP1x+3T2025" OR "DelftX+AIIP2x+3T2025")':
@@ -601,6 +604,10 @@ KEY_TO_PREDICATE_DICT = {
     'key: ("MITx+15.415.1x+3T2024" OR "15.415.2x+2T2024" OR "15.516x+3T2024" OR "15.455x+1T2025")':
     '(variant.key = "course-v1:MITx+15.415.1x+3T2024" or variant.key = "course-v1:MITx+15.415.2x+2T2024"'
     ' or variant.key = "course-v1:MITx+15.516x+3T2024" or variant.key = "course-v1:MITx+15.455x+1T2025")',
+    'key: ("DelftX+IIES03x+3T2025" OR "DelftX+IIES01x+2T2025"'
+    ' OR "DelftX+IIES04x+2T2025" OR "DelftX+EnerTran1x+1T2025")':
+    '(variant.key = "course-v1:DelftX+IIES03x+3T2025" or variant.key = "course-v1:DelftX+IIES01x+2T2025"'
+    ' or variant.key = "course-v1:DelftX+IIES04x+2T2025" or variant.key = "course-v1:DelftX+EnerTran1x+1T2025")',
     # Product and Variant Keys
     'key: ("DelftWageningenX+AMS.URB.1x+3T2024" OR "DelftX+SaSC01x" OR "DelftX+AIfE5x" OR "DelftX+AIfE6x")':
     '(variant.key = "course-v1:DelftWageningenX+AMS.URB.1x+3T2024" or product.key = "DelftX+SaSC01x"'
