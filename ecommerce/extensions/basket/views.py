@@ -24,7 +24,7 @@ from oscar.apps.basket.views import *  # pylint: disable=wildcard-import, unused
 from oscar.core.prices import Price
 from requests.exceptions import ConnectionError as ReqConnectionError
 from requests.exceptions import RequestException, Timeout
-from rest_framework import status
+from rest_framework import status as response_status_codes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -427,7 +427,7 @@ class BasketAddItemsView(BasketLogicMixin, APIView):
 
         if waffle.flag_is_active(request, 'disable_ecommerce_service'):
             return HttpResponse(
-                'Service unavailable', status=status.HTTP_503_SERVICE_UNAVAILABLE
+                'Service unavailable', status=response_status_codes.HTTP_503_SERVICE_UNAVAILABLE
             )
 
         # Send time when this view is called - https://openedx.atlassian.net/browse/REV-984
@@ -840,7 +840,8 @@ class PaymentApiView(PaymentApiLogicMixin, APIView):
 
         if waffle.flag_is_active(request, 'disable_ecommerce_service'):
             return JsonResponse(
-                {'error': 'Service unavailable'}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+                {'error': 'Service unavailable'},
+                status=response_status_codes.HTTP_503_SERVICE_UNAVAILABLE
             )
 
         basket = request.basket
