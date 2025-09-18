@@ -86,7 +86,7 @@ disable=
 # the pylint import errors, since they conflict at times.
     wrong-import-order,
     ungrouped-imports,
-
+    logging-fstring-interpolation,
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs

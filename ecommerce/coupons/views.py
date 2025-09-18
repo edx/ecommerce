@@ -3,6 +3,7 @@
 import logging
 
 import unicodecsv as csv
+import waffle
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -16,6 +17,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView, View
 from edx_rest_framework_extensions.permissions import LoginRedirectIfUnauthenticated
 from oscar.core.loading import get_class, get_model
+from rest_framework import status
 from rest_framework.views import APIView
 
 from ecommerce.core.url_utils import absolute_redirect, get_ecommerce_url, get_lms_course_about_url
@@ -158,6 +160,18 @@ class CouponRedeemView(EdxOrderPlacementMixin, APIView):
         then applies the voucher and if the basket total is FREE places the order and
         enrolls the user in the course.
         """
+        logger.info(
+            f"[CouponRedeemView] Request for user: {request.user.username}, "
+            f"referer: {request.META.get('HTTP_REFERER')}, "
+            f"client IP: {request.META.get('REMOTE_ADDR')}, "
+            f"and params: {request.get_full_path()}"
+        )
+
+        if waffle.flag_is_active(request, 'disable_ecommerce_service'):
+            return HttpResponse(
+                'Service unavailable', status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         template_name = 'coupons/_offer_error.html'
         code = request.GET.get('code')
         sku = request.GET.get('sku')

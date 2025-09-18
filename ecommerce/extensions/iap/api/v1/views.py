@@ -111,6 +111,18 @@ class MobileBasketAddItemsView(BasketLogicMixin, APIView):
     permission_classes = (LoginRedirectIfUnauthenticated,)
 
     def get(self, request):
+        logger.info(
+            f"[MobileBasketAddItemsView] Request for user: {request.user.username}, "
+            f"referer: {request.META.get('HTTP_REFERER')}, "
+            f"client IP: {request.META.get('REMOTE_ADDR')}, "
+            f"and params: {request.get_full_path()}"
+        )
+
+        if waffle.flag_is_active(request, 'disable_ecommerce_service'):
+            return JsonResponse(
+                {'error': 'Service unavailable'}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         # Send time when this view is called - https://openedx.atlassian.net/browse/REV-984
         track_segment_event(request.site, request.user, SEGMENT_MOBILE_BASKET_ADD, {'emitted_at': time.time()})
 

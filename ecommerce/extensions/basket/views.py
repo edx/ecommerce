@@ -10,7 +10,7 @@ from decimal import Decimal
 
 import dateutil.parser
 import waffle
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.html import escape
@@ -24,6 +24,7 @@ from oscar.apps.basket.views import *  # pylint: disable=wildcard-import, unused
 from oscar.core.prices import Price
 from requests.exceptions import ConnectionError as ReqConnectionError
 from requests.exceptions import RequestException, Timeout
+from rest_framework import status as response_status_codes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -417,6 +418,18 @@ class BasketAddItemsView(BasketLogicMixin, APIView):
     permission_classes = (LoginRedirectIfUnauthenticated,)
 
     def get(self, request):
+        logger.info(
+            f"[BasketAddItemsView] Request for user: {request.user.username}, "
+            f"referer: {request.META.get('HTTP_REFERER')}, "
+            f"client IP: {request.META.get('REMOTE_ADDR')}, "
+            f"and params: {request.get_full_path()}"
+        )
+
+        if waffle.flag_is_active(request, 'disable_ecommerce_service'):
+            return HttpResponse(
+                'Service unavailable', status=response_status_codes.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         # Send time when this view is called - https://openedx.atlassian.net/browse/REV-984
         properties = {'emitted_at': time.time()}
         track_segment_event(request.site, request.user, 'Basket Add Items View Called', properties)
@@ -818,6 +831,19 @@ class PaymentApiView(PaymentApiLogicMixin, APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):  # pylint: disable=unused-argument
+        logger.info(
+            f"[PaymentApiView] Request for user: {request.user.username}, "
+            f"referer: {request.META.get('HTTP_REFERER')}, "
+            f"client IP: {request.META.get('REMOTE_ADDR')}, "
+            f"and params: {request.get_full_path()}"
+        )
+
+        if waffle.flag_is_active(request, 'disable_ecommerce_service'):
+            return JsonResponse(
+                {'error': 'Service unavailable'},
+                status=response_status_codes.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         basket = request.basket
 
         try:
