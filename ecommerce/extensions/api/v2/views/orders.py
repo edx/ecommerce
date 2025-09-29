@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import dateutil
 import django_filters
+import waffle
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -205,6 +206,18 @@ class ManualCourseEnrollmentOrderViewSet(EdxOrderPlacementMixin, EnterpriseDisco
         *course_run_key*
             Course in which learner is enrolled.
         """
+
+        logger.info(
+            f"[ManualCourseEnrollmentOrderViewSet] Request for user: {request.user.username}, "
+            f"referer: {request.META.get('HTTP_REFERER')}, "
+            f"client IP: {request.META.get('REMOTE_ADDR')}, "
+            f"and params: {request.get_full_path()}"
+        )
+
+        if waffle.flag_is_active(request, 'disable_ecommerce_service'):
+            return Response(
+                {'error': 'Service unavailable'}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
 
         try:
             enrollments = request.data["enrollments"]
